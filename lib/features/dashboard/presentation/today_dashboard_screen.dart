@@ -8,6 +8,7 @@ import '../../food_log/domain/log_item.dart';
 import '../../food_log/domain/macro_snapshot.dart';
 import '../../food_log/domain/meal_type.dart';
 import '../../products/presentation/product_search_screen.dart';
+import '../../settings/presentation/settings_screen.dart';
 
 class TodayDashboardScreen extends StatelessWidget {
   const TodayDashboardScreen({required this.store, super.key});
@@ -24,6 +25,11 @@ class TodayDashboardScreen extends StatelessWidget {
             tooltip: 'Products',
             icon: const Icon(Icons.inventory_2_outlined),
             onPressed: () => _openAddFood(context),
+          ),
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => _openSettings(context),
           ),
         ],
       ),
@@ -45,6 +51,10 @@ class TodayDashboardScreen extends StatelessWidget {
                     _Header(date: DateTime.now()),
                     const SizedBox(height: 16),
                     _MacroGrid(totals: store.dailyTotals),
+                    if (store.todaysLogItems.isEmpty) ...[
+                      const SizedBox(height: 16),
+                      _TodayEmptyState(onAddFood: () => _openAddFood(context)),
+                    ],
                     const SizedBox(height: 20),
                     for (final meal in MealType.values) ...[
                       _MealSection(
@@ -70,6 +80,12 @@ class TodayDashboardScreen extends StatelessWidget {
         builder: (_) => ProductSearchScreen(store: store),
       ),
     );
+  }
+
+  Future<void> _openSettings(BuildContext context) {
+    return Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen()));
   }
 }
 
@@ -295,34 +311,125 @@ class _LogItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(
-        item.product.name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+    return Dismissible(
+      key: ValueKey(item.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          Icons.delete_outline,
+          color: theme.colorScheme.onErrorContainer,
+        ),
       ),
-      subtitle: Text(
-        '${formatQuantity(item.quantity)} ${item.unit} - '
-        '${formatMacro(item.macros.protein, decimals: 1)}P  '
-        '${formatMacro(item.macros.carbs, decimals: 1)}C  '
-        '${formatMacro(item.macros.fat, decimals: 1)}F',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+      onDismissed: (_) => onRemove(item.id),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(
+          item.product.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          '${formatQuantity(item.quantity)} ${item.unit} - '
+          '${formatMacro(item.macros.protein, decimals: 1)}P  '
+          '${formatMacro(item.macros.carbs, decimals: 1)}C  '
+          '${formatMacro(item.macros.fat, decimals: 1)}F',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${formatMacro(item.macros.calories)} kcal',
+              style: theme.textTheme.labelLarge,
+            ),
+            IconButton(
+              tooltip: 'Remove',
+              icon: const Icon(Icons.close),
+              onPressed: () => onRemove(item.id),
+            ),
+          ],
+        ),
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '${formatMacro(item.macros.calories)} kcal',
-            style: theme.textTheme.labelLarge,
-          ),
-          IconButton(
-            tooltip: 'Remove',
-            icon: const Icon(Icons.close),
-            onPressed: () => onRemove(item.id),
-          ),
-        ],
+    );
+  }
+}
+
+class _TodayEmptyState extends StatelessWidget {
+  const _TodayEmptyState({required this.onAddFood});
+
+  final VoidCallback onAddFood;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 460;
+          final content = Row(
+            children: [
+              Icon(
+                Icons.restaurant_outlined,
+                size: 34,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'No food logged today',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Add a saved product or create one to start tracking.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: compact
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      content,
+                      const SizedBox(height: 14),
+                      FilledButton.icon(
+                        onPressed: onAddFood,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Food'),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(child: content),
+                      const SizedBox(width: 12),
+                      FilledButton.icon(
+                        onPressed: onAddFood,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add'),
+                      ),
+                    ],
+                  ),
+          );
+        },
       ),
     );
   }

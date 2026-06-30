@@ -30,10 +30,14 @@ void main() {
     );
   }
 
-  Future<({AppDatabase database, NutrivoGoStore store})>
-  createMemoryStore() async {
+  Future<({AppDatabase database, NutrivoGoStore store})> createMemoryStore({
+    DateTime Function()? clock,
+  }) async {
     final database = AppDatabase.connect(NativeDatabase.memory());
-    final store = NutrivoGoStore(database: database, clock: () => fixedNow);
+    final store = NutrivoGoStore(
+      database: database,
+      clock: clock ?? () => fixedNow,
+    );
     await store.ready;
     addTearDown(database.close);
     return (database: database, store: store);
@@ -200,4 +204,74 @@ void main() {
     expect(store.logItems.single.macros.calories, closeTo(200, 0.001));
     expect(store.logItems.single.macros.protein, closeTo(20, 0.001));
   });
+
+  test('recent products are based on logged items', () async {
+    var tick = 0;
+    final fixture = await createMemoryStore(
+      clock: () => fixedNow.add(Duration(minutes: tick++)),
+    );
+    final store = fixture.store;
+    final rice = await store.addProduct(
+      name: 'Rice',
+      baseUnit: BaseUnit.grams,
+      caloriesPer100: 130,
+      proteinPer100: 2.7,
+      carbsPer100: 28,
+      fatPer100: 0.3,
+    );
+    final milk = await store.addProduct(
+      name: 'Milk',
+      baseUnit: BaseUnit.milliliters,
+      caloriesPer100: 42,
+      proteinPer100: 3.4,
+      carbsPer100: 5,
+      fatPer100: 1,
+    );
+
+    await store.addLogItem(
+      product: rice,
+      quantity: 100,
+      unit: 'g',
+      mealType: MealType.lunch,
+    );
+    await store.addLogItem(
+      product: milk,
+      quantity: 250,
+      unit: 'ml',
+      mealType: MealType.snack,
+    );
+
+    expect(store.recentProducts.map((product) => product.name), [
+      'Milk',
+      'Rice',
+    ]);
+  });
+
+  test(
+    'soft-deleted products are hidden but logged snapshots remain',
+    () async {
+      final fixture = await createMemoryStore();
+      final store = fixture.store;
+      final product = await store.addProduct(
+        name: 'Toast',
+        baseUnit: BaseUnit.grams,
+        caloriesPer100: 250,
+        proteinPer100: 8,
+        carbsPer100: 45,
+        fatPer100: 4,
+      );
+      await store.addLogItem(
+        product: product,
+        quantity: 50,
+        unit: 'g',
+        mealType: MealType.breakfast,
+      );
+
+      await store.deleteProduct(product.id);
+
+      expect(store.products, isEmpty);
+      expect(store.logItems.single.product.name, 'Toast');
+      expect(store.logItems.single.macros.calories, closeTo(125, 0.001));
+    },
+  );
 }

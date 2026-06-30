@@ -7,6 +7,8 @@ import '../../food_log/presentation/add_food_quantity_screen.dart';
 import '../domain/product.dart';
 import 'create_product_screen.dart';
 
+enum _ProductAction { edit, delete }
+
 class ProductSearchScreen extends StatefulWidget {
   const ProductSearchScreen({required this.store, super.key});
 
@@ -57,6 +59,9 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
           animation: widget.store,
           builder: (context, _) {
             final products = _filteredProducts(widget.store.products);
+            final recentProducts = _query.isEmpty
+                ? widget.store.recentProducts
+                : <Product>[];
             return Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 900),
@@ -75,10 +80,36 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                     if (widget.store.products.isEmpty)
                       _EmptyProducts(onCreate: _createProduct)
                     else if (products.isEmpty)
-                      const _NoResults()
-                    else
+                      _NoResults(onCreate: _createProduct)
+                    else ...[
+                      if (recentProducts.isNotEmpty) ...[
+                        _SectionHeader(
+                          title: 'Recent',
+                          subtitle: 'Quick add from foods logged before',
+                        ),
+                        const SizedBox(height: 8),
+                        for (final product in recentProducts)
+                          _ProductTile(
+                            product: product,
+                            onTap: _selectProduct,
+                            onEdit: _editProduct,
+                            onDelete: _confirmDeleteProduct,
+                          ),
+                        const SizedBox(height: 12),
+                      ],
+                      _SectionHeader(
+                        title: 'Products',
+                        subtitle: '${products.length} saved',
+                      ),
+                      const SizedBox(height: 8),
                       for (final product in products)
-                        _ProductTile(product: product, onTap: _selectProduct),
+                        _ProductTile(
+                          product: product,
+                          onTap: _selectProduct,
+                          onEdit: _editProduct,
+                          onDelete: _confirmDeleteProduct,
+                        ),
+                    ],
                   ],
                 ),
               ),
@@ -114,6 +145,53 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     await _selectProduct(product);
   }
 
+  Future<void> _editProduct(Product product) async {
+    await Navigator.of(context).push<Product>(
+      MaterialPageRoute<Product>(
+        builder: (_) =>
+            CreateProductScreen(store: widget.store, product: product),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteProduct(Product product) async {
+    final hasHistory = widget.store.hasLogItemsForProduct(product.id);
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete product?'),
+          content: Text(
+            hasHistory
+                ? 'This removes ${product.name} from saved products. Existing food logs keep their macro snapshots.'
+                : 'This removes ${product.name} from saved products.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || shouldDelete != true) {
+      return;
+    }
+    await widget.store.deleteProduct(product.id);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('${product.name} deleted')));
+  }
+
   Future<void> _selectProduct(Product product) async {
     final loggedItem = await Navigator.of(context).push<LogItem>(
       MaterialPageRoute<LogItem>(
@@ -129,10 +207,17 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 }
 
 class _ProductTile extends StatelessWidget {
-  const _ProductTile({required this.product, required this.onTap});
+  const _ProductTile({
+    required this.product,
+    required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final Product product;
   final ValueChanged<Product> onTap;
+  final ValueChanged<Product> onEdit;
+  final ValueChanged<Product> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -152,11 +237,72 @@ class _ProductTile extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: theme.colorScheme.onSurfaceVariant,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PopupMenuButton<_ProductAction>(
+              tooltip: 'Product actions',
+              icon: Icon(
+                Icons.more_vert,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              onSelected: (action) {
+                switch (action) {
+                  case _ProductAction.edit:
+                    onEdit(product);
+                    break;
+                  case _ProductAction.delete:
+                    onDelete(product);
+                    break;
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _ProductAction.edit,
+                  child: ListTile(
+                    leading: Icon(Icons.edit_outlined),
+                    title: Text('Edit'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _ProductAction.delete,
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline),
+                    title: Text('Delete'),
+                  ),
+                ),
+              ],
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
+        Text(
+          subtitle,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -180,6 +326,14 @@ class _EmptyProducts extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text('No products yet', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text(
+            'Create reusable foods with macros per 100g or 100ml.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: onCreate,
@@ -193,17 +347,31 @@ class _EmptyProducts extends StatelessWidget {
 }
 
 class _NoResults extends StatelessWidget {
-  const _NoResults();
+  const _NoResults({required this.onCreate});
+
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 56),
-      child: Center(
-        child: Text(
-          'No matching products',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 42,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text('No matching products', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: onCreate,
+            icon: const Icon(Icons.add),
+            label: const Text('Create Product'),
+          ),
+        ],
       ),
     );
   }

@@ -191,12 +191,16 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
   }
 
   String? _positiveNumberValidator(String? value) {
-    final parsed = _parseOptionalNumber(value);
+    final text = value?.trim();
+    if (text == null || text.isEmpty) {
+      return 'Enter a quantity';
+    }
+    final parsed = _parseOptionalNumber(text);
     if (parsed == null) {
-      return 'Required';
+      return 'Quantity must be a number';
     }
     if (parsed <= 0) {
-      return 'Must be greater than 0';
+      return 'Quantity must be greater than 0';
     }
     return null;
   }

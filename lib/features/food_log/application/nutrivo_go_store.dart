@@ -39,6 +39,26 @@ class NutrivoGoStore extends ChangeNotifier {
 
   List<LogItem> get logItems => List.unmodifiable(_logItems);
 
+  List<Product> get recentProducts {
+    final activeProductIds = _products.map((product) => product.id).toSet();
+    final seenProductIds = <String>{};
+    final recent = <Product>[];
+
+    for (final item in _logItems.reversed) {
+      final product = item.product;
+      if (!activeProductIds.contains(product.id) ||
+          !seenProductIds.add(product.id)) {
+        continue;
+      }
+      recent.add(product);
+      if (recent.length == 5) {
+        break;
+      }
+    }
+
+    return List.unmodifiable(recent);
+  }
+
   List<LogItem> get todaysLogItems {
     return _logItems
         .where((item) => _isSameDay(item.createdAt, _clock()))
@@ -132,22 +152,27 @@ class NutrivoGoStore extends ChangeNotifier {
     String? brand,
     double? servingSize,
     String? servingUnit,
+    bool clearServingSize = false,
     BaseUnit? baseUnit,
     double? caloriesPer100,
     double? proteinPer100,
     double? carbsPer100,
     double? fatPer100,
   }) async {
-    final updated = product.copyWith(
-      name: name?.trim(),
-      brand: _emptyToNull(brand) ?? product.brand,
-      servingSize: servingSize,
-      servingUnit: _emptyToNull(servingUnit) ?? product.servingUnit,
-      baseUnit: baseUnit,
-      caloriesPer100: caloriesPer100,
-      proteinPer100: proteinPer100,
-      carbsPer100: carbsPer100,
-      fatPer100: fatPer100,
+    final updated = Product(
+      id: product.id,
+      name: name?.trim() ?? product.name,
+      brand: brand == null ? product.brand : _emptyToNull(brand),
+      servingSize: clearServingSize ? null : servingSize ?? product.servingSize,
+      servingUnit: servingUnit == null
+          ? product.servingUnit
+          : _emptyToNull(servingUnit),
+      baseUnit: baseUnit ?? product.baseUnit,
+      caloriesPer100: caloriesPer100 ?? product.caloriesPer100,
+      proteinPer100: proteinPer100 ?? product.proteinPer100,
+      carbsPer100: carbsPer100 ?? product.carbsPer100,
+      fatPer100: fatPer100 ?? product.fatPer100,
+      createdAt: product.createdAt,
       updatedAt: _clock(),
     );
 
@@ -158,6 +183,10 @@ class NutrivoGoStore extends ChangeNotifier {
     _replaceProductInLogItems(updated);
     notifyListeners();
     return updated;
+  }
+
+  bool hasLogItemsForProduct(String productId) {
+    return _logItems.any((item) => item.product.id == productId);
   }
 
   Future<void> deleteProduct(String id) async {

@@ -5,9 +5,10 @@ import '../../food_log/application/nutrivo_go_store.dart';
 import '../domain/product.dart';
 
 class CreateProductScreen extends StatefulWidget {
-  const CreateProductScreen({required this.store, super.key});
+  const CreateProductScreen({required this.store, super.key, this.product});
 
   final NutrivoGoStore store;
+  final Product? product;
 
   @override
   State<CreateProductScreen> createState() => _CreateProductScreenState();
@@ -29,6 +30,27 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   final _fatController = TextEditingController();
   BaseUnit _baseUnit = BaseUnit.grams;
   bool _isSaving = false;
+  bool get _isEditing => widget.product != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final product = widget.product;
+    if (product == null) {
+      return;
+    }
+    _nameController.text = product.name;
+    _brandController.text = product.brand ?? '';
+    _servingSizeController.text = product.servingSize == null
+        ? ''
+        : _formatInputNumber(product.servingSize!);
+    _servingUnitController.text = product.servingUnit ?? '';
+    _caloriesController.text = _formatInputNumber(product.caloriesPer100);
+    _proteinController.text = _formatInputNumber(product.proteinPer100);
+    _carbsController.text = _formatInputNumber(product.carbsPer100);
+    _fatController.text = _formatInputNumber(product.fatPer100);
+    _baseUnit = product.baseUnit;
+  }
 
   @override
   void dispose() {
@@ -46,7 +68,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Product')),
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Edit Product' : 'Create Product'),
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -104,6 +128,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     servingUnitController: _servingUnitController,
                     numberInputFormatter: _numberInputFormatter,
                     optionalPositiveNumberValidator: _optionalPositiveNumber,
+                    servingUnitValidator: _servingUnitValidator,
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -138,17 +163,33 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       return;
     }
     setState(() => _isSaving = true);
-    final product = await widget.store.addProduct(
-      name: _nameController.text,
-      brand: _brandController.text,
-      servingSize: _parseOptionalNumber(_servingSizeController.text),
-      servingUnit: _servingUnitController.text,
-      baseUnit: _baseUnit,
-      caloriesPer100: _parseRequiredNumber(_caloriesController.text),
-      proteinPer100: _parseRequiredNumber(_proteinController.text),
-      carbsPer100: _parseRequiredNumber(_carbsController.text),
-      fatPer100: _parseRequiredNumber(_fatController.text),
-    );
+    final editingProduct = widget.product;
+    final servingSize = _parseOptionalNumber(_servingSizeController.text);
+    final product = editingProduct == null
+        ? await widget.store.addProduct(
+            name: _nameController.text,
+            brand: _brandController.text,
+            servingSize: servingSize,
+            servingUnit: _servingUnitController.text,
+            baseUnit: _baseUnit,
+            caloriesPer100: _parseRequiredNumber(_caloriesController.text),
+            proteinPer100: _parseRequiredNumber(_proteinController.text),
+            carbsPer100: _parseRequiredNumber(_carbsController.text),
+            fatPer100: _parseRequiredNumber(_fatController.text),
+          )
+        : await widget.store.updateProduct(
+            editingProduct,
+            name: _nameController.text,
+            brand: _brandController.text,
+            servingSize: servingSize,
+            servingUnit: _servingUnitController.text,
+            clearServingSize: _servingSizeController.text.trim().isEmpty,
+            baseUnit: _baseUnit,
+            caloriesPer100: _parseRequiredNumber(_caloriesController.text),
+            proteinPer100: _parseRequiredNumber(_proteinController.text),
+            carbsPer100: _parseRequiredNumber(_carbsController.text),
+            fatPer100: _parseRequiredNumber(_fatController.text),
+          );
     if (!mounted) {
       return;
     }
@@ -157,7 +198,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
   String? _requiredText(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Required';
+      return 'Enter a product name';
     }
     return null;
   }
@@ -169,10 +210,21 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     }
     final parsed = _parseOptionalNumber(text);
     if (parsed == null) {
-      return 'Invalid number';
+      return 'Serving size must be a number';
     }
     if (parsed <= 0) {
-      return 'Must be greater than 0';
+      return 'Serving size must be greater than 0';
+    }
+    return null;
+  }
+
+  String? _servingUnitValidator(String? value) {
+    final unit = value?.trim();
+    if (unit == null || unit.isEmpty) {
+      return null;
+    }
+    if (_servingSizeController.text.trim().isEmpty) {
+      return 'Add a serving size for this unit';
     }
     return null;
   }
@@ -188,6 +240,13 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     }
     return double.tryParse(text);
   }
+
+  String _formatInputNumber(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toString();
+  }
 }
 
 class _ServingFields extends StatelessWidget {
@@ -196,12 +255,14 @@ class _ServingFields extends StatelessWidget {
     required this.servingUnitController,
     required this.numberInputFormatter,
     required this.optionalPositiveNumberValidator,
+    required this.servingUnitValidator,
   });
 
   final TextEditingController servingSizeController;
   final TextEditingController servingUnitController;
   final TextInputFormatter numberInputFormatter;
   final FormFieldValidator<String> optionalPositiveNumberValidator;
+  final FormFieldValidator<String> servingUnitValidator;
 
   @override
   Widget build(BuildContext context) {
@@ -226,6 +287,7 @@ class _ServingFields extends StatelessWidget {
               labelText: 'Serving unit',
               prefixIcon: Icon(Icons.category_outlined),
             ),
+            validator: servingUnitValidator,
           ),
         ];
 
@@ -272,24 +334,28 @@ class _NutritionFields extends StatelessWidget {
             label: 'Calories',
             icon: Icons.local_fire_department_outlined,
             numberInputFormatter: numberInputFormatter,
+            errorLabel: 'calories',
           ),
           _NumberField(
             controller: proteinController,
             label: 'Protein',
             icon: Icons.fitness_center,
             numberInputFormatter: numberInputFormatter,
+            errorLabel: 'protein',
           ),
           _NumberField(
             controller: carbsController,
             label: 'Carbs',
             icon: Icons.grain,
             numberInputFormatter: numberInputFormatter,
+            errorLabel: 'carbs',
           ),
           _NumberField(
             controller: fatController,
             label: 'Fat',
             icon: Icons.water_drop_outlined,
             numberInputFormatter: numberInputFormatter,
+            errorLabel: 'fat',
           ),
         ];
 
@@ -334,12 +400,14 @@ class _NumberField extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.numberInputFormatter,
+    required this.errorLabel,
   });
 
   final TextEditingController controller;
   final String label;
   final IconData icon;
   final TextInputFormatter numberInputFormatter;
+  final String errorLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -356,10 +424,10 @@ class _NumberField extends StatelessWidget {
     final text = value?.trim().replaceAll(',', '.');
     final parsed = text == null || text.isEmpty ? null : double.tryParse(text);
     if (parsed == null) {
-      return 'Required';
+      return 'Enter $errorLabel per 100';
     }
     if (parsed < 0) {
-      return 'Must be 0 or more';
+      return '${label[0].toUpperCase()}${label.substring(1)} must be 0 or more';
     }
     return null;
   }

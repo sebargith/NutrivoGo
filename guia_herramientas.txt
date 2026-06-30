@@ -1,0 +1,19 @@
+VS Code = editor
+Codex = coding assistant
+Git = change history
+
+Flutter = cross-platform app framework
+Dart = programming language
+Flutter SDK = build/run tools
+
+Android Studio = Android tool manager
+Android SDK = Android build files
+Command-line tools = SDK management
+Platform-tools/ADB = communication with phone/emulator
+Emulator = virtual Android phone
+Java/JDK = needed by Android build system
+Gradle = Android build engine
+
+Visual Studio Build Tools = Windows desktop compiler
+MSBuild = Windows build engine
+Chrome = web test target

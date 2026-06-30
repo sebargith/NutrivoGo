@@ -28,6 +28,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   final _carbsController = TextEditingController();
   final _fatController = TextEditingController();
   BaseUnit _baseUnit = BaseUnit.grams;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -119,9 +120,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
-                    onPressed: _save,
+                    onPressed: _isSaving ? null : _save,
                     icon: const Icon(Icons.check),
-                    label: const Text('Save Product'),
+                    label: Text(_isSaving ? 'Saving' : 'Save Product'),
                   ),
                 ],
               ),
@@ -132,11 +133,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     );
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    final product = widget.store.addProduct(
+    setState(() => _isSaving = true);
+    final product = await widget.store.addProduct(
       name: _nameController.text,
       brand: _brandController.text,
       servingSize: _parseOptionalNumber(_servingSizeController.text),
@@ -147,6 +149,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       carbsPer100: _parseRequiredNumber(_carbsController.text),
       fatPer100: _parseRequiredNumber(_fatController.text),
     );
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pop(product);
   }
 

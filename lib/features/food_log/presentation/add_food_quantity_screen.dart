@@ -33,6 +33,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
   late final TextEditingController _quantityController;
   late String _unit;
   MealType _mealType = MealType.lunch;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -143,9 +144,9 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                   _MacroPreview(snapshot: preview),
                   const SizedBox(height: 24),
                   FilledButton.icon(
-                    onPressed: _save,
+                    onPressed: _isSaving ? null : _save,
                     icon: const Icon(Icons.check),
-                    label: const Text('Add to Today'),
+                    label: Text(_isSaving ? 'Saving' : 'Add to Today'),
                   ),
                 ],
               ),
@@ -172,16 +173,20 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    final item = widget.store.addLogItem(
+    setState(() => _isSaving = true);
+    final item = await widget.store.addLogItem(
       product: widget.product,
       quantity: _parseRequiredNumber(_quantityController.text),
       unit: _unit,
       mealType: _mealType,
     );
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pop<LogItem>(item);
   }
 

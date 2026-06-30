@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../shared/utils/macro_formatters.dart';
@@ -48,7 +50,7 @@ class TodayDashboardScreen extends StatelessWidget {
                       _MealSection(
                         mealType: meal,
                         items: store.itemsForMeal(meal),
-                        onRemove: store.removeLogItem,
+                        onRemove: (id) => unawaited(store.removeLogItem(id)),
                       ),
                       const SizedBox(height: 12),
                     ],

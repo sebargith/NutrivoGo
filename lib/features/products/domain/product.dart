@@ -5,6 +5,13 @@ enum BaseUnit {
   const BaseUnit(this.label);
 
   final String label;
+
+  static BaseUnit fromLabel(String label) {
+    return BaseUnit.values.firstWhere(
+      (unit) => unit.label == label,
+      orElse: () => throw ArgumentError.value(label, 'label', 'Unknown unit'),
+    );
+  }
 }
 
 class Product {
@@ -16,9 +23,12 @@ class Product {
     required this.proteinPer100,
     required this.carbsPer100,
     required this.fatPer100,
+    required this.createdAt,
+    required this.updatedAt,
     this.brand,
     this.servingSize,
     this.servingUnit,
+    this.deletedAt,
   });
 
   final String id;
@@ -31,6 +41,9 @@ class Product {
   final double proteinPer100;
   final double carbsPer100;
   final double fatPer100;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
 
   String get displayName {
     final trimmedBrand = brand?.trim();
@@ -57,5 +70,35 @@ class Product {
       return value.toStringAsFixed(0);
     }
     return value.toStringAsFixed(1);
+  }
+
+  Product copyWith({
+    String? name,
+    String? brand,
+    double? servingSize,
+    String? servingUnit,
+    BaseUnit? baseUnit,
+    double? caloriesPer100,
+    double? proteinPer100,
+    double? carbsPer100,
+    double? fatPer100,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+  }) {
+    return Product(
+      id: id,
+      name: name ?? this.name,
+      brand: brand ?? this.brand,
+      servingSize: servingSize ?? this.servingSize,
+      servingUnit: servingUnit ?? this.servingUnit,
+      baseUnit: baseUnit ?? this.baseUnit,
+      caloriesPer100: caloriesPer100 ?? this.caloriesPer100,
+      proteinPer100: proteinPer100 ?? this.proteinPer100,
+      carbsPer100: carbsPer100 ?? this.carbsPer100,
+      fatPer100: fatPer100 ?? this.fatPer100,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+    );
   }
 }

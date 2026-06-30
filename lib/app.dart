@@ -5,7 +5,9 @@ import 'features/food_log/application/nutrivo_go_store.dart';
 import 'shared/theme/app_theme.dart';
 
 class NutrivoGoApp extends StatefulWidget {
-  const NutrivoGoApp({super.key});
+  const NutrivoGoApp({super.key, this.store});
+
+  final NutrivoGoStore? store;
 
   @override
   State<NutrivoGoApp> createState() => _NutrivoGoAppState();
@@ -13,16 +15,20 @@ class NutrivoGoApp extends StatefulWidget {
 
 class _NutrivoGoAppState extends State<NutrivoGoApp> {
   late final NutrivoGoStore _store;
+  late final bool _ownsStore;
 
   @override
   void initState() {
     super.initState();
-    _store = NutrivoGoStore();
+    _ownsStore = widget.store == null;
+    _store = widget.store ?? NutrivoGoStore();
   }
 
   @override
   void dispose() {
-    _store.dispose();
+    if (_ownsStore) {
+      _store.dispose();
+    }
     super.dispose();
   }
 

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/sync/record_sync_status.dart';
 import '../../products/domain/product.dart';
 import '../domain/log_item.dart';
 import '../domain/macro_calculator.dart';
@@ -174,6 +175,8 @@ class NutrivoGoStore extends ChangeNotifier {
       fatPer100: fatPer100 ?? product.fatPer100,
       createdAt: product.createdAt,
       updatedAt: _clock(),
+      userId: product.userId,
+      syncStatus: RecordSyncStatus.pending,
     );
 
     await (_database.update(_database.productRows)
@@ -194,7 +197,12 @@ class NutrivoGoStore extends ChangeNotifier {
     await (_database.update(
       _database.productRows,
     )..where((row) => row.id.equals(id))).write(
-      ProductRowsCompanion(updatedAt: Value(now), deletedAt: Value(now)),
+      ProductRowsCompanion(
+        updatedAt: Value(now),
+        deletedAt: Value(now),
+        syncStatus: Value(RecordSyncStatus.pending.storageValue),
+        lastSyncedAt: const Value(null),
+      ),
     );
     _products.removeWhere((product) => product.id == id);
     notifyListeners();
@@ -237,7 +245,12 @@ class NutrivoGoStore extends ChangeNotifier {
     await (_database.update(
       _database.logItemRows,
     )..where((row) => row.id.equals(id))).write(
-      LogItemRowsCompanion(updatedAt: Value(now), deletedAt: Value(now)),
+      LogItemRowsCompanion(
+        updatedAt: Value(now),
+        deletedAt: Value(now),
+        syncStatus: Value(RecordSyncStatus.pending.storageValue),
+        lastSyncedAt: const Value(null),
+      ),
     );
     _logItems.removeWhere((item) => item.id == id);
     notifyListeners();
@@ -270,6 +283,9 @@ class NutrivoGoStore extends ChangeNotifier {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       deletedAt: row.deletedAt,
+      userId: row.userId,
+      syncStatus: RecordSyncStatus.fromStorage(row.syncStatus),
+      lastSyncedAt: row.lastSyncedAt,
     );
   }
 
@@ -288,6 +304,9 @@ class NutrivoGoStore extends ChangeNotifier {
       createdAt: Value(product.createdAt),
       updatedAt: Value(product.updatedAt),
       deletedAt: Value(product.deletedAt),
+      userId: Value(product.userId),
+      syncStatus: Value(product.syncStatus.storageValue),
+      lastSyncedAt: Value(product.lastSyncedAt),
     );
   }
 
@@ -307,6 +326,9 @@ class NutrivoGoStore extends ChangeNotifier {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       deletedAt: row.deletedAt,
+      userId: row.userId,
+      syncStatus: RecordSyncStatus.fromStorage(row.syncStatus),
+      lastSyncedAt: row.lastSyncedAt,
     );
   }
 
@@ -324,6 +346,9 @@ class NutrivoGoStore extends ChangeNotifier {
       createdAt: Value(item.createdAt),
       updatedAt: Value(item.updatedAt),
       deletedAt: Value(item.deletedAt),
+      userId: Value(item.userId),
+      syncStatus: Value(item.syncStatus.storageValue),
+      lastSyncedAt: Value(item.lastSyncedAt),
     );
   }
 

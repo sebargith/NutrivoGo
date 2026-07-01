@@ -1,3 +1,5 @@
+import '../../../core/sync/record_sync_status.dart';
+
 enum BaseUnit {
   grams('g'),
   milliliters('ml');
@@ -29,6 +31,9 @@ class Product {
     this.servingSize,
     this.servingUnit,
     this.deletedAt,
+    this.userId,
+    this.syncStatus = RecordSyncStatus.pending,
+    this.lastSyncedAt,
   });
 
   final String id;
@@ -44,6 +49,9 @@ class Product {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final String? userId;
+  final RecordSyncStatus syncStatus;
+  final DateTime? lastSyncedAt;
 
   String get displayName {
     final trimmedBrand = brand?.trim();
@@ -84,6 +92,9 @@ class Product {
     double? fatPer100,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    String? userId,
+    RecordSyncStatus? syncStatus,
+    DateTime? lastSyncedAt,
   }) {
     return Product(
       id: id,
@@ -99,6 +110,9 @@ class Product {
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      userId: userId ?? this.userId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
     );
   }
 }

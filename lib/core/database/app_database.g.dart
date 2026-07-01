@@ -146,6 +146,38 @@ class $ProductRowsTable extends ProductRows
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _lastSyncedAtMeta = const VerificationMeta(
+    'lastSyncedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+    'last_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -161,6 +193,9 @@ class $ProductRowsTable extends ProductRows
     createdAt,
     updatedAt,
     deletedAt,
+    userId,
+    syncStatus,
+    lastSyncedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -282,6 +317,27 @@ class $ProductRowsTable extends ProductRows
         deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+        _lastSyncedAtMeta,
+        lastSyncedAt.isAcceptableOrUnknown(
+          data['last_synced_at']!,
+          _lastSyncedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -343,6 +399,18 @@ class $ProductRowsTable extends ProductRows
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_synced_at'],
+      ),
     );
   }
 
@@ -366,6 +434,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final String? userId;
+  final String syncStatus;
+  final DateTime? lastSyncedAt;
   const ProductRow({
     required this.id,
     required this.name,
@@ -380,6 +451,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.userId,
+    required this.syncStatus,
+    this.lastSyncedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -404,6 +478,13 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    map['sync_status'] = Variable<String>(syncStatus);
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
     }
     return map;
   }
@@ -431,6 +512,13 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      syncStatus: Value(syncStatus),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
     );
   }
 
@@ -453,6 +541,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
     );
   }
   @override
@@ -472,6 +563,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'userId': serializer.toJson<String?>(userId),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
     };
   }
 
@@ -489,6 +583,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> userId = const Value.absent(),
+    String? syncStatus,
+    Value<DateTime?> lastSyncedAt = const Value.absent(),
   }) => ProductRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -503,6 +600,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    userId: userId.present ? userId.value : this.userId,
+    syncStatus: syncStatus ?? this.syncStatus,
+    lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
   );
   ProductRow copyWithCompanion(ProductRowsCompanion data) {
     return ProductRow(
@@ -529,6 +629,13 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
     );
   }
 
@@ -547,7 +654,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
           ..write('fatPer100: $fatPer100, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('userId: $userId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
           ..write(')'))
         .toString();
   }
@@ -567,6 +677,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     createdAt,
     updatedAt,
     deletedAt,
+    userId,
+    syncStatus,
+    lastSyncedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -584,7 +697,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
           other.fatPer100 == this.fatPer100 &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.deletedAt == this.deletedAt);
+          other.deletedAt == this.deletedAt &&
+          other.userId == this.userId &&
+          other.syncStatus == this.syncStatus &&
+          other.lastSyncedAt == this.lastSyncedAt);
 }
 
 class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
@@ -601,6 +717,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
+  final Value<String?> userId;
+  final Value<String> syncStatus;
+  final Value<DateTime?> lastSyncedAt;
   final Value<int> rowid;
   const ProductRowsCompanion({
     this.id = const Value.absent(),
@@ -616,6 +735,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProductRowsCompanion.insert({
@@ -632,6 +754,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -656,6 +781,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
+    Expression<String>? userId,
+    Expression<String>? syncStatus,
+    Expression<DateTime>? lastSyncedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -672,6 +800,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
+      if (userId != null) 'user_id': userId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -690,6 +821,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
+    Value<String?>? userId,
+    Value<String>? syncStatus,
+    Value<DateTime?>? lastSyncedAt,
     Value<int>? rowid,
   }) {
     return ProductRowsCompanion(
@@ -706,6 +840,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      userId: userId ?? this.userId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -752,6 +889,15 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -774,6 +920,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('userId: $userId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -910,6 +1059,38 @@ class $LogItemRowsTable extends LogItemRows
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _lastSyncedAtMeta = const VerificationMeta(
+    'lastSyncedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+    'last_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -924,6 +1105,9 @@ class $LogItemRowsTable extends LogItemRows
     createdAt,
     updatedAt,
     deletedAt,
+    userId,
+    syncStatus,
+    lastSyncedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1028,6 +1212,27 @@ class $LogItemRowsTable extends LogItemRows
         deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+        _lastSyncedAtMeta,
+        lastSyncedAt.isAcceptableOrUnknown(
+          data['last_synced_at']!,
+          _lastSyncedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1085,6 +1290,18 @@ class $LogItemRowsTable extends LogItemRows
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_synced_at'],
+      ),
     );
   }
 
@@ -1107,6 +1324,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final String? userId;
+  final String syncStatus;
+  final DateTime? lastSyncedAt;
   const LogItemRow({
     required this.id,
     required this.productId,
@@ -1120,6 +1340,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.userId,
+    required this.syncStatus,
+    this.lastSyncedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1137,6 +1360,13 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    map['sync_status'] = Variable<String>(syncStatus);
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
     }
     return map;
   }
@@ -1157,6 +1387,13 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      syncStatus: Value(syncStatus),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
     );
   }
 
@@ -1178,6 +1415,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
     );
   }
   @override
@@ -1196,6 +1436,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'userId': serializer.toJson<String?>(userId),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
     };
   }
 
@@ -1212,6 +1455,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> userId = const Value.absent(),
+    String? syncStatus,
+    Value<DateTime?> lastSyncedAt = const Value.absent(),
   }) => LogItemRow(
     id: id ?? this.id,
     productId: productId ?? this.productId,
@@ -1225,6 +1471,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    userId: userId.present ? userId.value : this.userId,
+    syncStatus: syncStatus ?? this.syncStatus,
+    lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
   );
   LogItemRow copyWithCompanion(LogItemRowsCompanion data) {
     return LogItemRow(
@@ -1240,6 +1489,13 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
     );
   }
 
@@ -1257,7 +1513,10 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
           ..write('fat: $fat, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('userId: $userId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
           ..write(')'))
         .toString();
   }
@@ -1276,6 +1535,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     createdAt,
     updatedAt,
     deletedAt,
+    userId,
+    syncStatus,
+    lastSyncedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -1292,7 +1554,10 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
           other.fat == this.fat &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.deletedAt == this.deletedAt);
+          other.deletedAt == this.deletedAt &&
+          other.userId == this.userId &&
+          other.syncStatus == this.syncStatus &&
+          other.lastSyncedAt == this.lastSyncedAt);
 }
 
 class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
@@ -1308,6 +1573,9 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
+  final Value<String?> userId;
+  final Value<String> syncStatus;
+  final Value<DateTime?> lastSyncedAt;
   final Value<int> rowid;
   const LogItemRowsCompanion({
     this.id = const Value.absent(),
@@ -1322,6 +1590,9 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LogItemRowsCompanion.insert({
@@ -1337,6 +1608,9 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        productId = Value(productId),
@@ -1362,6 +1636,9 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
+    Expression<String>? userId,
+    Expression<String>? syncStatus,
+    Expression<DateTime>? lastSyncedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1377,6 +1654,9 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
+      if (userId != null) 'user_id': userId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1394,6 +1674,9 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
+    Value<String?>? userId,
+    Value<String>? syncStatus,
+    Value<DateTime?>? lastSyncedAt,
     Value<int>? rowid,
   }) {
     return LogItemRowsCompanion(
@@ -1409,6 +1692,9 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      userId: userId ?? this.userId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1452,6 +1738,15 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1473,6 +1768,9 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('userId: $userId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1509,6 +1807,9 @@ typedef $$ProductRowsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
+      Value<String?> userId,
+      Value<String> syncStatus,
+      Value<DateTime?> lastSyncedAt,
       Value<int> rowid,
     });
 typedef $$ProductRowsTableUpdateCompanionBuilder =
@@ -1526,6 +1827,9 @@ typedef $$ProductRowsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
+      Value<String?> userId,
+      Value<String> syncStatus,
+      Value<DateTime?> lastSyncedAt,
       Value<int> rowid,
     });
 
@@ -1600,6 +1904,21 @@ class $$ProductRowsTableFilterComposer
 
   ColumnFilters<DateTime> get deletedAt => $composableBuilder(
     column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1677,6 +1996,21 @@ class $$ProductRowsTableOrderingComposer
     column: $table.deletedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ProductRowsTableAnnotationComposer
@@ -1736,6 +2070,19 @@ class $$ProductRowsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$ProductRowsTableTableManager
@@ -1782,6 +2129,9 @@ class $$ProductRowsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductRowsCompanion(
                 id: id,
@@ -1797,6 +2147,9 @@ class $$ProductRowsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                userId: userId,
+                syncStatus: syncStatus,
+                lastSyncedAt: lastSyncedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1814,6 +2167,9 @@ class $$ProductRowsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductRowsCompanion.insert(
                 id: id,
@@ -1829,6 +2185,9 @@ class $$ProductRowsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                userId: userId,
+                syncStatus: syncStatus,
+                lastSyncedAt: lastSyncedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -1870,6 +2229,9 @@ typedef $$LogItemRowsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
+      Value<String?> userId,
+      Value<String> syncStatus,
+      Value<DateTime?> lastSyncedAt,
       Value<int> rowid,
     });
 typedef $$LogItemRowsTableUpdateCompanionBuilder =
@@ -1886,6 +2248,9 @@ typedef $$LogItemRowsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
+      Value<String?> userId,
+      Value<String> syncStatus,
+      Value<DateTime?> lastSyncedAt,
       Value<int> rowid,
     });
 
@@ -1955,6 +2320,21 @@ class $$LogItemRowsTableFilterComposer
 
   ColumnFilters<DateTime> get deletedAt => $composableBuilder(
     column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2027,6 +2407,21 @@ class $$LogItemRowsTableOrderingComposer
     column: $table.deletedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LogItemRowsTableAnnotationComposer
@@ -2073,6 +2468,19 @@ class $$LogItemRowsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$LogItemRowsTableTableManager
@@ -2118,6 +2526,9 @@ class $$LogItemRowsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogItemRowsCompanion(
                 id: id,
@@ -2132,6 +2543,9 @@ class $$LogItemRowsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                userId: userId,
+                syncStatus: syncStatus,
+                lastSyncedAt: lastSyncedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2148,6 +2562,9 @@ class $$LogItemRowsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogItemRowsCompanion.insert(
                 id: id,
@@ -2162,6 +2579,9 @@ class $$LogItemRowsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                userId: userId,
+                syncStatus: syncStatus,
+                lastSyncedAt: lastSyncedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

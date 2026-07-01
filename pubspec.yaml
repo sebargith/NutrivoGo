@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   drift: ^2.34.0
   path: ^1.9.1
-
+  supabase: ^2.13.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

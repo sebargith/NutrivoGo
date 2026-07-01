@@ -27,6 +27,9 @@ class ProductRows extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get userId => text().nullable()();
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+  DateTimeColumn get lastSyncedAt => dateTime().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -49,6 +52,9 @@ class LogItemRows extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get userId => text().nullable()();
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+  DateTimeColumn get lastSyncedAt => dateTime().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -61,7 +67,22 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.connect(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (migrator) => migrator.createAll(),
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.addColumn(productRows, productRows.userId);
+        await migrator.addColumn(productRows, productRows.syncStatus);
+        await migrator.addColumn(productRows, productRows.lastSyncedAt);
+        await migrator.addColumn(logItemRows, logItemRows.userId);
+        await migrator.addColumn(logItemRows, logItemRows.syncStatus);
+        await migrator.addColumn(logItemRows, logItemRows.lastSyncedAt);
+      }
+    },
+  );
 }
 
 LazyDatabase _openConnection() {

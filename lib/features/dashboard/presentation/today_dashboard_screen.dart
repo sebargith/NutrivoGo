@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/auth/auth_controller.dart';
 import '../../../shared/utils/macro_formatters.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
 import '../../food_log/domain/log_item.dart';
@@ -9,11 +10,19 @@ import '../../food_log/domain/macro_snapshot.dart';
 import '../../food_log/domain/meal_type.dart';
 import '../../products/presentation/product_search_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
+import '../../sync/application/sync_service.dart';
 
 class TodayDashboardScreen extends StatelessWidget {
-  const TodayDashboardScreen({required this.store, super.key});
+  const TodayDashboardScreen({
+    required this.store,
+    super.key,
+    this.authController,
+    this.syncService,
+  });
 
   final NutrivoGoStore store;
+  final AuthController? authController;
+  final SyncService? syncService;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +30,11 @@ class TodayDashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('NutrivoGo'),
         actions: [
+          if (syncService != null)
+            _SyncStatusAction(
+              syncService: syncService!,
+              onPressed: () => _openSettings(context),
+            ),
           IconButton(
             tooltip: 'Products',
             icon: const Icon(Icons.inventory_2_outlined),
@@ -83,9 +97,77 @@ class TodayDashboardScreen extends StatelessWidget {
   }
 
   Future<void> _openSettings(BuildContext context) {
-    return Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen()));
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SettingsScreen(
+          store: store,
+          authController: authController,
+          syncService: syncService,
+        ),
+      ),
+    );
+  }
+}
+
+class _SyncStatusAction extends StatelessWidget {
+  const _SyncStatusAction({required this.syncService, required this.onPressed});
+
+  final SyncService syncService;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: syncService,
+      builder: (context, _) {
+        return IconButton(
+          tooltip: _tooltip,
+          icon: Icon(_icon),
+          color: _color(context),
+          onPressed: onPressed,
+        );
+      },
+    );
+  }
+
+  IconData get _icon {
+    if (syncService.isSyncing) {
+      return Icons.sync;
+    }
+    if (syncService.status == SyncRunStatus.failed) {
+      return Icons.cloud_off_outlined;
+    }
+    if (syncService.pendingCount > 0) {
+      return Icons.cloud_upload_outlined;
+    }
+    if (syncService.status == SyncRunStatus.success) {
+      return Icons.cloud_done_outlined;
+    }
+    return Icons.cloud_queue_outlined;
+  }
+
+  String get _tooltip {
+    if (syncService.isSyncing) {
+      return 'Syncing';
+    }
+    if (syncService.pendingCount > 0) {
+      return '${syncService.pendingCount} pending sync item(s)';
+    }
+    if (syncService.status == SyncRunStatus.failed) {
+      return 'Sync needs attention';
+    }
+    return 'Sync status';
+  }
+
+  Color? _color(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    if (syncService.status == SyncRunStatus.failed) {
+      return colorScheme.error;
+    }
+    if (syncService.pendingCount > 0) {
+      return colorScheme.secondary;
+    }
+    return null;
   }
 }
 

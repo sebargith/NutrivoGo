@@ -34,6 +34,12 @@ class Product {
     this.userId,
     this.syncStatus = RecordSyncStatus.pending,
     this.lastSyncedAt,
+    this.barcode,
+    this.source,
+    this.sugarPer100,
+    this.saturatedFatPer100,
+    this.sodiumPer100,
+    this.fiberPer100,
   });
 
   final String id;
@@ -52,6 +58,12 @@ class Product {
   final String? userId;
   final RecordSyncStatus syncStatus;
   final DateTime? lastSyncedAt;
+  final String? barcode;
+  final String? source;
+  final double? sugarPer100;
+  final double? saturatedFatPer100;
+  final double? sodiumPer100;
+  final double? fiberPer100;
 
   String get displayName {
     final trimmedBrand = brand?.trim();
@@ -95,6 +107,12 @@ class Product {
     String? userId,
     RecordSyncStatus? syncStatus,
     DateTime? lastSyncedAt,
+    String? barcode,
+    String? source,
+    double? sugarPer100,
+    double? saturatedFatPer100,
+    double? sodiumPer100,
+    double? fiberPer100,
   }) {
     return Product(
       id: id,
@@ -113,6 +131,12 @@ class Product {
       userId: userId ?? this.userId,
       syncStatus: syncStatus ?? this.syncStatus,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      barcode: barcode ?? this.barcode,
+      source: source ?? this.source,
+      sugarPer100: sugarPer100 ?? this.sugarPer100,
+      saturatedFatPer100: saturatedFatPer100 ?? this.saturatedFatPer100,
+      sodiumPer100: sodiumPer100 ?? this.sodiumPer100,
+      fiberPer100: fiberPer100 ?? this.fiberPer100,
     );
   }
 }

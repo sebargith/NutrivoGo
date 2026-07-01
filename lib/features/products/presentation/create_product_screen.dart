@@ -5,10 +5,16 @@ import '../../food_log/application/nutrivo_go_store.dart';
 import '../domain/product.dart';
 
 class CreateProductScreen extends StatefulWidget {
-  const CreateProductScreen({required this.store, super.key, this.product});
+  const CreateProductScreen({
+    required this.store,
+    super.key,
+    this.product,
+    this.initialBarcode,
+  });
 
   final NutrivoGoStore store;
   final Product? product;
+  final String? initialBarcode;
 
   @override
   State<CreateProductScreen> createState() => _CreateProductScreenState();
@@ -22,12 +28,17 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
+  final _barcodeController = TextEditingController();
   final _servingSizeController = TextEditingController();
   final _servingUnitController = TextEditingController();
   final _caloriesController = TextEditingController();
   final _proteinController = TextEditingController();
   final _carbsController = TextEditingController();
   final _fatController = TextEditingController();
+  final _sugarController = TextEditingController();
+  final _saturatedFatController = TextEditingController();
+  final _sodiumController = TextEditingController();
+  final _fiberController = TextEditingController();
   BaseUnit _baseUnit = BaseUnit.grams;
   bool _isSaving = false;
   bool get _isEditing => widget.product != null;
@@ -37,18 +48,26 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     super.initState();
     final product = widget.product;
     if (product == null) {
+      _barcodeController.text = widget.initialBarcode ?? '';
       return;
     }
     _nameController.text = product.name;
     _brandController.text = product.brand ?? '';
-    _servingSizeController.text = product.servingSize == null
-        ? ''
-        : _formatInputNumber(product.servingSize!);
+    _barcodeController.text = product.barcode ?? '';
+    _servingSizeController.text = _formatOptionalInputNumber(
+      product.servingSize,
+    );
     _servingUnitController.text = product.servingUnit ?? '';
     _caloriesController.text = _formatInputNumber(product.caloriesPer100);
     _proteinController.text = _formatInputNumber(product.proteinPer100);
     _carbsController.text = _formatInputNumber(product.carbsPer100);
     _fatController.text = _formatInputNumber(product.fatPer100);
+    _sugarController.text = _formatOptionalInputNumber(product.sugarPer100);
+    _saturatedFatController.text = _formatOptionalInputNumber(
+      product.saturatedFatPer100,
+    );
+    _sodiumController.text = _formatOptionalInputNumber(product.sodiumPer100);
+    _fiberController.text = _formatOptionalInputNumber(product.fiberPer100);
     _baseUnit = product.baseUnit;
   }
 
@@ -56,12 +75,17 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   void dispose() {
     _nameController.dispose();
     _brandController.dispose();
+    _barcodeController.dispose();
     _servingSizeController.dispose();
     _servingUnitController.dispose();
     _caloriesController.dispose();
     _proteinController.dispose();
     _carbsController.dispose();
     _fatController.dispose();
+    _sugarController.dispose();
+    _saturatedFatController.dispose();
+    _sodiumController.dispose();
+    _fiberController.dispose();
     super.dispose();
   }
 
@@ -98,6 +122,16 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                       prefixIcon: Icon(Icons.sell_outlined),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _barcodeController,
+                    textInputAction: TextInputAction.next,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Barcode',
+                      prefixIcon: Icon(Icons.qr_code_2_outlined),
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   Text(
                     'Base unit',
@@ -123,25 +157,88 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  _ServingFields(
-                    servingSizeController: _servingSizeController,
-                    servingUnitController: _servingUnitController,
-                    numberInputFormatter: _numberInputFormatter,
-                    optionalPositiveNumberValidator: _optionalPositiveNumber,
-                    servingUnitValidator: _servingUnitValidator,
+                  _ResponsiveFields(
+                    children: [
+                      _OptionalNumberField(
+                        controller: _servingSizeController,
+                        label: 'Porción',
+                        icon: Icons.straighten,
+                        numberInputFormatter: _numberInputFormatter,
+                      ),
+                      TextFormField(
+                        controller: _servingUnitController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Serving unit',
+                          prefixIcon: Icon(Icons.category_outlined),
+                        ),
+                        validator: _servingUnitValidator,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Nutrition per 100${_baseUnit.label}',
+                    _baseUnit == BaseUnit.milliliters
+                        ? 'Por 100 ml'
+                        : 'Por 100 g',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 8),
-                  _NutritionFields(
-                    caloriesController: _caloriesController,
-                    proteinController: _proteinController,
-                    carbsController: _carbsController,
-                    fatController: _fatController,
-                    numberInputFormatter: _numberInputFormatter,
+                  _ResponsiveFields(
+                    children: [
+                      _RequiredNumberField(
+                        controller: _caloriesController,
+                        label: 'Energía / Calorías',
+                        errorLabel: 'calorías',
+                        icon: Icons.local_fire_department_outlined,
+                        numberInputFormatter: _numberInputFormatter,
+                      ),
+                      _RequiredNumberField(
+                        controller: _proteinController,
+                        label: 'Proteínas',
+                        errorLabel: 'proteínas',
+                        icon: Icons.fitness_center,
+                        numberInputFormatter: _numberInputFormatter,
+                      ),
+                      _RequiredNumberField(
+                        controller: _carbsController,
+                        label: 'Carbohidratos',
+                        errorLabel: 'carbohidratos',
+                        icon: Icons.grain,
+                        numberInputFormatter: _numberInputFormatter,
+                      ),
+                      _RequiredNumberField(
+                        controller: _fatController,
+                        label: 'Grasas',
+                        errorLabel: 'grasas',
+                        icon: Icons.water_drop_outlined,
+                        numberInputFormatter: _numberInputFormatter,
+                      ),
+                      _OptionalNumberField(
+                        controller: _sugarController,
+                        label: 'Azúcares',
+                        icon: Icons.cookie_outlined,
+                        numberInputFormatter: _numberInputFormatter,
+                      ),
+                      _OptionalNumberField(
+                        controller: _saturatedFatController,
+                        label: 'Grasas saturadas',
+                        icon: Icons.opacity,
+                        numberInputFormatter: _numberInputFormatter,
+                      ),
+                      _OptionalNumberField(
+                        controller: _sodiumController,
+                        label: 'Sodio',
+                        icon: Icons.science_outlined,
+                        numberInputFormatter: _numberInputFormatter,
+                      ),
+                      _OptionalNumberField(
+                        controller: _fiberController,
+                        label: 'Fibra',
+                        icon: Icons.spa_outlined,
+                        numberInputFormatter: _numberInputFormatter,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
@@ -165,6 +262,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     setState(() => _isSaving = true);
     final editingProduct = widget.product;
     final servingSize = _parseOptionalNumber(_servingSizeController.text);
+    final barcode = _barcodeController.text.trim();
     final product = editingProduct == null
         ? await widget.store.addProduct(
             name: _nameController.text,
@@ -176,6 +274,14 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             proteinPer100: _parseRequiredNumber(_proteinController.text),
             carbsPer100: _parseRequiredNumber(_carbsController.text),
             fatPer100: _parseRequiredNumber(_fatController.text),
+            barcode: barcode,
+            source: barcode.isEmpty ? null : 'barcode',
+            sugarPer100: _parseOptionalNumber(_sugarController.text),
+            saturatedFatPer100: _parseOptionalNumber(
+              _saturatedFatController.text,
+            ),
+            sodiumPer100: _parseOptionalNumber(_sodiumController.text),
+            fiberPer100: _parseOptionalNumber(_fiberController.text),
           )
         : await widget.store.updateProduct(
             editingProduct,
@@ -189,6 +295,20 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             proteinPer100: _parseRequiredNumber(_proteinController.text),
             carbsPer100: _parseRequiredNumber(_carbsController.text),
             fatPer100: _parseRequiredNumber(_fatController.text),
+            barcode: barcode,
+            source: barcode.isEmpty ? null : editingProduct.source ?? 'barcode',
+            clearBarcode: barcode.isEmpty,
+            clearSource: barcode.isEmpty,
+            sugarPer100: _parseOptionalNumber(_sugarController.text),
+            saturatedFatPer100: _parseOptionalNumber(
+              _saturatedFatController.text,
+            ),
+            sodiumPer100: _parseOptionalNumber(_sodiumController.text),
+            fiberPer100: _parseOptionalNumber(_fiberController.text),
+            clearSugar: _sugarController.text.trim().isEmpty,
+            clearSaturatedFat: _saturatedFatController.text.trim().isEmpty,
+            clearSodium: _sodiumController.text.trim().isEmpty,
+            clearFiber: _fiberController.text.trim().isEmpty,
           );
     if (!mounted) {
       return;
@@ -199,21 +319,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   String? _requiredText(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Enter a product name';
-    }
-    return null;
-  }
-
-  String? _optionalPositiveNumber(String? value) {
-    final text = value?.trim();
-    if (text == null || text.isEmpty) {
-      return null;
-    }
-    final parsed = _parseOptionalNumber(text);
-    if (parsed == null) {
-      return 'Serving size must be a number';
-    }
-    if (parsed <= 0) {
-      return 'Serving size must be greater than 0';
     }
     return null;
   }
@@ -247,146 +352,41 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     }
     return value.toString();
   }
-}
 
-class _ServingFields extends StatelessWidget {
-  const _ServingFields({
-    required this.servingSizeController,
-    required this.servingUnitController,
-    required this.numberInputFormatter,
-    required this.optionalPositiveNumberValidator,
-    required this.servingUnitValidator,
-  });
-
-  final TextEditingController servingSizeController;
-  final TextEditingController servingUnitController;
-  final TextInputFormatter numberInputFormatter;
-  final FormFieldValidator<String> optionalPositiveNumberValidator;
-  final FormFieldValidator<String> servingUnitValidator;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 560;
-        final fields = [
-          TextFormField(
-            controller: servingSizeController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [numberInputFormatter],
-            decoration: const InputDecoration(
-              labelText: 'Serving size',
-              prefixIcon: Icon(Icons.straighten),
-            ),
-            validator: optionalPositiveNumberValidator,
-          ),
-          TextFormField(
-            controller: servingUnitController,
-            textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Serving unit',
-              prefixIcon: Icon(Icons.category_outlined),
-            ),
-            validator: servingUnitValidator,
-          ),
-        ];
-
-        if (!isWide) {
-          return Column(
-            children: [fields[0], const SizedBox(height: 12), fields[1]],
-          );
-        }
-
-        return Row(
-          children: [
-            Expanded(child: fields[0]),
-            const SizedBox(width: 12),
-            Expanded(child: fields[1]),
-          ],
-        );
-      },
-    );
+  String _formatOptionalInputNumber(double? value) {
+    if (value == null) {
+      return '';
+    }
+    return _formatInputNumber(value);
   }
 }
 
-class _NutritionFields extends StatelessWidget {
-  const _NutritionFields({
-    required this.caloriesController,
-    required this.proteinController,
-    required this.carbsController,
-    required this.fatController,
-    required this.numberInputFormatter,
-  });
+class _ResponsiveFields extends StatelessWidget {
+  const _ResponsiveFields({required this.children});
 
-  final TextEditingController caloriesController;
-  final TextEditingController proteinController;
-  final TextEditingController carbsController;
-  final TextEditingController fatController;
-  final TextInputFormatter numberInputFormatter;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final fields = [
-          _NumberField(
-            controller: caloriesController,
-            label: 'Calories',
-            icon: Icons.local_fire_department_outlined,
-            numberInputFormatter: numberInputFormatter,
-            errorLabel: 'calories',
-          ),
-          _NumberField(
-            controller: proteinController,
-            label: 'Protein',
-            icon: Icons.fitness_center,
-            numberInputFormatter: numberInputFormatter,
-            errorLabel: 'protein',
-          ),
-          _NumberField(
-            controller: carbsController,
-            label: 'Carbs',
-            icon: Icons.grain,
-            numberInputFormatter: numberInputFormatter,
-            errorLabel: 'carbs',
-          ),
-          _NumberField(
-            controller: fatController,
-            label: 'Fat',
-            icon: Icons.water_drop_outlined,
-            numberInputFormatter: numberInputFormatter,
-            errorLabel: 'fat',
-          ),
-        ];
-
         if (constraints.maxWidth < 640) {
           return Column(
             children: [
-              for (var index = 0; index < fields.length; index++) ...[
-                fields[index],
-                if (index != fields.length - 1) const SizedBox(height: 12),
+              for (var index = 0; index < children.length; index++) ...[
+                children[index],
+                if (index != children.length - 1) const SizedBox(height: 12),
               ],
             ],
           );
         }
 
-        return Column(
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
           children: [
-            Row(
-              children: [
-                Expanded(child: fields[0]),
-                const SizedBox(width: 12),
-                Expanded(child: fields[1]),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: fields[2]),
-                const SizedBox(width: 12),
-                Expanded(child: fields[3]),
-              ],
-            ),
+            for (final child in children)
+              SizedBox(width: (constraints.maxWidth - 12) / 2, child: child),
           ],
         );
       },
@@ -394,20 +394,20 @@ class _NutritionFields extends StatelessWidget {
   }
 }
 
-class _NumberField extends StatelessWidget {
-  const _NumberField({
+class _RequiredNumberField extends StatelessWidget {
+  const _RequiredNumberField({
     required this.controller,
     required this.label,
+    required this.errorLabel,
     required this.icon,
     required this.numberInputFormatter,
-    required this.errorLabel,
   });
 
   final TextEditingController controller;
   final String label;
+  final String errorLabel;
   final IconData icon;
   final TextInputFormatter numberInputFormatter;
-  final String errorLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -416,19 +416,62 @@ class _NumberField extends StatelessWidget {
       keyboardType: TextInputType.number,
       inputFormatters: [numberInputFormatter],
       decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
-      validator: _requiredPositiveNumber,
+      validator: (value) {
+        final parsed = _parseOptionalNumber(value);
+        if (parsed == null) {
+          return 'Ingresa $errorLabel';
+        }
+        if (parsed < 0) {
+          return 'Debe ser 0 o más';
+        }
+        return null;
+      },
     );
   }
+}
 
-  String? _requiredPositiveNumber(String? value) {
-    final text = value?.trim().replaceAll(',', '.');
-    final parsed = text == null || text.isEmpty ? null : double.tryParse(text);
-    if (parsed == null) {
-      return 'Enter $errorLabel per 100';
-    }
-    if (parsed < 0) {
-      return '${label[0].toUpperCase()}${label.substring(1)} must be 0 or more';
-    }
+class _OptionalNumberField extends StatelessWidget {
+  const _OptionalNumberField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    required this.numberInputFormatter,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final TextInputFormatter numberInputFormatter;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      inputFormatters: [numberInputFormatter],
+      decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
+      validator: (value) {
+        final text = value?.trim();
+        if (text == null || text.isEmpty) {
+          return null;
+        }
+        final parsed = _parseOptionalNumber(text);
+        if (parsed == null) {
+          return 'Debe ser un número';
+        }
+        if (parsed < 0) {
+          return 'Debe ser 0 o más';
+        }
+        return null;
+      },
+    );
+  }
+}
+
+double? _parseOptionalNumber(String? value) {
+  final text = value?.trim().replaceAll(',', '.');
+  if (text == null || text.isEmpty) {
     return null;
   }
+  return double.tryParse(text);
 }

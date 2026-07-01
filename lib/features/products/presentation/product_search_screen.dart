@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/utils/macro_formatters.dart';
+import '../../barcode/application/open_food_facts_client.dart';
+import '../../barcode/domain/product_import_draft.dart';
+import '../../barcode/presentation/barcode_scan_screen.dart';
+import '../../barcode/presentation/product_import_confirmation_screen.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
 import '../../food_log/domain/log_item.dart';
 import '../../food_log/presentation/add_food_quantity_screen.dart';
@@ -20,7 +24,9 @@ class ProductSearchScreen extends StatefulWidget {
 
 class _ProductSearchScreenState extends State<ProductSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final OpenFoodFactsClient _openFoodFactsClient = OpenFoodFactsClient();
   String _query = '';
+  bool _isLookingUpBarcode = false;
 
   @override
   void initState() {
@@ -33,6 +39,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _openFoodFactsClient.close();
     super.dispose();
   }
 
@@ -42,6 +49,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       appBar: AppBar(
         title: const Text('Add Food'),
         actions: [
+          IconButton(
+            tooltip: 'Scan barcode',
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: _isLookingUpBarcode ? null : _scanBarcode,
+          ),
           IconButton(
             tooltip: 'Create product',
             icon: const Icon(Icons.add_box_outlined),
@@ -75,6 +87,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                         hintText: 'Search products',
                         prefixIcon: Icon(Icons.search),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    _BarcodeActionBar(
+                      isLoading: _isLookingUpBarcode,
+                      onScan: _scanBarcode,
                     ),
                     const SizedBox(height: 16),
                     if (widget.store.products.isEmpty)
@@ -126,8 +143,10 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     }
     return products
         .where((product) {
-          final haystack = '${product.name} ${product.brand ?? ''}'
-              .toLowerCase();
+          final haystack =
+              '${product.name} ${product.brand ?? ''}'
+                      ' ${product.barcode ?? ''}'
+                  .toLowerCase();
           return haystack.contains(_query);
         })
         .toList(growable: false);
@@ -137,6 +156,89 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     final product = await Navigator.of(context).push<Product>(
       MaterialPageRoute<Product>(
         builder: (_) => CreateProductScreen(store: widget.store),
+      ),
+    );
+    if (!mounted || product == null) {
+      return;
+    }
+    await _selectProduct(product);
+  }
+
+  Future<void> _scanBarcode() async {
+    final barcode = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(builder: (_) => const BarcodeScanScreen()),
+    );
+    if (!mounted || barcode == null || barcode.trim().isEmpty) {
+      return;
+    }
+    await _handleBarcode(barcode);
+  }
+
+  Future<void> _handleBarcode(String barcode) async {
+    final normalized = barcode.trim();
+    final localProduct = widget.store.findProductByBarcode(normalized);
+    if (localProduct != null) {
+      await _selectProduct(localProduct);
+      return;
+    }
+
+    setState(() => _isLookingUpBarcode = true);
+    ProductLookupResult result;
+    try {
+      result = await _openFoodFactsClient.lookupBarcode(normalized);
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _isLookingUpBarcode = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Could not reach Open Food Facts. Create the product manually. $error',
+          ),
+        ),
+      );
+      await _openManualProductWithBarcode(normalized);
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+    setState(() => _isLookingUpBarcode = false);
+
+    if (result.status == ProductLookupStatus.notFound || result.draft == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Barcode not found in Open Food Facts. Create it manually.',
+          ),
+        ),
+      );
+      await _openManualProductWithBarcode(normalized);
+      return;
+    }
+
+    final product = await Navigator.of(context).push<Product>(
+      MaterialPageRoute<Product>(
+        builder: (_) => ProductImportConfirmationScreen(
+          store: widget.store,
+          draft: result.draft!,
+          message: result.message,
+        ),
+      ),
+    );
+    if (!mounted || product == null) {
+      return;
+    }
+    await _selectProduct(product);
+  }
+
+  Future<void> _openManualProductWithBarcode(String barcode) async {
+    final product = await Navigator.of(context).push<Product>(
+      MaterialPageRoute<Product>(
+        builder: (_) =>
+            CreateProductScreen(store: widget.store, initialBarcode: barcode),
       ),
     );
     if (!mounted || product == null) {
@@ -203,6 +305,41 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       return;
     }
     Navigator.of(context).pop();
+  }
+}
+
+class _BarcodeActionBar extends StatelessWidget {
+  const _BarcodeActionBar({required this.isLoading, required this.onScan});
+
+  final bool isLoading;
+  final VoidCallback onScan;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            const Icon(Icons.qr_code_scanner),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isLoading ? 'Searching barcode...' : 'Scan or enter a barcode',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton.icon(
+              onPressed: isLoading ? null : onScan,
+              icon: Icon(isLoading ? Icons.hourglass_top : Icons.camera_alt),
+              label: Text(isLoading ? 'Searching' : 'Scan'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

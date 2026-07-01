@@ -37,6 +37,8 @@ dependencies:
   drift: ^2.34.0
   path: ^1.9.1
   supabase: ^2.13.2
+  mobile_scanner: ^7.2.0
+  http: ^1.6.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

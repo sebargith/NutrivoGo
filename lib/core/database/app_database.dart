@@ -30,6 +30,12 @@ class ProductRows extends Table {
   TextColumn get userId => text().nullable()();
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
   DateTimeColumn get lastSyncedAt => dateTime().nullable()();
+  TextColumn get barcode => text().nullable()();
+  TextColumn get source => text().nullable()();
+  RealColumn get sugarPer100 => real().nullable()();
+  RealColumn get saturatedFatPer100 => real().nullable()();
+  RealColumn get sodiumPer100 => real().nullable()();
+  RealColumn get fiberPer100 => real().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -67,7 +73,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.connect(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +86,14 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(logItemRows, logItemRows.userId);
         await migrator.addColumn(logItemRows, logItemRows.syncStatus);
         await migrator.addColumn(logItemRows, logItemRows.lastSyncedAt);
+      }
+      if (from < 3) {
+        await migrator.addColumn(productRows, productRows.barcode);
+        await migrator.addColumn(productRows, productRows.source);
+        await migrator.addColumn(productRows, productRows.sugarPer100);
+        await migrator.addColumn(productRows, productRows.saturatedFatPer100);
+        await migrator.addColumn(productRows, productRows.sodiumPer100);
+        await migrator.addColumn(productRows, productRows.fiberPer100);
       }
     },
   );

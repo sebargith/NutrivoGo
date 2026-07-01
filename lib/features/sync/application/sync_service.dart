@@ -288,6 +288,14 @@ class SyncService extends ChangeNotifier {
       deletedAt: Value(_readNullableDate(row['deleted_at'])),
       syncStatus: Value(RecordSyncStatus.synced.storageValue),
       lastSyncedAt: Value(now),
+      barcode: Value(row['barcode'] as String?),
+      source: Value(row['source'] as String?),
+      sugarPer100: Value((row['sugar_per_100'] as num?)?.toDouble()),
+      saturatedFatPer100: Value(
+        (row['saturated_fat_per_100'] as num?)?.toDouble(),
+      ),
+      sodiumPer100: Value((row['sodium_per_100'] as num?)?.toDouble()),
+      fiberPer100: Value((row['fiber_per_100'] as num?)?.toDouble()),
     );
   }
 
@@ -331,6 +339,12 @@ class SyncService extends ChangeNotifier {
       'created_at': _toIso(row.createdAt),
       'updated_at': _toIso(row.updatedAt),
       'deleted_at': _toIsoOrNull(row.deletedAt),
+      'barcode': row.barcode,
+      'source': row.source,
+      'sugar_per_100': row.sugarPer100,
+      'saturated_fat_per_100': row.saturatedFatPer100,
+      'sodium_per_100': row.sodiumPer100,
+      'fiber_per_100': row.fiberPer100,
     };
   }
 

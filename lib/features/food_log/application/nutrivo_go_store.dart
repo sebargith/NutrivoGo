@@ -76,6 +76,19 @@ class NutrivoGoStore extends ChangeNotifier {
     );
   }
 
+  Product? findProductByBarcode(String barcode) {
+    final normalized = _normalizeBarcode(barcode);
+    if (normalized == null) {
+      return null;
+    }
+    for (final product in _products) {
+      if (_normalizeBarcode(product.barcode) == normalized) {
+        return product;
+      }
+    }
+    return null;
+  }
+
   List<LogItem> itemsForMeal(MealType mealType) {
     return todaysLogItems
         .where((item) => item.mealType == mealType)
@@ -136,6 +149,12 @@ class NutrivoGoStore extends ChangeNotifier {
     String? brand,
     double? servingSize,
     String? servingUnit,
+    String? barcode,
+    String? source,
+    double? sugarPer100,
+    double? saturatedFatPer100,
+    double? sodiumPer100,
+    double? fiberPer100,
   }) async {
     final now = _clock();
     final product = Product(
@@ -152,6 +171,12 @@ class NutrivoGoStore extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
       userId: _activeUserId,
+      barcode: _normalizeBarcode(barcode),
+      source: _emptyToNull(source),
+      sugarPer100: sugarPer100,
+      saturatedFatPer100: saturatedFatPer100,
+      sodiumPer100: sodiumPer100,
+      fiberPer100: fiberPer100,
     );
 
     await _database
@@ -174,6 +199,19 @@ class NutrivoGoStore extends ChangeNotifier {
     double? proteinPer100,
     double? carbsPer100,
     double? fatPer100,
+    String? barcode,
+    String? source,
+    bool clearBarcode = false,
+    bool clearSource = false,
+    double? sugarPer100,
+    double? saturatedFatPer100,
+    double? sodiumPer100,
+    double? fiberPer100,
+    bool clearExtraNutrients = false,
+    bool clearSugar = false,
+    bool clearSaturatedFat = false,
+    bool clearSodium = false,
+    bool clearFiber = false,
   }) async {
     final updated = Product(
       id: product.id,
@@ -192,6 +230,28 @@ class NutrivoGoStore extends ChangeNotifier {
       updatedAt: _clock(),
       userId: product.userId ?? _activeUserId,
       syncStatus: RecordSyncStatus.pending,
+      barcode: clearBarcode
+          ? null
+          : barcode == null
+          ? product.barcode
+          : _normalizeBarcode(barcode),
+      source: clearSource
+          ? null
+          : source == null
+          ? product.source
+          : _emptyToNull(source),
+      sugarPer100: clearExtraNutrients || clearSugar
+          ? null
+          : sugarPer100 ?? product.sugarPer100,
+      saturatedFatPer100: clearExtraNutrients || clearSaturatedFat
+          ? null
+          : saturatedFatPer100 ?? product.saturatedFatPer100,
+      sodiumPer100: clearExtraNutrients || clearSodium
+          ? null
+          : sodiumPer100 ?? product.sodiumPer100,
+      fiberPer100: clearExtraNutrients || clearFiber
+          ? null
+          : fiberPer100 ?? product.fiberPer100,
     );
 
     await (_database.update(_database.productRows)
@@ -302,6 +362,12 @@ class NutrivoGoStore extends ChangeNotifier {
       userId: row.userId,
       syncStatus: RecordSyncStatus.fromStorage(row.syncStatus),
       lastSyncedAt: row.lastSyncedAt,
+      barcode: row.barcode,
+      source: row.source,
+      sugarPer100: row.sugarPer100,
+      saturatedFatPer100: row.saturatedFatPer100,
+      sodiumPer100: row.sodiumPer100,
+      fiberPer100: row.fiberPer100,
     );
   }
 
@@ -323,6 +389,12 @@ class NutrivoGoStore extends ChangeNotifier {
       userId: Value(product.userId),
       syncStatus: Value(product.syncStatus.storageValue),
       lastSyncedAt: Value(product.lastSyncedAt),
+      barcode: Value(product.barcode),
+      source: Value(product.source),
+      sugarPer100: Value(product.sugarPer100),
+      saturatedFatPer100: Value(product.saturatedFatPer100),
+      sodiumPer100: Value(product.sodiumPer100),
+      fiberPer100: Value(product.fiberPer100),
     );
   }
 
@@ -414,5 +486,13 @@ class NutrivoGoStore extends ChangeNotifier {
       return null;
     }
     return trimmed;
+  }
+
+  String? _normalizeBarcode(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed.replaceAll(RegExp(r'\s+'), '');
   }
 }

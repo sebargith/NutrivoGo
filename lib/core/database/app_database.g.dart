@@ -178,6 +178,70 @@ class $ProductRowsTable extends ProductRows
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _barcodeMeta = const VerificationMeta(
+    'barcode',
+  );
+  @override
+  late final GeneratedColumn<String> barcode = GeneratedColumn<String>(
+    'barcode',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sugarPer100Meta = const VerificationMeta(
+    'sugarPer100',
+  );
+  @override
+  late final GeneratedColumn<double> sugarPer100 = GeneratedColumn<double>(
+    'sugar_per100',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _saturatedFatPer100Meta =
+      const VerificationMeta('saturatedFatPer100');
+  @override
+  late final GeneratedColumn<double> saturatedFatPer100 =
+      GeneratedColumn<double>(
+        'saturated_fat_per100',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sodiumPer100Meta = const VerificationMeta(
+    'sodiumPer100',
+  );
+  @override
+  late final GeneratedColumn<double> sodiumPer100 = GeneratedColumn<double>(
+    'sodium_per100',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fiberPer100Meta = const VerificationMeta(
+    'fiberPer100',
+  );
+  @override
+  late final GeneratedColumn<double> fiberPer100 = GeneratedColumn<double>(
+    'fiber_per100',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -196,6 +260,12 @@ class $ProductRowsTable extends ProductRows
     userId,
     syncStatus,
     lastSyncedAt,
+    barcode,
+    source,
+    sugarPer100,
+    saturatedFatPer100,
+    sodiumPer100,
+    fiberPer100,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -338,6 +408,54 @@ class $ProductRowsTable extends ProductRows
         ),
       );
     }
+    if (data.containsKey('barcode')) {
+      context.handle(
+        _barcodeMeta,
+        barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('sugar_per100')) {
+      context.handle(
+        _sugarPer100Meta,
+        sugarPer100.isAcceptableOrUnknown(
+          data['sugar_per100']!,
+          _sugarPer100Meta,
+        ),
+      );
+    }
+    if (data.containsKey('saturated_fat_per100')) {
+      context.handle(
+        _saturatedFatPer100Meta,
+        saturatedFatPer100.isAcceptableOrUnknown(
+          data['saturated_fat_per100']!,
+          _saturatedFatPer100Meta,
+        ),
+      );
+    }
+    if (data.containsKey('sodium_per100')) {
+      context.handle(
+        _sodiumPer100Meta,
+        sodiumPer100.isAcceptableOrUnknown(
+          data['sodium_per100']!,
+          _sodiumPer100Meta,
+        ),
+      );
+    }
+    if (data.containsKey('fiber_per100')) {
+      context.handle(
+        _fiberPer100Meta,
+        fiberPer100.isAcceptableOrUnknown(
+          data['fiber_per100']!,
+          _fiberPer100Meta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -411,6 +529,30 @@ class $ProductRowsTable extends ProductRows
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_synced_at'],
       ),
+      barcode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}barcode'],
+      ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      ),
+      sugarPer100: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar_per100'],
+      ),
+      saturatedFatPer100: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}saturated_fat_per100'],
+      ),
+      sodiumPer100: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium_per100'],
+      ),
+      fiberPer100: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber_per100'],
+      ),
     );
   }
 
@@ -437,6 +579,12 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
   final String? userId;
   final String syncStatus;
   final DateTime? lastSyncedAt;
+  final String? barcode;
+  final String? source;
+  final double? sugarPer100;
+  final double? saturatedFatPer100;
+  final double? sodiumPer100;
+  final double? fiberPer100;
   const ProductRow({
     required this.id,
     required this.name,
@@ -454,6 +602,12 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     this.userId,
     required this.syncStatus,
     this.lastSyncedAt,
+    this.barcode,
+    this.source,
+    this.sugarPer100,
+    this.saturatedFatPer100,
+    this.sodiumPer100,
+    this.fiberPer100,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -485,6 +639,24 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     map['sync_status'] = Variable<String>(syncStatus);
     if (!nullToAbsent || lastSyncedAt != null) {
       map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    if (!nullToAbsent || barcode != null) {
+      map['barcode'] = Variable<String>(barcode);
+    }
+    if (!nullToAbsent || source != null) {
+      map['source'] = Variable<String>(source);
+    }
+    if (!nullToAbsent || sugarPer100 != null) {
+      map['sugar_per100'] = Variable<double>(sugarPer100);
+    }
+    if (!nullToAbsent || saturatedFatPer100 != null) {
+      map['saturated_fat_per100'] = Variable<double>(saturatedFatPer100);
+    }
+    if (!nullToAbsent || sodiumPer100 != null) {
+      map['sodium_per100'] = Variable<double>(sodiumPer100);
+    }
+    if (!nullToAbsent || fiberPer100 != null) {
+      map['fiber_per100'] = Variable<double>(fiberPer100);
     }
     return map;
   }
@@ -519,6 +691,24 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       lastSyncedAt: lastSyncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastSyncedAt),
+      barcode: barcode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(barcode),
+      source: source == null && nullToAbsent
+          ? const Value.absent()
+          : Value(source),
+      sugarPer100: sugarPer100 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sugarPer100),
+      saturatedFatPer100: saturatedFatPer100 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(saturatedFatPer100),
+      sodiumPer100: sodiumPer100 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodiumPer100),
+      fiberPer100: fiberPer100 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiberPer100),
     );
   }
 
@@ -544,6 +734,14 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       userId: serializer.fromJson<String?>(json['userId']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+      barcode: serializer.fromJson<String?>(json['barcode']),
+      source: serializer.fromJson<String?>(json['source']),
+      sugarPer100: serializer.fromJson<double?>(json['sugarPer100']),
+      saturatedFatPer100: serializer.fromJson<double?>(
+        json['saturatedFatPer100'],
+      ),
+      sodiumPer100: serializer.fromJson<double?>(json['sodiumPer100']),
+      fiberPer100: serializer.fromJson<double?>(json['fiberPer100']),
     );
   }
   @override
@@ -566,6 +764,12 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       'userId': serializer.toJson<String?>(userId),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+      'barcode': serializer.toJson<String?>(barcode),
+      'source': serializer.toJson<String?>(source),
+      'sugarPer100': serializer.toJson<double?>(sugarPer100),
+      'saturatedFatPer100': serializer.toJson<double?>(saturatedFatPer100),
+      'sodiumPer100': serializer.toJson<double?>(sodiumPer100),
+      'fiberPer100': serializer.toJson<double?>(fiberPer100),
     };
   }
 
@@ -586,6 +790,12 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     Value<String?> userId = const Value.absent(),
     String? syncStatus,
     Value<DateTime?> lastSyncedAt = const Value.absent(),
+    Value<String?> barcode = const Value.absent(),
+    Value<String?> source = const Value.absent(),
+    Value<double?> sugarPer100 = const Value.absent(),
+    Value<double?> saturatedFatPer100 = const Value.absent(),
+    Value<double?> sodiumPer100 = const Value.absent(),
+    Value<double?> fiberPer100 = const Value.absent(),
   }) => ProductRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -603,6 +813,14 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     userId: userId.present ? userId.value : this.userId,
     syncStatus: syncStatus ?? this.syncStatus,
     lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+    barcode: barcode.present ? barcode.value : this.barcode,
+    source: source.present ? source.value : this.source,
+    sugarPer100: sugarPer100.present ? sugarPer100.value : this.sugarPer100,
+    saturatedFatPer100: saturatedFatPer100.present
+        ? saturatedFatPer100.value
+        : this.saturatedFatPer100,
+    sodiumPer100: sodiumPer100.present ? sodiumPer100.value : this.sodiumPer100,
+    fiberPer100: fiberPer100.present ? fiberPer100.value : this.fiberPer100,
   );
   ProductRow copyWithCompanion(ProductRowsCompanion data) {
     return ProductRow(
@@ -636,6 +854,20 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       lastSyncedAt: data.lastSyncedAt.present
           ? data.lastSyncedAt.value
           : this.lastSyncedAt,
+      barcode: data.barcode.present ? data.barcode.value : this.barcode,
+      source: data.source.present ? data.source.value : this.source,
+      sugarPer100: data.sugarPer100.present
+          ? data.sugarPer100.value
+          : this.sugarPer100,
+      saturatedFatPer100: data.saturatedFatPer100.present
+          ? data.saturatedFatPer100.value
+          : this.saturatedFatPer100,
+      sodiumPer100: data.sodiumPer100.present
+          ? data.sodiumPer100.value
+          : this.sodiumPer100,
+      fiberPer100: data.fiberPer100.present
+          ? data.fiberPer100.value
+          : this.fiberPer100,
     );
   }
 
@@ -657,13 +889,19 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
           ..write('deletedAt: $deletedAt, ')
           ..write('userId: $userId, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('barcode: $barcode, ')
+          ..write('source: $source, ')
+          ..write('sugarPer100: $sugarPer100, ')
+          ..write('saturatedFatPer100: $saturatedFatPer100, ')
+          ..write('sodiumPer100: $sodiumPer100, ')
+          ..write('fiberPer100: $fiberPer100')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     brand,
@@ -680,7 +918,13 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     userId,
     syncStatus,
     lastSyncedAt,
-  );
+    barcode,
+    source,
+    sugarPer100,
+    saturatedFatPer100,
+    sodiumPer100,
+    fiberPer100,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -700,7 +944,13 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
           other.deletedAt == this.deletedAt &&
           other.userId == this.userId &&
           other.syncStatus == this.syncStatus &&
-          other.lastSyncedAt == this.lastSyncedAt);
+          other.lastSyncedAt == this.lastSyncedAt &&
+          other.barcode == this.barcode &&
+          other.source == this.source &&
+          other.sugarPer100 == this.sugarPer100 &&
+          other.saturatedFatPer100 == this.saturatedFatPer100 &&
+          other.sodiumPer100 == this.sodiumPer100 &&
+          other.fiberPer100 == this.fiberPer100);
 }
 
 class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
@@ -720,6 +970,12 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
   final Value<String?> userId;
   final Value<String> syncStatus;
   final Value<DateTime?> lastSyncedAt;
+  final Value<String?> barcode;
+  final Value<String?> source;
+  final Value<double?> sugarPer100;
+  final Value<double?> saturatedFatPer100;
+  final Value<double?> sodiumPer100;
+  final Value<double?> fiberPer100;
   final Value<int> rowid;
   const ProductRowsCompanion({
     this.id = const Value.absent(),
@@ -738,6 +994,12 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     this.userId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
+    this.barcode = const Value.absent(),
+    this.source = const Value.absent(),
+    this.sugarPer100 = const Value.absent(),
+    this.saturatedFatPer100 = const Value.absent(),
+    this.sodiumPer100 = const Value.absent(),
+    this.fiberPer100 = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProductRowsCompanion.insert({
@@ -757,6 +1019,12 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     this.userId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
+    this.barcode = const Value.absent(),
+    this.source = const Value.absent(),
+    this.sugarPer100 = const Value.absent(),
+    this.saturatedFatPer100 = const Value.absent(),
+    this.sodiumPer100 = const Value.absent(),
+    this.fiberPer100 = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -784,6 +1052,12 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     Expression<String>? userId,
     Expression<String>? syncStatus,
     Expression<DateTime>? lastSyncedAt,
+    Expression<String>? barcode,
+    Expression<String>? source,
+    Expression<double>? sugarPer100,
+    Expression<double>? saturatedFatPer100,
+    Expression<double>? sodiumPer100,
+    Expression<double>? fiberPer100,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -803,6 +1077,13 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
       if (userId != null) 'user_id': userId,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (barcode != null) 'barcode': barcode,
+      if (source != null) 'source': source,
+      if (sugarPer100 != null) 'sugar_per100': sugarPer100,
+      if (saturatedFatPer100 != null)
+        'saturated_fat_per100': saturatedFatPer100,
+      if (sodiumPer100 != null) 'sodium_per100': sodiumPer100,
+      if (fiberPer100 != null) 'fiber_per100': fiberPer100,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -824,6 +1105,12 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     Value<String?>? userId,
     Value<String>? syncStatus,
     Value<DateTime?>? lastSyncedAt,
+    Value<String?>? barcode,
+    Value<String?>? source,
+    Value<double?>? sugarPer100,
+    Value<double?>? saturatedFatPer100,
+    Value<double?>? sodiumPer100,
+    Value<double?>? fiberPer100,
     Value<int>? rowid,
   }) {
     return ProductRowsCompanion(
@@ -843,6 +1130,12 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
       userId: userId ?? this.userId,
       syncStatus: syncStatus ?? this.syncStatus,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      barcode: barcode ?? this.barcode,
+      source: source ?? this.source,
+      sugarPer100: sugarPer100 ?? this.sugarPer100,
+      saturatedFatPer100: saturatedFatPer100 ?? this.saturatedFatPer100,
+      sodiumPer100: sodiumPer100 ?? this.sodiumPer100,
+      fiberPer100: fiberPer100 ?? this.fiberPer100,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -898,6 +1191,24 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     if (lastSyncedAt.present) {
       map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
     }
+    if (barcode.present) {
+      map['barcode'] = Variable<String>(barcode.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (sugarPer100.present) {
+      map['sugar_per100'] = Variable<double>(sugarPer100.value);
+    }
+    if (saturatedFatPer100.present) {
+      map['saturated_fat_per100'] = Variable<double>(saturatedFatPer100.value);
+    }
+    if (sodiumPer100.present) {
+      map['sodium_per100'] = Variable<double>(sodiumPer100.value);
+    }
+    if (fiberPer100.present) {
+      map['fiber_per100'] = Variable<double>(fiberPer100.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -923,6 +1234,12 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
           ..write('userId: $userId, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('barcode: $barcode, ')
+          ..write('source: $source, ')
+          ..write('sugarPer100: $sugarPer100, ')
+          ..write('saturatedFatPer100: $saturatedFatPer100, ')
+          ..write('sodiumPer100: $sodiumPer100, ')
+          ..write('fiberPer100: $fiberPer100, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1810,6 +2127,12 @@ typedef $$ProductRowsTableCreateCompanionBuilder =
       Value<String?> userId,
       Value<String> syncStatus,
       Value<DateTime?> lastSyncedAt,
+      Value<String?> barcode,
+      Value<String?> source,
+      Value<double?> sugarPer100,
+      Value<double?> saturatedFatPer100,
+      Value<double?> sodiumPer100,
+      Value<double?> fiberPer100,
       Value<int> rowid,
     });
 typedef $$ProductRowsTableUpdateCompanionBuilder =
@@ -1830,6 +2153,12 @@ typedef $$ProductRowsTableUpdateCompanionBuilder =
       Value<String?> userId,
       Value<String> syncStatus,
       Value<DateTime?> lastSyncedAt,
+      Value<String?> barcode,
+      Value<String?> source,
+      Value<double?> sugarPer100,
+      Value<double?> saturatedFatPer100,
+      Value<double?> sodiumPer100,
+      Value<double?> fiberPer100,
       Value<int> rowid,
     });
 
@@ -1919,6 +2248,36 @@ class $$ProductRowsTableFilterComposer
 
   ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
     column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get barcode => $composableBuilder(
+    column: $table.barcode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugarPer100 => $composableBuilder(
+    column: $table.sugarPer100,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get saturatedFatPer100 => $composableBuilder(
+    column: $table.saturatedFatPer100,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodiumPer100 => $composableBuilder(
+    column: $table.sodiumPer100,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiberPer100 => $composableBuilder(
+    column: $table.fiberPer100,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2011,6 +2370,36 @@ class $$ProductRowsTableOrderingComposer
     column: $table.lastSyncedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get barcode => $composableBuilder(
+    column: $table.barcode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugarPer100 => $composableBuilder(
+    column: $table.sugarPer100,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get saturatedFatPer100 => $composableBuilder(
+    column: $table.saturatedFatPer100,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodiumPer100 => $composableBuilder(
+    column: $table.sodiumPer100,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fiberPer100 => $composableBuilder(
+    column: $table.fiberPer100,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ProductRowsTableAnnotationComposer
@@ -2083,6 +2472,32 @@ class $$ProductRowsTableAnnotationComposer
     column: $table.lastSyncedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get barcode =>
+      $composableBuilder(column: $table.barcode, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<double> get sugarPer100 => $composableBuilder(
+    column: $table.sugarPer100,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get saturatedFatPer100 => $composableBuilder(
+    column: $table.saturatedFatPer100,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sodiumPer100 => $composableBuilder(
+    column: $table.sodiumPer100,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fiberPer100 => $composableBuilder(
+    column: $table.fiberPer100,
+    builder: (column) => column,
+  );
 }
 
 class $$ProductRowsTableTableManager
@@ -2132,6 +2547,12 @@ class $$ProductRowsTableTableManager
                 Value<String?> userId = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
+                Value<String?> source = const Value.absent(),
+                Value<double?> sugarPer100 = const Value.absent(),
+                Value<double?> saturatedFatPer100 = const Value.absent(),
+                Value<double?> sodiumPer100 = const Value.absent(),
+                Value<double?> fiberPer100 = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductRowsCompanion(
                 id: id,
@@ -2150,6 +2571,12 @@ class $$ProductRowsTableTableManager
                 userId: userId,
                 syncStatus: syncStatus,
                 lastSyncedAt: lastSyncedAt,
+                barcode: barcode,
+                source: source,
+                sugarPer100: sugarPer100,
+                saturatedFatPer100: saturatedFatPer100,
+                sodiumPer100: sodiumPer100,
+                fiberPer100: fiberPer100,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2170,6 +2597,12 @@ class $$ProductRowsTableTableManager
                 Value<String?> userId = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
+                Value<String?> source = const Value.absent(),
+                Value<double?> sugarPer100 = const Value.absent(),
+                Value<double?> saturatedFatPer100 = const Value.absent(),
+                Value<double?> sodiumPer100 = const Value.absent(),
+                Value<double?> fiberPer100 = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductRowsCompanion.insert(
                 id: id,
@@ -2188,6 +2621,12 @@ class $$ProductRowsTableTableManager
                 userId: userId,
                 syncStatus: syncStatus,
                 lastSyncedAt: lastSyncedAt,
+                barcode: barcode,
+                source: source,
+                sugarPer100: sugarPer100,
+                saturatedFatPer100: saturatedFatPer100,
+                sodiumPer100: sodiumPer100,
+                fiberPer100: fiberPer100,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -76,7 +76,18 @@ class SyncService extends ChangeNotifier {
   bool get isSyncing => _status == SyncRunStatus.syncing;
 
   Future<void> handleAuthChanged() async {
-    await store.setActiveUserId(remote.currentUserId);
+    final currentUserId = remote.currentUserId;
+    final userChanged = store.activeUserId != currentUserId;
+    await store.setActiveUserId(currentUserId);
+    if (userChanged && !isSyncing) {
+      _lastError = null;
+      _message = currentUserId == null
+          ? 'Logged out. Local data remains on this device.'
+          : null;
+      _status = currentUserId == null
+          ? SyncRunStatus.notLoggedIn
+          : SyncRunStatus.idle;
+    }
     await refreshPendingCount();
   }
 

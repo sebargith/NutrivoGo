@@ -1,0 +1,50 @@
+# Supabase Sync Testing
+
+Use this checklist to test NutrivoGo sync between Windows and Android.
+
+## Prerequisites
+
+- Supabase tables from `supabase/migrations/001_create_products_and_log_items.sql` are applied.
+- Email/password auth is enabled in the Supabase project.
+- The app is built with the public Supabase project URL and publishable key.
+- Use the same test account on both devices.
+
+## Windows to Android
+
+1. Run NutrivoGo on Windows.
+2. Open Settings and log in with the test account.
+3. Create a product and add it to Today.
+4. Open Settings and tap Sync Now.
+5. Confirm Sync Diagnostics shows:
+   - the expected user id/email
+   - pending products count `0`
+   - pending log items count `0`
+   - a last sync timestamp
+6. Run NutrivoGo on Android.
+7. Log in with the same test account.
+8. Open Settings and tap Sync Now.
+9. Confirm the product and log item appear on Android.
+
+## Android to Windows
+
+1. On Android, create another product and log it.
+2. Open Settings and tap Sync Now.
+3. On Windows, open Settings and tap Sync Now.
+4. Confirm the Android-created product and log item appear on Windows.
+
+## Offline/Pending Check
+
+1. Disconnect the device from the network.
+2. Create a product and log it.
+3. Open Settings and confirm pending counts increase.
+4. Tap Sync Now and confirm the error explains that local changes remain pending.
+5. Reconnect the network.
+6. Tap Sync Now again and confirm pending counts return to `0`.
+
+## Account Isolation Check
+
+1. Log in as account A and sync a product.
+2. Log out.
+3. Log in as account B.
+4. Confirm account A's synced data is not visible.
+5. Log back in as account A and sync to confirm account A's data is still available.

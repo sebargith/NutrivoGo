@@ -52,21 +52,24 @@ class _NutrivoGoAppState extends State<NutrivoGoApp> {
           widget.authController ?? AuthController(client: supabaseClient);
       _syncService =
           widget.syncService ??
-          SyncService(
+          SyncService.withSupabaseClient(
             client: supabaseClient,
             database: _database!,
             store: _store,
           );
+      _authController?.addListener(_handleAuthChanged);
       return;
     }
 
     _store = widget.store!;
     _authController = widget.authController;
     _syncService = widget.syncService;
+    _authController?.addListener(_handleAuthChanged);
   }
 
   @override
   void dispose() {
+    _authController?.removeListener(_handleAuthChanged);
     if (_ownsSyncService) {
       _syncService?.dispose();
     }
@@ -97,5 +100,12 @@ class _NutrivoGoAppState extends State<NutrivoGoApp> {
         syncService: _syncService,
       ),
     );
+  }
+
+  void _handleAuthChanged() {
+    final syncService = _syncService;
+    if (syncService != null) {
+      unawaited(syncService.handleAuthChanged());
+    }
   }
 }

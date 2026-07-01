@@ -29,12 +29,15 @@ class NutrivoGoStore extends ChangeNotifier {
   final DateTime Function() _clock;
   final List<Product> _products = <Product>[];
   final List<LogItem> _logItems = <LogItem>[];
+  String? _activeUserId;
   int _idCounter = 0;
 
   late final Future<void> ready;
   bool _isLoading = true;
 
   bool get isLoading => _isLoading;
+
+  String? get activeUserId => _activeUserId;
 
   List<Product> get products => List.unmodifiable(_products);
 
@@ -83,12 +86,15 @@ class NutrivoGoStore extends ChangeNotifier {
     _isLoading = true;
     final productRows = await _database.select(_database.productRows).get();
     final productsById = {
-      for (final row in productRows) row.id: _productFromRow(row),
+      for (final row in productRows)
+        if (_canShowUserData(row.userId)) row.id: _productFromRow(row),
     };
 
     final activeProducts =
         productRows
-            .where((row) => row.deletedAt == null)
+            .where(
+              (row) => row.deletedAt == null && _canShowUserData(row.userId),
+            )
             .map(_productFromRow)
             .toList()
           ..sort(_compareProducts);
@@ -98,7 +104,7 @@ class NutrivoGoStore extends ChangeNotifier {
     )..where((row) => row.deletedAt.isNull())).get();
     final activeLogItems = <LogItem>[
       for (final row in logRows)
-        if (productsById[row.productId] != null)
+        if (_canShowUserData(row.userId) && productsById[row.productId] != null)
           _logItemFromRow(row, productsById[row.productId]!),
     ]..sort((left, right) => left.createdAt.compareTo(right.createdAt));
 
@@ -110,6 +116,14 @@ class NutrivoGoStore extends ChangeNotifier {
       ..addAll(activeLogItems);
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> setActiveUserId(String? userId) async {
+    if (_activeUserId == userId) {
+      return;
+    }
+    _activeUserId = userId;
+    await load();
   }
 
   Future<Product> addProduct({
@@ -137,6 +151,7 @@ class NutrivoGoStore extends ChangeNotifier {
       fatPer100: fatPer100,
       createdAt: now,
       updatedAt: now,
+      userId: _activeUserId,
     );
 
     await _database
@@ -175,7 +190,7 @@ class NutrivoGoStore extends ChangeNotifier {
       fatPer100: fatPer100 ?? product.fatPer100,
       createdAt: product.createdAt,
       updatedAt: _clock(),
-      userId: product.userId,
+      userId: product.userId ?? _activeUserId,
       syncStatus: RecordSyncStatus.pending,
     );
 
@@ -229,6 +244,7 @@ class NutrivoGoStore extends ChangeNotifier {
       macros: macros,
       createdAt: now,
       updatedAt: now,
+      userId: _activeUserId,
     );
 
     await _database
@@ -381,6 +397,10 @@ class NutrivoGoStore extends ChangeNotifier {
     return left.year == right.year &&
         left.month == right.month &&
         left.day == right.day;
+  }
+
+  bool _canShowUserData(String? rowUserId) {
+    return rowUserId == null || rowUserId == _activeUserId;
   }
 
   String _makeId(String prefix) {

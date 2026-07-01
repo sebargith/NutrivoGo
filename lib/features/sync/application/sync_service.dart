@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -7,91 +8,159 @@ import 'package:supabase/supabase.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/record_sync_status.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
+import 'sync_remote_data_source.dart';
 
-enum SyncRunStatus { idle, syncing, success, failed }
+enum SyncRunStatus {
+  notLoggedIn,
+  idle,
+  syncing,
+  synced,
+  failed,
+  offlinePending,
+}
 
 class SyncService extends ChangeNotifier {
   SyncService({
-    required this.client,
+    required this.remote,
     required this.database,
     required this.store,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now {
-    unawaited(refreshPendingCount());
+    store.addListener(_handleStoreChanged);
+    unawaited(handleAuthChanged());
   }
 
-  final SupabaseClient client;
+  factory SyncService.withSupabaseClient({
+    required SupabaseClient client,
+    required AppDatabase database,
+    required NutrivoGoStore store,
+    DateTime Function()? clock,
+  }) {
+    return SyncService(
+      remote: SupabaseSyncRemoteDataSource(client: client),
+      database: database,
+      store: store,
+      clock: clock,
+    );
+  }
+
+  final SyncRemoteDataSource remote;
   final AppDatabase database;
   final NutrivoGoStore store;
   final DateTime Function() _clock;
 
-  SyncRunStatus _status = SyncRunStatus.idle;
+  SyncRunStatus _status = SyncRunStatus.notLoggedIn;
   String? _message;
-  DateTime? _lastSyncedAt;
-  int _pendingCount = 0;
+  String? _lastError;
+  DateTime? _lastSuccessfulSyncAt;
+  int _pendingProductCount = 0;
+  int _pendingLogItemCount = 0;
+  bool _disposed = false;
 
   SyncRunStatus get status => _status;
 
   String? get message => _message;
 
-  DateTime? get lastSyncedAt => _lastSyncedAt;
+  String? get lastError => _lastError;
 
-  int get pendingCount => _pendingCount;
+  DateTime? get lastSuccessfulSyncAt => _lastSuccessfulSyncAt;
+
+  DateTime? get lastSyncedAt => _lastSuccessfulSyncAt;
+
+  int get pendingProductCount => _pendingProductCount;
+
+  int get pendingLogItemCount => _pendingLogItemCount;
+
+  int get pendingCount => _pendingProductCount + _pendingLogItemCount;
 
   bool get isSyncing => _status == SyncRunStatus.syncing;
 
+  Future<void> handleAuthChanged() async {
+    await store.setActiveUserId(remote.currentUserId);
+    await refreshPendingCount();
+  }
+
   Future<void> refreshPendingCount() async {
+    final currentUserId = remote.currentUserId;
     final productRows = await database.select(database.productRows).get();
     final logItemRows = await database.select(database.logItemRows).get();
-    _pendingCount =
-        productRows.where(_productNeedsSync).length +
-        logItemRows.where(_logItemNeedsSync).length;
-    notifyListeners();
+
+    _pendingProductCount = productRows
+        .where(
+          (row) =>
+              _canManageRow(row.userId, currentUserId) &&
+              _productNeedsSync(row),
+        )
+        .length;
+    _pendingLogItemCount = logItemRows
+        .where(
+          (row) =>
+              _canManageRow(row.userId, currentUserId) &&
+              _logItemNeedsSync(row),
+        )
+        .length;
+
+    if (!isSyncing && _status != SyncRunStatus.failed) {
+      _statusForIdleAuthState();
+    }
+    _notifyIfAlive();
   }
 
   Future<void> sync() async {
-    final user = client.auth.currentUser;
-    if (user == null) {
-      _status = SyncRunStatus.failed;
-      _message = 'Sign in before syncing.';
-      notifyListeners();
+    if (isSyncing) {
+      return;
+    }
+
+    final userId = remote.currentUserId;
+    if (userId == null) {
+      _status = SyncRunStatus.notLoggedIn;
+      _message = 'Log in to sync local changes.';
+      _lastError = null;
+      _notifyIfAlive();
       return;
     }
 
     _status = SyncRunStatus.syncing;
     _message = 'Syncing local changes.';
-    notifyListeners();
+    _lastError = null;
+    _notifyIfAlive();
 
     try {
-      await _pullProducts(user.id);
-      await _pullLogItems(user.id);
-      await _pushProducts(user.id);
-      await _pushLogItems(user.id);
+      await _pullProducts(userId);
+      await _pullLogItems(userId);
+      await _pushProducts(userId);
+      await _pushLogItems(userId);
       await store.load();
       await refreshPendingCount();
-      _status = SyncRunStatus.success;
-      _lastSyncedAt = _clock();
-      _message = _pendingCount == 0
+      _lastSuccessfulSyncAt = _clock();
+      _lastError = null;
+      _status = pendingCount == 0
+          ? SyncRunStatus.synced
+          : SyncRunStatus.offlinePending;
+      _message = pendingCount == 0
           ? 'Sync complete.'
-          : 'Sync complete with $_pendingCount pending item(s).';
+          : 'Sync complete with $pendingCount pending item(s).';
     } on Object catch (error) {
-      await _markPendingAsFailed(user.id);
       await refreshPendingCount();
       _status = SyncRunStatus.failed;
-      _message = 'Sync failed: $error';
+      _lastError = _describeSyncError(error);
+      _message = _lastError;
     } finally {
-      notifyListeners();
+      _notifyIfAlive();
     }
   }
 
-  Future<void> _pullProducts(String userId) async {
-    final remoteRows = await client
-        .from('products')
-        .select()
-        .eq('user_id', userId);
+  @override
+  void dispose() {
+    _disposed = true;
+    store.removeListener(_handleStoreChanged);
+    super.dispose();
+  }
 
-    for (final remote in remoteRows) {
-      final row = Map<String, dynamic>.from(remote);
+  Future<void> _pullProducts(String userId) async {
+    final remoteRows = await remote.fetchProducts(userId);
+
+    for (final row in remoteRows) {
       final id = row['id'] as String;
       final local = await (database.select(
         database.productRows,
@@ -115,13 +184,9 @@ class SyncService extends ChangeNotifier {
   }
 
   Future<void> _pullLogItems(String userId) async {
-    final remoteRows = await client
-        .from('log_items')
-        .select()
-        .eq('user_id', userId);
+    final remoteRows = await remote.fetchLogItems(userId);
 
-    for (final remote in remoteRows) {
-      final row = Map<String, dynamic>.from(remote);
+    for (final row in remoteRows) {
       final id = row['id'] as String;
       final productId = row['product_id'] as String;
       final productExists =
@@ -159,9 +224,7 @@ class SyncService extends ChangeNotifier {
     for (final row in rows.where(
       (row) => _canPush(row.userId, userId) && _productNeedsSync(row),
     )) {
-      await client
-          .from('products')
-          .upsert(_productRemoteMap(row, userId), onConflict: 'id');
+      await remote.upsertProduct(_productRemoteMap(row, userId));
       await (database.update(
         database.productRows,
       )..where((table) => table.id.equals(row.id))).write(
@@ -179,9 +242,7 @@ class SyncService extends ChangeNotifier {
     for (final row in rows.where(
       (row) => _canPush(row.userId, userId) && _logItemNeedsSync(row),
     )) {
-      await client
-          .from('log_items')
-          .upsert(_logItemRemoteMap(row, userId), onConflict: 'id');
+      await remote.upsertLogItem(_logItemRemoteMap(row, userId));
       await (database.update(
         database.logItemRows,
       )..where((table) => table.id.equals(row.id))).write(
@@ -189,34 +250,6 @@ class SyncService extends ChangeNotifier {
           userId: Value(userId),
           syncStatus: Value(RecordSyncStatus.synced.storageValue),
           lastSyncedAt: Value(_clock()),
-        ),
-      );
-    }
-  }
-
-  Future<void> _markPendingAsFailed(String userId) async {
-    final products = await database.select(database.productRows).get();
-    for (final row in products.where(
-      (row) => _canPush(row.userId, userId) && _productNeedsSync(row),
-    )) {
-      await (database.update(
-        database.productRows,
-      )..where((table) => table.id.equals(row.id))).write(
-        ProductRowsCompanion(
-          syncStatus: Value(RecordSyncStatus.failed.storageValue),
-        ),
-      );
-    }
-
-    final logItems = await database.select(database.logItemRows).get();
-    for (final row in logItems.where(
-      (row) => _canPush(row.userId, userId) && _logItemNeedsSync(row),
-    )) {
-      await (database.update(
-        database.logItemRows,
-      )..where((table) => table.id.equals(row.id))).write(
-        LogItemRowsCompanion(
-          syncStatus: Value(RecordSyncStatus.failed.storageValue),
         ),
       );
     }
@@ -308,6 +341,24 @@ class SyncService extends ChangeNotifier {
     };
   }
 
+  void _handleStoreChanged() {
+    unawaited(refreshPendingCount());
+  }
+
+  void _statusForIdleAuthState() {
+    if (remote.currentUserId == null) {
+      _status = SyncRunStatus.notLoggedIn;
+      return;
+    }
+    if (pendingCount > 0) {
+      _status = SyncRunStatus.offlinePending;
+      return;
+    }
+    _status = _lastSuccessfulSyncAt == null
+        ? SyncRunStatus.idle
+        : SyncRunStatus.synced;
+  }
+
   bool _productNeedsSync(ProductRow row) {
     return row.syncStatus != RecordSyncStatus.synced.storageValue ||
         row.userId == null;
@@ -318,12 +369,40 @@ class SyncService extends ChangeNotifier {
         row.userId == null;
   }
 
+  bool _canManageRow(String? rowUserId, String? currentUserId) {
+    if (currentUserId == null) {
+      return rowUserId == null;
+    }
+    return rowUserId == null || rowUserId == currentUserId;
+  }
+
   bool _canPush(String? rowUserId, String currentUserId) {
     return rowUserId == null || rowUserId == currentUserId;
   }
 
   bool _sameOrUnownedUser(String? rowUserId, String currentUserId) {
     return rowUserId == null || rowUserId == currentUserId;
+  }
+
+  String _describeSyncError(Object error) {
+    if (error is PostgrestException) {
+      final details = error.details == null ? '' : ' ${error.details}';
+      final hint = error.hint == null ? '' : ' Hint: ${error.hint}';
+      return 'Supabase rejected the sync: ${error.message}.$details$hint';
+    }
+    if (error is AuthException) {
+      return 'Authentication failed: ${error.message}';
+    }
+    if (error is SocketException) {
+      return 'Network unavailable. Your local changes are still pending.';
+    }
+    if (error is TimeoutException) {
+      return 'Sync timed out. Your local changes are still pending.';
+    }
+    if (error is FormatException) {
+      return 'Remote data format was unexpected: ${error.message}';
+    }
+    return 'Sync failed. Your local changes are still pending. $error';
   }
 
   DateTime _readDate(Object? value) {
@@ -352,5 +431,11 @@ class SyncService extends ChangeNotifier {
       return null;
     }
     return _toIso(value);
+  }
+
+  void _notifyIfAlive() {
+    if (!_disposed) {
+      notifyListeners();
+    }
   }
 }

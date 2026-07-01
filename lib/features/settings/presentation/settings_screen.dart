@@ -57,6 +57,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   syncService: widget.syncService,
                 ),
                 const SizedBox(height: 12),
+                _DiagnosticsCard(
+                  authController: widget.authController,
+                  syncService: widget.syncService,
+                ),
+                const SizedBox(height: 12),
                 _StorageCard(store: widget.store),
               ],
             ),
@@ -183,7 +188,19 @@ class _SignedOutAuthForm extends StatelessWidget {
             const Icon(Icons.lock_outline),
             const SizedBox(width: 12),
             Expanded(
-              child: Text('Account', style: theme.textTheme.titleMedium),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Logged out', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Local data stays on this device.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -358,12 +375,16 @@ class _SyncCard extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     _StatusChip(
-                      icon: Icons.pending_actions_outlined,
-                      label: '${service.pendingCount} pending',
+                      icon: _syncIcon(service),
+                      label: _syncStateLabel(service.status),
                     ),
                     _StatusChip(
-                      icon: Icons.wifi_off_outlined,
-                      label: 'Offline usable',
+                      icon: Icons.inventory_2_outlined,
+                      label: '${service.pendingProductCount} products pending',
+                    ),
+                    _StatusChip(
+                      icon: Icons.receipt_long_outlined,
+                      label: '${service.pendingLogItemCount} logs pending',
                     ),
                   ],
                 ),
@@ -390,6 +411,9 @@ class _SyncCard extends StatelessWidget {
     if (service.status == SyncRunStatus.failed) {
       return Icons.cloud_off_outlined;
     }
+    if (service.status == SyncRunStatus.notLoggedIn) {
+      return Icons.lock_outline;
+    }
     if (service.pendingCount > 0) {
       return Icons.cloud_upload_outlined;
     }
@@ -402,20 +426,139 @@ class _SyncCard extends StatelessWidget {
     bool isSignedIn,
   ) {
     if (!isSignedIn) {
-      return 'Sign in to push and pull this device data.';
+      return 'Logged out. Sign in to push and pull this device data.';
     }
     final message = service.message;
     if (message != null && message.isNotEmpty) {
       return message;
     }
-    final lastSyncedAt = service.lastSyncedAt;
+    final lastSyncedAt = service.lastSuccessfulSyncAt;
     if (lastSyncedAt != null) {
-      final time = MaterialLocalizations.of(
-        context,
-      ).formatTimeOfDay(TimeOfDay.fromDateTime(lastSyncedAt));
-      return 'Last sync today at $time.';
+      return 'Last successful sync ${_formatTimestamp(context, lastSyncedAt)}.';
     }
     return 'Ready to sync local changes.';
+  }
+
+  String _syncStateLabel(SyncRunStatus status) {
+    return switch (status) {
+      SyncRunStatus.notLoggedIn => 'Not logged in',
+      SyncRunStatus.idle => 'Idle',
+      SyncRunStatus.syncing => 'Syncing',
+      SyncRunStatus.synced => 'Synced',
+      SyncRunStatus.failed => 'Failed',
+      SyncRunStatus.offlinePending => 'Offline pending',
+    };
+  }
+}
+
+class _DiagnosticsCard extends StatelessWidget {
+  const _DiagnosticsCard({
+    required this.authController,
+    required this.syncService,
+  });
+
+  final AuthController? authController;
+  final SyncService? syncService;
+
+  @override
+  Widget build(BuildContext context) {
+    final service = syncService;
+    if (service == null) {
+      return const Card(
+        child: ListTile(
+          leading: Icon(Icons.bug_report_outlined),
+          title: Text('Sync Diagnostics'),
+          subtitle: Text('Diagnostics are not available in this run.'),
+        ),
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: service,
+      builder: (context, _) {
+        final user = authController?.currentUser;
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.bug_report_outlined),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Sync Diagnostics',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _DiagnosticRow(
+                  label: 'Auth user',
+                  value: user == null
+                      ? 'Not logged in'
+                      : '${user.email ?? 'No email'} (${user.id})',
+                ),
+                _DiagnosticRow(
+                  label: 'Last sync',
+                  value: service.lastSuccessfulSyncAt == null
+                      ? 'Never'
+                      : _formatTimestamp(
+                          context,
+                          service.lastSuccessfulSyncAt!,
+                        ),
+                ),
+                _DiagnosticRow(
+                  label: 'Pending products',
+                  value: service.pendingProductCount.toString(),
+                ),
+                _DiagnosticRow(
+                  label: 'Pending log items',
+                  value: service.pendingLogItemCount.toString(),
+                ),
+                _DiagnosticRow(
+                  label: 'Last error',
+                  value: service.lastError ?? 'None',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DiagnosticRow extends StatelessWidget {
+  const _DiagnosticRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 132,
+            child: Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(child: SelectableText(value)),
+        ],
+      ),
+    );
   }
 }
 
@@ -496,6 +639,14 @@ class _StatusChip extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
+}
+
+String _formatTimestamp(BuildContext context, DateTime value) {
+  final local = value.toLocal();
+  final material = MaterialLocalizations.of(context);
+  final date = material.formatShortDate(local);
+  final time = material.formatTimeOfDay(TimeOfDay.fromDateTime(local));
+  return '$date $time';
 }
 
 void _showMessage(BuildContext context, String message) {

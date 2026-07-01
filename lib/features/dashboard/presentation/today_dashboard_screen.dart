@@ -140,8 +140,11 @@ class _SyncStatusAction extends StatelessWidget {
     if (syncService.pendingCount > 0) {
       return Icons.cloud_upload_outlined;
     }
-    if (syncService.status == SyncRunStatus.success) {
+    if (syncService.status == SyncRunStatus.synced) {
       return Icons.cloud_done_outlined;
+    }
+    if (syncService.status == SyncRunStatus.notLoggedIn) {
+      return Icons.cloud_off_outlined;
     }
     return Icons.cloud_queue_outlined;
   }

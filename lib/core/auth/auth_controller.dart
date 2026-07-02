@@ -32,23 +32,6 @@ class AuthController extends ChangeNotifier {
     });
   }
 
-  Future<void> register({
-    required String email,
-    required String password,
-  }) async {
-    await _run(() async {
-      final response = await client.auth.signUp(
-        email: email.trim(),
-        password: password,
-      );
-      if (response.session == null) {
-        _message = 'Account created. Check your email to confirm sign in.';
-        return;
-      }
-      _message = 'Account created and signed in.';
-    });
-  }
-
   Future<void> signOut() async {
     await _run(() async {
       await client.auth.signOut();

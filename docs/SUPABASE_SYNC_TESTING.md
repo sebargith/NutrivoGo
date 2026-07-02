@@ -6,8 +6,10 @@ Use this checklist to test NutrivoGo sync between Windows and Android.
 
 - Supabase tables from `supabase/migrations/001_create_products_and_log_items.sql` are applied.
 - Email/password auth is enabled in the Supabase project.
+- The personal sync user has been created manually in the Supabase dashboard.
 - The app is built with the public Supabase project URL and publishable key.
 - Use the same test account on both devices.
+- In-app registration is disabled in personal-use mode.
 
 ## Windows to Android
 

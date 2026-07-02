@@ -131,7 +131,7 @@ class _AuthCard extends StatelessWidget {
       return const Card(
         child: ListTile(
           leading: Icon(Icons.lock_outline),
-          title: Text('Account'),
+          title: Text('Personal sync login'),
           subtitle: Text('Authentication is not available in this run.'),
         ),
       );
@@ -194,7 +194,7 @@ class _SignedOutAuthForm extends StatelessWidget {
                   Text('Logged out', style: theme.textTheme.titleMedium),
                   const SizedBox(height: 2),
                   Text(
-                    'Local data stays on this device.',
+                    'Local tracking still works. Log in only to sync your personal Supabase account.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -211,7 +211,7 @@ class _SignedOutAuthForm extends StatelessWidget {
           textInputAction: TextInputAction.next,
           enabled: !isBusy,
           decoration: const InputDecoration(
-            labelText: 'Email',
+            labelText: 'Personal sync email',
             prefixIcon: Icon(Icons.mail_outline),
           ),
         ),
@@ -221,7 +221,7 @@ class _SignedOutAuthForm extends StatelessWidget {
           obscureText: true,
           enabled: !isBusy,
           decoration: const InputDecoration(
-            labelText: 'Password',
+            labelText: 'Personal sync password',
             prefixIcon: Icon(Icons.password),
           ),
         ),
@@ -244,16 +244,9 @@ class _SignedOutAuthForm extends StatelessWidget {
           runSpacing: 10,
           children: [
             FilledButton.icon(
-              onPressed: isBusy
-                  ? null
-                  : () => _submit(context, register: false),
+              onPressed: isBusy ? null : () => _submit(context),
               icon: const Icon(Icons.login),
-              label: Text(isBusy ? 'Working' : 'Login'),
-            ),
-            OutlinedButton.icon(
-              onPressed: isBusy ? null : () => _submit(context, register: true),
-              icon: const Icon(Icons.person_add_alt),
-              label: const Text('Register'),
+              label: Text(isBusy ? 'Working' : 'Login for Sync'),
             ),
           ],
         ),
@@ -261,7 +254,7 @@ class _SignedOutAuthForm extends StatelessWidget {
     );
   }
 
-  Future<void> _submit(BuildContext context, {required bool register}) async {
+  Future<void> _submit(BuildContext context) async {
     final email = emailController.text.trim();
     final password = passwordController.text;
     if (email.isEmpty || !email.contains('@')) {
@@ -273,11 +266,7 @@ class _SignedOutAuthForm extends StatelessWidget {
       return;
     }
 
-    if (register) {
-      await authController.register(email: email, password: password);
-    } else {
-      await authController.signIn(email: email, password: password);
-    }
+    await authController.signIn(email: email, password: password);
     onChanged();
   }
 }
@@ -302,7 +291,7 @@ class _SignedInAccount extends StatelessWidget {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.account_circle_outlined),
-          title: const Text('Account'),
+          title: const Text('Personal sync account'),
           subtitle: Text(email),
         ),
         if (authController.errorMessage != null)
@@ -394,7 +383,13 @@ class _SyncCard extends StatelessWidget {
                       ? null
                       : service.sync,
                   icon: Icon(service.isSyncing ? Icons.sync : Icons.cloud_sync),
-                  label: Text(service.isSyncing ? 'Syncing' : 'Sync Now'),
+                  label: Text(
+                    service.isSyncing
+                        ? 'Syncing'
+                        : isSignedIn
+                        ? 'Sync Now'
+                        : 'Login required for sync',
+                  ),
                 ),
               ],
             ),
@@ -426,7 +421,7 @@ class _SyncCard extends StatelessWidget {
     bool isSignedIn,
   ) {
     if (!isSignedIn) {
-      return 'Logged out. Sign in to push and pull this device data.';
+      return 'Login required for sync. Local tracking still works offline.';
     }
     final message = service.message;
     if (message != null && message.isNotEmpty) {
@@ -497,7 +492,7 @@ class _DiagnosticsCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _DiagnosticRow(
-                  label: 'Auth user',
+                  label: 'Sync user',
                   value: user == null
                       ? 'Not logged in'
                       : '${user.email ?? 'No email'} (${user.id})',

@@ -58,6 +58,9 @@ class _NutrivoGoAppState extends State<NutrivoGoApp> {
             store: _store,
           );
       _authController?.addListener(_handleAuthChanged);
+      unawaited(
+        _authController?.ready.then((_) => _syncService?.handleAuthChanged()),
+      );
       return;
     }
 
@@ -65,6 +68,9 @@ class _NutrivoGoAppState extends State<NutrivoGoApp> {
     _authController = widget.authController;
     _syncService = widget.syncService;
     _authController?.addListener(_handleAuthChanged);
+    unawaited(
+      _authController?.ready.then((_) => _syncService?.handleAuthChanged()),
+    );
   }
 
   @override

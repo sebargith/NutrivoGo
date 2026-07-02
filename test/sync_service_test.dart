@@ -13,7 +13,11 @@ import 'package:nutrivogo/features/sync/application/sync_service.dart';
 void main() {
   final fixedNow = DateTime.utc(2026, 7, 1, 12);
 
-  Future<_Fixture> createFixture({String? userId = 'user-1'}) async {
+  Future<_Fixture> createFixture({
+    String? userId = 'user-1',
+    Duration autoSyncDebounce = const Duration(seconds: 2),
+    bool autoSyncEnabled = false,
+  }) async {
     final database = AppDatabase.connect(NativeDatabase.memory());
     final store = NutrivoGoStore(database: database, clock: () => fixedNow);
     await store.ready;
@@ -26,6 +30,8 @@ void main() {
       database: database,
       store: store,
       clock: () => fixedNow,
+      autoSyncDebounce: autoSyncDebounce,
+      autoSyncEnabled: autoSyncEnabled,
     );
     await syncService.handleAuthChanged();
 
@@ -174,6 +180,79 @@ void main() {
     expect(fixture.syncService.pendingCount, 0);
   });
 
+  test('auto-syncs product and log item after local changes', () async {
+    final fixture = await createFixture(
+      autoSyncDebounce: const Duration(milliseconds: 50),
+      autoSyncEnabled: true,
+    );
+
+    await addProductAndLog(fixture.store);
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    expect(fixture.remote.products, hasLength(1));
+    expect(fixture.remote.logItems, hasLength(1));
+    expect(fixture.syncService.status, SyncRunStatus.synced);
+    expect(fixture.syncService.pendingCount, 0);
+  });
+
+  test('auto-sync debounce combines fast local changes', () async {
+    final fixture = await createFixture(
+      autoSyncDebounce: const Duration(milliseconds: 80),
+      autoSyncEnabled: true,
+    );
+
+    await fixture.store.addProduct(
+      name: 'Milk',
+      baseUnit: BaseUnit.milliliters,
+      caloriesPer100: 42,
+      proteinPer100: 3.4,
+      carbsPer100: 5,
+      fatPer100: 1,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await fixture.store.addProduct(
+      name: 'Bread',
+      baseUnit: BaseUnit.grams,
+      caloriesPer100: 250,
+      proteinPer100: 8,
+      carbsPer100: 45,
+      fatPer100: 3,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    expect(fixture.remote.fetchProductsCount, 1);
+    expect(fixture.remote.productUpsertCount, 2);
+    expect(fixture.syncService.pendingProductCount, 0);
+  });
+
+  test('failed auto-sync keeps local records pending', () async {
+    final fixture = await createFixture(
+      autoSyncDebounce: const Duration(milliseconds: 50),
+      autoSyncEnabled: true,
+    );
+    fixture.remote.failUpserts = true;
+
+    await fixture.store.addProduct(
+      name: 'Oats',
+      baseUnit: BaseUnit.grams,
+      caloriesPer100: 389,
+      proteinPer100: 16.9,
+      carbsPer100: 66.3,
+      fatPer100: 6.9,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    final productRows = await fixture.database
+        .select(fixture.database.productRows)
+        .get();
+    expect(
+      productRows.single.syncStatus,
+      RecordSyncStatus.pending.storageValue,
+    );
+    expect(fixture.syncService.status, SyncRunStatus.failed);
+    expect(fixture.syncService.pendingProductCount, 1);
+  });
+
   test('Supabase migration has RLS policies for products and log items', () {
     final migration = File(
       'supabase/migrations/001_create_products_and_log_items.sql',
@@ -222,6 +301,8 @@ class _FakeSyncRemoteDataSource implements SyncRemoteDataSource {
   String? currentUserEmail;
 
   bool failUpserts = false;
+  int fetchProductsCount = 0;
+  int fetchLogItemsCount = 0;
   int productUpsertCount = 0;
   int logItemUpsertCount = 0;
   final products = <String, Map<String, dynamic>>{};
@@ -229,6 +310,7 @@ class _FakeSyncRemoteDataSource implements SyncRemoteDataSource {
 
   @override
   Future<List<Map<String, dynamic>>> fetchProducts(String userId) async {
+    fetchProductsCount += 1;
     return [
       for (final row in products.values)
         if (row['user_id'] == userId) Map<String, dynamic>.from(row),
@@ -237,6 +319,7 @@ class _FakeSyncRemoteDataSource implements SyncRemoteDataSource {
 
   @override
   Future<List<Map<String, dynamic>>> fetchLogItems(String userId) async {
+    fetchLogItemsCount += 1;
     return [
       for (final row in logItems.values)
         if (row['user_id'] == userId) Map<String, dynamic>.from(row),

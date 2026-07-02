@@ -354,8 +354,35 @@ class _SyncCard extends StatelessWidget {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(_syncIcon(service)),
-                  title: const Text('Sync'),
+                  title: const Text('Personal sync'),
                   subtitle: Text(_syncSubtitle(context, service, isSignedIn)),
+                ),
+                const SizedBox(height: 8),
+                _SyncSummaryRow(
+                  label: 'Signed in account',
+                  value: _signedInAccountLabel(authController),
+                ),
+                _SyncSummaryRow(
+                  label: 'Sync state',
+                  value: _syncStateLabel(service.status),
+                ),
+                _SyncSummaryRow(
+                  label: 'Last sync',
+                  value: service.lastSuccessfulSyncAt == null
+                      ? 'Never'
+                      : _formatTimestamp(
+                          context,
+                          service.lastSuccessfulSyncAt!,
+                        ),
+                ),
+                _SyncSummaryRow(
+                  label: 'Pending',
+                  value:
+                      '${service.pendingProductCount} products, ${service.pendingLogItemCount} logs',
+                ),
+                _SyncSummaryRow(
+                  label: 'Last error',
+                  value: service.lastError ?? 'None',
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -444,6 +471,44 @@ class _SyncCard extends StatelessWidget {
       SyncRunStatus.offlinePending => 'Offline pending',
     };
   }
+
+  String _signedInAccountLabel(AuthController? controller) {
+    final user = controller?.currentUser;
+    if (user == null) {
+      return 'Not logged in';
+    }
+    return user.email ?? user.id;
+  }
+}
+
+class _SyncSummaryRow extends StatelessWidget {
+  const _SyncSummaryRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 132,
+            child: Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
 }
 
 class _DiagnosticsCard extends StatelessWidget {
@@ -484,7 +549,7 @@ class _DiagnosticsCard extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Sync Diagnostics',
+                        'Sync diagnostics',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -492,10 +557,8 @@ class _DiagnosticsCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _DiagnosticRow(
-                  label: 'Sync user',
-                  value: user == null
-                      ? 'Not logged in'
-                      : '${user.email ?? 'No email'} (${user.id})',
+                  label: 'Auth user id',
+                  value: user?.id ?? 'Not logged in',
                 ),
                 _DiagnosticRow(
                   label: 'Last sync',

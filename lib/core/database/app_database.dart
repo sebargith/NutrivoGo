@@ -2,12 +2,11 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
-part 'app_database.g.dart';
+import '../platform/app_data_directory.dart';
 
-const _platformChannel = MethodChannel('nutrivogo/platform');
+part 'app_database.g.dart';
 
 @DataClassName('ProductRow')
 class ProductRows extends Table {
@@ -101,35 +100,9 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final directory = await _databaseDirectory();
+    final directory = await appDataDirectory();
     await directory.create(recursive: true);
     final file = File(p.join(directory.path, 'nutrivogo.sqlite'));
     return NativeDatabase.createInBackground(file);
   });
-}
-
-Future<Directory> _databaseDirectory() async {
-  if (Platform.isAndroid) {
-    final directoryPath = await _platformChannel.invokeMethod<String>(
-      'applicationSupportDirectory',
-    );
-    if (directoryPath == null || directoryPath.isEmpty) {
-      throw StateError('Android application directory was not available.');
-    }
-    return Directory(directoryPath);
-  }
-
-  if (Platform.isWindows) {
-    final appData = Platform.environment['APPDATA'];
-    final localAppData = Platform.environment['LOCALAPPDATA'];
-    final basePath = appData ?? localAppData ?? Directory.current.path;
-    return Directory(p.join(basePath, 'NutrivoGo'));
-  }
-
-  final home = Platform.environment['HOME'];
-  if (home != null && home.isNotEmpty) {
-    return Directory(p.join(home, '.nutrivogo'));
-  }
-
-  return Directory(p.join(Directory.current.path, '.nutrivogo'));
 }

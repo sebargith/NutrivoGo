@@ -25,7 +25,10 @@ class SyncService extends ChangeNotifier {
     required this.database,
     required this.store,
     DateTime Function()? clock,
-  }) : _clock = clock ?? DateTime.now {
+    this._autoSyncDebounce = const Duration(seconds: 2),
+    this._autoSyncEnabled = true,
+  }) : _clock = clock ?? DateTime.now,
+       _lastSeenLocalChangeVersion = store.localChangeVersion {
     store.addListener(_handleStoreChanged);
     unawaited(handleAuthChanged());
   }
@@ -35,12 +38,16 @@ class SyncService extends ChangeNotifier {
     required AppDatabase database,
     required NutrivoGoStore store,
     DateTime Function()? clock,
+    Duration autoSyncDebounce = const Duration(seconds: 2),
+    bool autoSyncEnabled = true,
   }) {
     return SyncService(
       remote: SupabaseSyncRemoteDataSource(client: client),
       database: database,
       store: store,
       clock: clock,
+      autoSyncDebounce: autoSyncDebounce,
+      autoSyncEnabled: autoSyncEnabled,
     );
   }
 
@@ -48,6 +55,8 @@ class SyncService extends ChangeNotifier {
   final AppDatabase database;
   final NutrivoGoStore store;
   final DateTime Function() _clock;
+  final Duration _autoSyncDebounce;
+  final bool _autoSyncEnabled;
 
   SyncRunStatus _status = SyncRunStatus.notLoggedIn;
   String? _message;
@@ -56,6 +65,8 @@ class SyncService extends ChangeNotifier {
   int _pendingProductCount = 0;
   int _pendingLogItemCount = 0;
   bool _disposed = false;
+  Timer? _autoSyncTimer;
+  int _lastSeenLocalChangeVersion;
 
   SyncRunStatus get status => _status;
 
@@ -121,6 +132,7 @@ class SyncService extends ChangeNotifier {
     if (isSyncing) {
       return;
     }
+    _autoSyncTimer?.cancel();
 
     final userId = remote.currentUserId;
     if (userId == null) {
@@ -164,6 +176,7 @@ class SyncService extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _autoSyncTimer?.cancel();
     store.removeListener(_handleStoreChanged);
     super.dispose();
   }
@@ -368,6 +381,24 @@ class SyncService extends ChangeNotifier {
 
   void _handleStoreChanged() {
     unawaited(refreshPendingCount());
+    if (store.localChangeVersion == _lastSeenLocalChangeVersion) {
+      return;
+    }
+    _lastSeenLocalChangeVersion = store.localChangeVersion;
+    _scheduleAutoSync();
+  }
+
+  void _scheduleAutoSync() {
+    if (!_autoSyncEnabled || remote.currentUserId == null || isSyncing) {
+      return;
+    }
+    _autoSyncTimer?.cancel();
+    _autoSyncTimer = Timer(_autoSyncDebounce, () {
+      if (_disposed || isSyncing || remote.currentUserId == null) {
+        return;
+      }
+      unawaited(sync());
+    });
   }
 
   void _statusForIdleAuthState() {

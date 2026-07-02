@@ -31,6 +31,7 @@ class NutrivoGoStore extends ChangeNotifier {
   final List<LogItem> _logItems = <LogItem>[];
   String? _activeUserId;
   int _idCounter = 0;
+  int _localChangeVersion = 0;
 
   late final Future<void> ready;
   bool _isLoading = true;
@@ -38,6 +39,8 @@ class NutrivoGoStore extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   String? get activeUserId => _activeUserId;
+
+  int get localChangeVersion => _localChangeVersion;
 
   List<Product> get products => List.unmodifiable(_products);
 
@@ -183,6 +186,7 @@ class NutrivoGoStore extends ChangeNotifier {
         .into(_database.productRows)
         .insert(_productToCompanion(product));
     _upsertProduct(product);
+    _markLocalChange();
     notifyListeners();
     return product;
   }
@@ -259,6 +263,7 @@ class NutrivoGoStore extends ChangeNotifier {
         .write(_productToCompanion(updated));
     _upsertProduct(updated);
     _replaceProductInLogItems(updated);
+    _markLocalChange();
     notifyListeners();
     return updated;
   }
@@ -280,6 +285,7 @@ class NutrivoGoStore extends ChangeNotifier {
       ),
     );
     _products.removeWhere((product) => product.id == id);
+    _markLocalChange();
     notifyListeners();
   }
 
@@ -312,6 +318,7 @@ class NutrivoGoStore extends ChangeNotifier {
         .insert(_logItemToCompanion(item));
     _logItems.add(item);
     _logItems.sort((left, right) => left.createdAt.compareTo(right.createdAt));
+    _markLocalChange();
     notifyListeners();
     return item;
   }
@@ -329,6 +336,7 @@ class NutrivoGoStore extends ChangeNotifier {
       ),
     );
     _logItems.removeWhere((item) => item.id == id);
+    _markLocalChange();
     notifyListeners();
   }
 
@@ -473,6 +481,10 @@ class NutrivoGoStore extends ChangeNotifier {
 
   bool _canShowUserData(String? rowUserId) {
     return rowUserId == null || rowUserId == _activeUserId;
+  }
+
+  void _markLocalChange() {
+    _localChangeVersion += 1;
   }
 
   String _makeId(String prefix) {

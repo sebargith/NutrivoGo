@@ -8,6 +8,7 @@ import '../domain/log_item.dart';
 import '../domain/macro_calculator.dart';
 import '../domain/macro_snapshot.dart';
 import '../domain/meal_type.dart';
+import 'quantity_display.dart';
 
 class AddFoodQuantityScreen extends StatefulWidget {
   const AddFoodQuantityScreen({
@@ -38,8 +39,9 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
   @override
   void initState() {
     super.initState();
-    _unit = widget.product.baseUnitLabel;
-    final initialQuantity = widget.product.servingSize ?? 100;
+    final hasServing = widget.product.servingSize != null;
+    _unit = hasServing ? 'serving' : widget.product.baseUnitLabel;
+    final initialQuantity = hasServing ? 1.0 : 100.0;
     _quantityController = TextEditingController(
       text: formatQuantity(initialQuantity),
     )..addListener(() => setState(() {}));
@@ -60,7 +62,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Quantity')),
+      appBar: AppBar(title: const Text('Amount eaten')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -79,21 +81,26 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                         controller: _quantityController,
                         keyboardType: TextInputType.number,
                         inputFormatters: [_numberInputFormatter],
-                        decoration: const InputDecoration(
-                          labelText: 'Quantity',
-                          prefixIcon: Icon(Icons.straighten),
+                        decoration: InputDecoration(
+                          labelText: 'Amount eaten',
+                          prefixIcon: const Icon(Icons.straighten),
+                          helperText: quantityHelperText(_unit),
                         ),
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                         validator: _positiveNumberValidator,
                       );
                       final unitField = DropdownButtonFormField<String>(
                         initialValue: _unit,
                         decoration: const InputDecoration(
-                          labelText: 'Unit',
+                          labelText: 'Measured in',
                           prefixIcon: Icon(Icons.category_outlined),
                         ),
                         items: [
                           for (final unit in availableUnits)
-                            DropdownMenuItem(value: unit, child: Text(unit)),
+                            DropdownMenuItem(
+                              value: unit,
+                              child: Text(quantityUnitLabel(unit)),
+                            ),
                         ],
                         onChanged: (value) {
                           if (value == null) {
@@ -193,14 +200,14 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
   String? _positiveNumberValidator(String? value) {
     final text = value?.trim();
     if (text == null || text.isEmpty) {
-      return 'Enter a quantity';
+      return 'Enter the amount eaten';
     }
     final parsed = _parseOptionalNumber(text);
     if (parsed == null) {
-      return 'Quantity must be a number';
+      return 'Amount eaten must be a number';
     }
     if (parsed <= 0) {
-      return 'Quantity must be greater than 0';
+      return 'Amount eaten must be greater than 0';
     }
     return null;
   }
@@ -257,10 +264,10 @@ class _ProductSummary extends StatelessWidget {
                   text:
                       '${formatMacro(product.proteinPer100, decimals: 1)}g protein',
                 ),
-                if (product.servingLabel != null)
+                if (servingSizeDisplay(product) != null)
                   _InfoChip(
                     icon: Icons.straighten,
-                    text: 'Serving ${product.servingLabel}',
+                    text: servingSizeDisplay(product)!,
                   ),
               ],
             ),

@@ -15,22 +15,23 @@ Use this checklist to test NutrivoGo sync between Windows and Android.
 
 1. Run NutrivoGo on Windows.
 2. Open Settings and log in with the test account.
-3. Create a product and add it to Today.
-4. Open Settings and tap Sync Now.
-5. Confirm Sync Diagnostics shows:
-   - the expected user id/email
-   - pending products count `0`
-   - pending log items count `0`
+3. Close and reopen the app, then confirm Settings still shows the signed-in account.
+4. Create a product and add it to Today.
+5. Wait a few seconds for auto-sync, or open Settings and tap Sync Now.
+6. Confirm the main sync status shows:
+   - the expected signed-in account
+   - pending products/logs count `0`
    - a last sync timestamp
-6. Run NutrivoGo on Android.
-7. Log in with the same test account.
-8. Open Settings and tap Sync Now.
-9. Confirm the product and log item appear on Android.
+   - last error `None`
+7. Run NutrivoGo on Android.
+8. Log in with the same test account.
+9. Open Settings and tap Sync Now.
+10. Confirm the product and log item appear on Android.
 
 ## Android to Windows
 
 1. On Android, create another product and log it.
-2. Open Settings and tap Sync Now.
+2. Wait a few seconds for auto-sync, or open Settings and tap Sync Now.
 3. On Windows, open Settings and tap Sync Now.
 4. Confirm the Android-created product and log item appear on Windows.
 
@@ -38,7 +39,7 @@ Use this checklist to test NutrivoGo sync between Windows and Android.
 
 1. Disconnect the device from the network.
 2. Create a product and log it.
-3. Open Settings and confirm pending counts increase.
+3. Open Settings and confirm pending counts increase after auto-sync fails.
 4. Tap Sync Now and confirm the error explains that local changes remain pending.
 5. Reconnect the network.
 6. Tap Sync Now again and confirm pending counts return to `0`.

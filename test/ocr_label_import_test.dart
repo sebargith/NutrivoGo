@@ -92,6 +92,86 @@ Sodio 55 mg
     expect(draft.fatPer100, 1.5);
   });
 
+  test('reconstructs real Chilean yogurt OCR table with vertical columns', () {
+    final draft = parser.parse('''
+INFORMACION NUTRICIONAL
+Porción: 1 envase (140 g)
+Porciones por envase: 1
+Energía (kcal)
+Proteínas (9)
+Grasa total (g)
+Grasa saturada (g)
+Grasa monoinsat. (g)
+Grasa poliinsat. (9)
+Ac. Grasos Trans (9)
+Colesterol (mg)
+H. de C. Disp. (g)
+Azúcares totales (a)
+Azúcar (Sacarosa) (g)
+Lactosa (9)
+Sodio (mg)
+Calcio (mg)
+100 g
+Dosis de edulcorantes:
+Sucalosa (ng)
+65
+8,8
+0,7
+0,4
+0,2
+0
+5,1
+5,9
+5,9
+0,1
+65
+100
+1 Pordón
+91
+20
+12,3
+1
+0,6
+0.3
+0
+1,1
+8,3
+8,3
+0
+0,1
+91
+)% en relación a la Dosis Diaria Recomendad
+1896()
+100 g 1Pocón
+sleva (Esteviol equivalentes) (ng) 2
+LDA (ngesta Diaria Admisibe: Sucralosa 0-15
+pu kg de peso coporal. Esteva 0-4 mg por g &
+peso iorporal lexpresado como esteviol.
+28
+''');
+
+    expect(draft.detectedBasis, OcrNutritionBasis.per100g);
+    expect(draft.servingSize, 140);
+    expect(draft.servingUnit, 'g');
+    expect(draft.caloriesPer100, 65);
+    expect(draft.proteinPer100, 8.8);
+    expect(draft.fatPer100, 0.7);
+    expect(draft.saturatedFatPer100, 0.4);
+    expect(draft.carbsPer100, 5.9);
+    expect(draft.sugarPer100, 5.9);
+    expect(draft.sodiumPer100, 65);
+    expect(draft.fiberPer100, isNull);
+    expect(draft.perServingValues?.calories, 91);
+    expect(draft.perServingValues?.protein, 12.3);
+    expect(draft.perServingValues?.fat, 1);
+    expect(draft.perServingValues?.saturatedFat, 0.6);
+    expect(draft.perServingValues?.carbs, 8.3);
+    expect(draft.perServingValues?.sugar, 8.3);
+    expect(draft.perServingValues?.sodium, 91);
+    expect(draft.warnings, isNotEmpty);
+    expect(draft.warnings.join(' '), contains('reconstructed OCR table'));
+  });
+
   test('per-serving fallback normalizes values when serving size exists', () {
     final draft = parser.parse('''
 Información nutricional

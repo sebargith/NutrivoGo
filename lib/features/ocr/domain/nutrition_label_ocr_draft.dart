@@ -43,6 +43,7 @@ class NutritionLabelOcrDraft {
     this.detectedBasis = OcrNutritionBasis.unknown,
     this.perServingValues,
     this.normalizedFromServing = false,
+    this.warnings = const <String>[],
   });
 
   final String rawText;
@@ -62,6 +63,7 @@ class NutritionLabelOcrDraft {
   final OcrNutritionBasis detectedBasis;
   final OcrNutritionValues? perServingValues;
   final bool normalizedFromServing;
+  final List<String> warnings;
 
   bool get hasRequiredNutrition {
     return name.trim().isNotEmpty &&
@@ -120,6 +122,7 @@ class NutritionLabelOcrDraft {
     OcrNutritionBasis? detectedBasis,
     OcrNutritionValues? perServingValues,
     bool? normalizedFromServing,
+    List<String>? warnings,
   }) {
     return NutritionLabelOcrDraft(
       rawText: rawText ?? this.rawText,
@@ -140,6 +143,7 @@ class NutritionLabelOcrDraft {
       perServingValues: perServingValues ?? this.perServingValues,
       normalizedFromServing:
           normalizedFromServing ?? this.normalizedFromServing,
+      warnings: warnings ?? this.warnings,
     );
   }
 }

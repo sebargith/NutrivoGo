@@ -325,11 +325,25 @@ class _ReviewMessage extends StatelessWidget {
             Icon(Icons.info_outline, color: theme.colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                draft.reviewMessage,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    draft.reviewMessage,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  for (final warning in draft.warnings) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      warning,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],

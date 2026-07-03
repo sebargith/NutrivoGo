@@ -8,6 +8,9 @@ import '../../barcode/presentation/product_import_confirmation_screen.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
 import '../../food_log/domain/log_item.dart';
 import '../../food_log/presentation/add_food_quantity_screen.dart';
+import '../../ocr/domain/nutrition_label_ocr_draft.dart';
+import '../../ocr/presentation/ocr_product_confirmation_screen.dart';
+import '../../ocr/presentation/ocr_scan_screen.dart';
 import '../domain/product.dart';
 import 'create_product_screen.dart';
 
@@ -55,6 +58,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
             onPressed: _isLookingUpBarcode ? null : _scanBarcode,
           ),
           IconButton(
+            tooltip: 'Scan nutrition label',
+            icon: const Icon(Icons.document_scanner_outlined),
+            onPressed: _scanNutritionLabel,
+          ),
+          IconButton(
             tooltip: 'Create product',
             icon: const Icon(Icons.add_box_outlined),
             onPressed: _createProduct,
@@ -93,6 +101,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                       isLoading: _isLookingUpBarcode,
                       onScan: _scanBarcode,
                     ),
+                    const SizedBox(height: 12),
+                    _OcrActionBar(onScan: _scanNutritionLabel),
                     const SizedBox(height: 16),
                     if (widget.store.products.isEmpty)
                       _EmptyProducts(onCreate: _createProduct)
@@ -172,6 +182,28 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       return;
     }
     await _handleBarcode(barcode);
+  }
+
+  Future<void> _scanNutritionLabel() async {
+    final draft = await Navigator.of(context).push<NutritionLabelOcrDraft>(
+      MaterialPageRoute<NutritionLabelOcrDraft>(
+        builder: (_) => const OcrScanScreen(),
+      ),
+    );
+    if (!mounted || draft == null) {
+      return;
+    }
+
+    final product = await Navigator.of(context).push<Product>(
+      MaterialPageRoute<Product>(
+        builder: (_) =>
+            OcrProductConfirmationScreen(store: widget.store, draft: draft),
+      ),
+    );
+    if (!mounted || product == null) {
+      return;
+    }
+    await _selectProduct(product);
   }
 
   Future<void> _handleBarcode(String barcode) async {
@@ -305,6 +337,40 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       return;
     }
     Navigator.of(context).pop();
+  }
+}
+
+class _OcrActionBar extends StatelessWidget {
+  const _OcrActionBar({required this.onScan});
+
+  final VoidCallback onScan;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            const Icon(Icons.document_scanner_outlined),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Scan a nutrition label',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton.icon(
+              onPressed: onScan,
+              icon: const Icon(Icons.camera_alt_outlined),
+              label: const Text('Scan'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

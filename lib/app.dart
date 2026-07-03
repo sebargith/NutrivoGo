@@ -26,7 +26,8 @@ class NutrivoGoApp extends StatefulWidget {
   State<NutrivoGoApp> createState() => _NutrivoGoAppState();
 }
 
-class _NutrivoGoAppState extends State<NutrivoGoApp> {
+class _NutrivoGoAppState extends State<NutrivoGoApp>
+    with WidgetsBindingObserver {
   AppDatabase? _database;
   late final NutrivoGoStore _store;
   late final bool _ownsStore;
@@ -39,6 +40,7 @@ class _NutrivoGoAppState extends State<NutrivoGoApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _ownsStore = widget.store == null;
     _ownsAuthController = widget.authController == null && widget.store == null;
     _ownsSyncService = widget.syncService == null && widget.store == null;
@@ -75,6 +77,7 @@ class _NutrivoGoAppState extends State<NutrivoGoApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _authController?.removeListener(_handleAuthChanged);
     if (_ownsSyncService) {
       _syncService?.dispose();
@@ -92,6 +95,13 @@ class _NutrivoGoAppState extends State<NutrivoGoApp> {
       }
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncService?.syncWhenAppResumes();
+    }
   }
 
   @override

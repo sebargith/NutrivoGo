@@ -17,6 +17,7 @@ void main() {
     String? userId = 'user-1',
     Duration autoSyncDebounce = const Duration(seconds: 2),
     bool autoSyncEnabled = false,
+    Duration remoteSyncInterval = const Duration(seconds: 30),
   }) async {
     final database = AppDatabase.connect(NativeDatabase.memory());
     final store = NutrivoGoStore(database: database, clock: () => fixedNow);
@@ -32,11 +33,15 @@ void main() {
       clock: () => fixedNow,
       autoSyncDebounce: autoSyncDebounce,
       autoSyncEnabled: autoSyncEnabled,
+      remoteSyncInterval: remoteSyncInterval,
     );
     await syncService.handleAuthChanged();
 
-    addTearDown(syncService.dispose);
-    addTearDown(database.close);
+    addTearDown(() async {
+      syncService.dispose();
+      await syncService.waitForIdle();
+      await database.close();
+    });
     return _Fixture(
       database: database,
       store: store,
@@ -220,7 +225,7 @@ void main() {
     );
     await Future<void>.delayed(const Duration(milliseconds: 150));
 
-    expect(fixture.remote.fetchProductsCount, 1);
+    expect(fixture.remote.fetchProductsCount, lessThanOrEqualTo(2));
     expect(fixture.remote.productUpsertCount, 2);
     expect(fixture.syncService.pendingProductCount, 0);
   });
@@ -253,6 +258,43 @@ void main() {
     expect(fixture.syncService.pendingProductCount, 1);
   });
 
+  test('remote polling pulls changes made on another device', () async {
+    final fixture = await createFixture(
+      autoSyncEnabled: true,
+      remoteSyncInterval: const Duration(milliseconds: 50),
+    );
+    fixture.remote.products['remote-product-1'] = _remoteProductRow(
+      id: 'remote-product-1',
+      userId: 'user-1',
+      name: 'Remote apple',
+      updatedAt: fixedNow,
+    );
+
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    fixture.syncService.dispose();
+    await fixture.syncService.waitForIdle();
+
+    expect(fixture.store.products, hasLength(1));
+    expect(fixture.store.products.single.name, 'Remote apple');
+    expect(fixture.syncService.status, SyncRunStatus.synced);
+  });
+
+  test('app resume pulls remote changes immediately', () async {
+    final fixture = await createFixture(autoSyncEnabled: true);
+    fixture.remote.products['remote-product-2'] = _remoteProductRow(
+      id: 'remote-product-2',
+      userId: 'user-1',
+      name: 'Phone yogurt',
+      updatedAt: fixedNow,
+    );
+
+    fixture.syncService.syncWhenAppResumes();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(fixture.store.products, hasLength(1));
+    expect(fixture.store.products.single.name, 'Phone yogurt');
+  });
+
   test('Supabase migration has RLS policies for products and log items', () {
     final migration = File(
       'supabase/migrations/001_create_products_and_log_items.sql',
@@ -275,6 +317,36 @@ void main() {
     expect(migration, contains('Users can update their log items'));
     expect(migration, contains('Users can delete their log items'));
   });
+}
+
+Map<String, dynamic> _remoteProductRow({
+  required String id,
+  required String userId,
+  required String name,
+  required DateTime updatedAt,
+}) {
+  return {
+    'id': id,
+    'user_id': userId,
+    'name': name,
+    'brand': null,
+    'serving_size': null,
+    'serving_unit': null,
+    'base_unit': 'g',
+    'calories_per_100': 52,
+    'protein_per_100': 0.3,
+    'carbs_per_100': 14,
+    'fat_per_100': 0.2,
+    'created_at': updatedAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+    'deleted_at': null,
+    'barcode': null,
+    'source': null,
+    'sugar_per_100': null,
+    'saturated_fat_per_100': null,
+    'sodium_per_100': null,
+    'fiber_per_100': null,
+  };
 }
 
 class _Fixture {

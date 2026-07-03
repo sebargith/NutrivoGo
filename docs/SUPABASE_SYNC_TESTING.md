@@ -25,15 +25,22 @@ Use this checklist to test NutrivoGo sync between Windows and Android.
    - last error `None`
 7. Run NutrivoGo on Android.
 8. Log in with the same test account.
-9. Open Settings and tap Sync Now.
-10. Confirm the product and log item appear on Android.
+9. Keep the app open briefly, or background and reopen it.
+10. Confirm the product and log item appear on Android without needing manual sync. If needed, tap Sync Now to verify the remote data exists.
 
 ## Android to Windows
 
 1. On Android, create another product and log it.
 2. Wait a few seconds for auto-sync, or open Settings and tap Sync Now.
-3. On Windows, open Settings and tap Sync Now.
-4. Confirm the Android-created product and log item appear on Windows.
+3. On Windows, keep the app open briefly, or minimize and reopen it.
+4. Confirm the Android-created product and log item appear on Windows without needing manual sync.
+
+## Automatic Cross-device Sync
+
+- The device where you make a local change schedules a debounced sync to push it.
+- Other signed-in devices poll Supabase while the app is open and also sync when the app resumes.
+- This is not realtime streaming yet; expect a short delay before another device reflects the change.
+- The manual Sync Now button remains available for immediate troubleshooting.
 
 ## Offline/Pending Check
 

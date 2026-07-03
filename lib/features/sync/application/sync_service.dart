@@ -27,6 +27,7 @@ class SyncService extends ChangeNotifier {
     DateTime Function()? clock,
     this._autoSyncDebounce = const Duration(seconds: 2),
     this._autoSyncEnabled = true,
+    this._remoteSyncInterval = const Duration(seconds: 30),
   }) : _clock = clock ?? DateTime.now,
        _lastSeenLocalChangeVersion = store.localChangeVersion {
     store.addListener(_handleStoreChanged);
@@ -40,6 +41,7 @@ class SyncService extends ChangeNotifier {
     DateTime Function()? clock,
     Duration autoSyncDebounce = const Duration(seconds: 2),
     bool autoSyncEnabled = true,
+    Duration remoteSyncInterval = const Duration(seconds: 30),
   }) {
     return SyncService(
       remote: SupabaseSyncRemoteDataSource(client: client),
@@ -48,6 +50,7 @@ class SyncService extends ChangeNotifier {
       clock: clock,
       autoSyncDebounce: autoSyncDebounce,
       autoSyncEnabled: autoSyncEnabled,
+      remoteSyncInterval: remoteSyncInterval,
     );
   }
 
@@ -57,6 +60,7 @@ class SyncService extends ChangeNotifier {
   final DateTime Function() _clock;
   final Duration _autoSyncDebounce;
   final bool _autoSyncEnabled;
+  final Duration _remoteSyncInterval;
 
   SyncRunStatus _status = SyncRunStatus.notLoggedIn;
   String? _message;
@@ -66,6 +70,8 @@ class SyncService extends ChangeNotifier {
   int _pendingLogItemCount = 0;
   bool _disposed = false;
   Timer? _autoSyncTimer;
+  Timer? _remoteSyncTimer;
+  Future<void>? _runningSync;
   int _lastSeenLocalChangeVersion;
 
   SyncRunStatus get status => _status;
@@ -86,6 +92,10 @@ class SyncService extends ChangeNotifier {
 
   bool get isSyncing => _status == SyncRunStatus.syncing;
 
+  Future<void> waitForIdle() {
+    return _runningSync ?? Future<void>.value();
+  }
+
   Future<void> handleAuthChanged() async {
     final currentUserId = remote.currentUserId;
     final userChanged = store.activeUserId != currentUserId;
@@ -100,6 +110,14 @@ class SyncService extends ChangeNotifier {
           : SyncRunStatus.idle;
     }
     await refreshPendingCount();
+    if (currentUserId == null) {
+      _stopAutomaticSync();
+      return;
+    }
+    _startRemoteSyncPolling();
+    if (userChanged) {
+      _scheduleAutoSync(delay: Duration.zero);
+    }
   }
 
   Future<void> refreshPendingCount() async {
@@ -130,8 +148,14 @@ class SyncService extends ChangeNotifier {
 
   Future<void> sync() async {
     if (isSyncing) {
-      return;
+      return waitForIdle();
     }
+    final run = _sync();
+    _runningSync = run.whenComplete(() => _runningSync = null);
+    return _runningSync!;
+  }
+
+  Future<void> _sync() async {
     _autoSyncTimer?.cancel();
 
     final userId = remote.currentUserId;
@@ -144,7 +168,7 @@ class SyncService extends ChangeNotifier {
     }
 
     _status = SyncRunStatus.syncing;
-    _message = 'Syncing local changes.';
+    _message = 'Syncing changes.';
     _lastError = null;
     _notifyIfAlive();
 
@@ -175,10 +199,21 @@ class SyncService extends ChangeNotifier {
 
   @override
   void dispose() {
+    if (_disposed) {
+      return;
+    }
     _disposed = true;
     _autoSyncTimer?.cancel();
+    _remoteSyncTimer?.cancel();
     store.removeListener(_handleStoreChanged);
     super.dispose();
+  }
+
+  void syncWhenAppResumes() {
+    if (remote.currentUserId == null || isSyncing) {
+      return;
+    }
+    _scheduleAutoSync(delay: Duration.zero);
   }
 
   Future<void> _pullProducts(String userId) async {
@@ -388,17 +423,39 @@ class SyncService extends ChangeNotifier {
     _scheduleAutoSync();
   }
 
-  void _scheduleAutoSync() {
+  void _scheduleAutoSync({Duration? delay}) {
     if (!_autoSyncEnabled || remote.currentUserId == null || isSyncing) {
       return;
     }
     _autoSyncTimer?.cancel();
-    _autoSyncTimer = Timer(_autoSyncDebounce, () {
+    _autoSyncTimer = Timer(delay ?? _autoSyncDebounce, () {
       if (_disposed || isSyncing || remote.currentUserId == null) {
         return;
       }
       unawaited(sync());
     });
+  }
+
+  void _startRemoteSyncPolling() {
+    if (!_autoSyncEnabled ||
+        _remoteSyncInterval <= Duration.zero ||
+        remote.currentUserId == null ||
+        _remoteSyncTimer != null) {
+      return;
+    }
+    _remoteSyncTimer = Timer.periodic(_remoteSyncInterval, (_) {
+      if (_disposed || isSyncing || remote.currentUserId == null) {
+        return;
+      }
+      unawaited(sync());
+    });
+  }
+
+  void _stopAutomaticSync() {
+    _autoSyncTimer?.cancel();
+    _autoSyncTimer = null;
+    _remoteSyncTimer?.cancel();
+    _remoteSyncTimer = null;
   }
 
   void _statusForIdleAuthState() {

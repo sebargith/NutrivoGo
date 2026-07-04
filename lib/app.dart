@@ -7,6 +7,7 @@ import 'core/database/app_database.dart';
 import 'core/supabase/supabase_client_provider.dart';
 import 'features/dashboard/presentation/today_dashboard_screen.dart';
 import 'features/food_log/application/nutrivo_go_store.dart';
+import 'features/ocr/application/ai_label_extraction_client.dart';
 import 'features/sync/application/sync_service.dart';
 import 'shared/theme/app_theme.dart';
 
@@ -33,6 +34,7 @@ class _NutrivoGoAppState extends State<NutrivoGoApp>
   late final bool _ownsStore;
   AuthController? _authController;
   SyncService? _syncService;
+  NutritionLabelAiExtractionClient? _aiExtractionClient;
   late final bool _ownsAuthController;
   late final bool _ownsSyncService;
   late final bool _ownsDatabase;
@@ -50,6 +52,9 @@ class _NutrivoGoAppState extends State<NutrivoGoApp>
       _database = AppDatabase();
       _store = NutrivoGoStore(database: _database);
       final supabaseClient = createSupabaseClient();
+      _aiExtractionClient = SupabaseNutritionLabelAiExtractionClient(
+        client: supabaseClient,
+      );
       _authController =
           widget.authController ?? AuthController(client: supabaseClient);
       _syncService =
@@ -114,6 +119,7 @@ class _NutrivoGoAppState extends State<NutrivoGoApp>
         store: _store,
         authController: _authController,
         syncService: _syncService,
+        aiExtractionClient: _aiExtractionClient,
       ),
     );
   }

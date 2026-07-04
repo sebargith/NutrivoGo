@@ -8,6 +8,7 @@ import '../../food_log/application/nutrivo_go_store.dart';
 import '../../food_log/domain/log_item.dart';
 import '../../food_log/domain/macro_snapshot.dart';
 import '../../food_log/domain/meal_type.dart';
+import '../../ocr/application/ai_label_extraction_client.dart';
 import '../../products/presentation/product_search_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../sync/application/sync_service.dart';
@@ -18,11 +19,13 @@ class TodayDashboardScreen extends StatelessWidget {
     super.key,
     this.authController,
     this.syncService,
+    this.aiExtractionClient,
   });
 
   final NutrivoGoStore store;
   final AuthController? authController;
   final SyncService? syncService;
+  final NutritionLabelAiExtractionClient? aiExtractionClient;
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +94,10 @@ class TodayDashboardScreen extends StatelessWidget {
   Future<void> _openAddFood(BuildContext context) {
     return Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => ProductSearchScreen(store: store),
+        builder: (_) => ProductSearchScreen(
+          store: store,
+          aiExtractionClient: aiExtractionClient,
+        ),
       ),
     );
   }

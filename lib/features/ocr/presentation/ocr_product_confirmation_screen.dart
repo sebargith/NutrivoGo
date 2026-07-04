@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../shared/utils/macro_formatters.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
 import '../../products/domain/product.dart';
+import '../application/ai_label_extraction_client.dart';
 import '../application/ocr_product_import_saver.dart';
 import '../domain/nutrition_label_ocr_draft.dart';
 
@@ -13,11 +14,13 @@ class OcrProductConfirmationScreen extends StatefulWidget {
     required this.draft,
     super.key,
     this.saver = const OcrProductImportSaver(),
+    this.aiExtractionClient,
   });
 
   final NutrivoGoStore store;
   final NutritionLabelOcrDraft draft;
   final OcrProductImportSaver saver;
+  final NutritionLabelAiExtractionClient? aiExtractionClient;
 
   @override
   State<OcrProductConfirmationScreen> createState() =>
@@ -43,13 +46,17 @@ class _OcrProductConfirmationScreenState
   final _saturatedFatController = TextEditingController();
   final _sodiumController = TextEditingController();
   final _fiberController = TextEditingController();
+  late NutritionLabelOcrDraft _draft;
   late BaseUnit _baseUnit;
   bool _isSaving = false;
+  _AiAnalysisState _aiState = _AiAnalysisState.idle;
+  String? _aiMessage;
 
   @override
   void initState() {
     super.initState();
     final draft = widget.draft;
+    _draft = draft;
     _nameController.text = draft.name;
     _brandController.text = draft.brand ?? '';
     _servingSizeController.text = _formatInputNumberOrEmpty(draft.servingSize);
@@ -100,13 +107,22 @@ class _OcrProductConfirmationScreenState
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  _ReviewMessage(draft: widget.draft),
-                  if (widget.draft.perServingValues != null) ...[
+                  _ReviewMessage(draft: _draft),
+                  if (_draft.perServingValues != null) ...[
                     const SizedBox(height: 12),
-                    _PerServingCard(values: widget.draft.perServingValues!),
+                    _PerServingCard(values: _draft.perServingValues!),
                   ],
                   const SizedBox(height: 12),
-                  _RawTextCard(rawText: widget.draft.rawText),
+                  _RawTextCard(rawText: _draft.rawText),
+                  if (widget.aiExtractionClient != null) ...[
+                    const SizedBox(height: 12),
+                    _AiAnalysisCard(
+                      state: _aiState,
+                      message: _aiMessage,
+                      canAnalyze: _draft.imagePath?.isNotEmpty == true,
+                      onAnalyze: _analyzeWithAi,
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _nameController,
@@ -128,7 +144,7 @@ class _OcrProductConfirmationScreenState
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Detected basis: ${widget.draft.basisLabel}',
+                    'Detected basis: ${_draft.basisLabel}',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 8),
@@ -242,7 +258,8 @@ class _OcrProductConfirmationScreenState
     }
     setState(() => _isSaving = true);
     final draft = NutritionLabelOcrDraft(
-      rawText: widget.draft.rawText,
+      rawText: _draft.rawText,
+      imagePath: _draft.imagePath,
       name: _nameController.text.trim(),
       brand: _emptyToNull(_brandController.text),
       servingSize: _parseOptionalNumber(_servingSizeController.text),
@@ -256,15 +273,104 @@ class _OcrProductConfirmationScreenState
       saturatedFatPer100: _parseOptionalNumber(_saturatedFatController.text),
       sodiumPer100: _parseOptionalNumber(_sodiumController.text),
       fiberPer100: _parseOptionalNumber(_fiberController.text),
-      detectedBasis: widget.draft.detectedBasis,
-      perServingValues: widget.draft.perServingValues,
-      normalizedFromServing: widget.draft.normalizedFromServing,
+      detectedBasis: _draft.detectedBasis,
+      perServingValues: _draft.perServingValues,
+      normalizedFromServing: _draft.normalizedFromServing,
+      warnings: _draft.warnings,
+      confidence: _draft.confidence,
     );
     final product = await widget.saver.save(widget.store, draft);
     if (!mounted) {
       return;
     }
     Navigator.of(context).pop<Product>(product);
+  }
+
+  Future<void> _analyzeWithAi() async {
+    final client = widget.aiExtractionClient;
+    if (client == null || _aiState.isBusy) {
+      return;
+    }
+
+    final currentDraft = _currentDraftFromFields();
+    final enhancer = NutritionLabelAiEnhancer(client: client);
+    final result = await enhancer.analyzeOrKeep(
+      currentDraft: currentDraft,
+      onProgress: (progress) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _aiState = switch (progress) {
+            AiLabelExtractionProgress.uploading => _AiAnalysisState.uploading,
+            AiLabelExtractionProgress.analyzing => _AiAnalysisState.analyzing,
+          };
+          _aiMessage = null;
+        });
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+    if (!result.isSuccess) {
+      setState(() {
+        _aiState = _AiAnalysisState.failed;
+        _aiMessage =
+            'AI extraction failed. Existing OCR values were kept. ${result.error}';
+      });
+      return;
+    }
+
+    setState(() {
+      _applyDraft(result.draft);
+      _aiState = _AiAnalysisState.received;
+      _aiMessage = 'AI result received. Review before saving.';
+    });
+  }
+
+  NutritionLabelOcrDraft _currentDraftFromFields() {
+    return NutritionLabelOcrDraft(
+      rawText: _draft.rawText,
+      imagePath: _draft.imagePath,
+      name: _nameController.text.trim(),
+      brand: _emptyToNull(_brandController.text),
+      servingSize: _parseOptionalNumber(_servingSizeController.text),
+      servingUnit: _emptyToNull(_servingUnitController.text),
+      baseUnit: _baseUnit,
+      caloriesPer100: _parseOptionalNumber(_caloriesController.text),
+      proteinPer100: _parseOptionalNumber(_proteinController.text),
+      carbsPer100: _parseOptionalNumber(_carbsController.text),
+      fatPer100: _parseOptionalNumber(_fatController.text),
+      sugarPer100: _parseOptionalNumber(_sugarController.text),
+      saturatedFatPer100: _parseOptionalNumber(_saturatedFatController.text),
+      sodiumPer100: _parseOptionalNumber(_sodiumController.text),
+      fiberPer100: _parseOptionalNumber(_fiberController.text),
+      detectedBasis: _draft.detectedBasis,
+      perServingValues: _draft.perServingValues,
+      normalizedFromServing: _draft.normalizedFromServing,
+      warnings: _draft.warnings,
+      confidence: _draft.confidence,
+    );
+  }
+
+  void _applyDraft(NutritionLabelOcrDraft draft) {
+    _draft = draft;
+    _nameController.text = draft.name;
+    _brandController.text = draft.brand ?? '';
+    _servingSizeController.text = _formatInputNumberOrEmpty(draft.servingSize);
+    _servingUnitController.text = draft.servingUnit ?? '';
+    _caloriesController.text = _formatInputNumberOrEmpty(draft.caloriesPer100);
+    _proteinController.text = _formatInputNumberOrEmpty(draft.proteinPer100);
+    _carbsController.text = _formatInputNumberOrEmpty(draft.carbsPer100);
+    _fatController.text = _formatInputNumberOrEmpty(draft.fatPer100);
+    _sugarController.text = _formatInputNumberOrEmpty(draft.sugarPer100);
+    _saturatedFatController.text = _formatInputNumberOrEmpty(
+      draft.saturatedFatPer100,
+    );
+    _sodiumController.text = _formatInputNumberOrEmpty(draft.sodiumPer100);
+    _fiberController.text = _formatInputNumberOrEmpty(draft.fiberPer100);
+    _baseUnit = draft.baseUnit;
   }
 
   String? _requiredText(String? value) {
@@ -305,6 +411,118 @@ class _OcrProductConfirmationScreenState
         .toStringAsFixed(2)
         .replaceAll(RegExp(r'0+$'), '')
         .replaceAll(RegExp(r'\.$'), '');
+  }
+}
+
+enum _AiAnalysisState {
+  idle,
+  uploading,
+  analyzing,
+  received,
+  failed;
+
+  bool get isBusy {
+    return this == _AiAnalysisState.uploading ||
+        this == _AiAnalysisState.analyzing;
+  }
+}
+
+class _AiAnalysisCard extends StatelessWidget {
+  const _AiAnalysisCard({
+    required this.state,
+    required this.canAnalyze,
+    required this.onAnalyze,
+    this.message,
+  });
+
+  final _AiAnalysisState state;
+  final String? message;
+  final bool canAnalyze;
+  final VoidCallback onAnalyze;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(_icon, color: _color(theme)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'AI extraction can be wrong. Review before saving.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (message != null) ...[
+              Text(
+                message!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: state == _AiAnalysisState.failed
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            FilledButton.icon(
+              onPressed: canAnalyze && !state.isBusy ? onAnalyze : null,
+              icon: state.isBusy
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      state == _AiAnalysisState.failed
+                          ? Icons.refresh
+                          : Icons.auto_awesome,
+                    ),
+              label: Text(_buttonLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData get _icon {
+    return switch (state) {
+      _AiAnalysisState.idle => Icons.auto_awesome,
+      _AiAnalysisState.uploading => Icons.cloud_upload_outlined,
+      _AiAnalysisState.analyzing => Icons.manage_search,
+      _AiAnalysisState.received => Icons.check_circle_outline,
+      _AiAnalysisState.failed => Icons.error_outline,
+    };
+  }
+
+  Color _color(ThemeData theme) {
+    return switch (state) {
+      _AiAnalysisState.failed => theme.colorScheme.error,
+      _ => theme.colorScheme.primary,
+    };
+  }
+
+  String get _buttonLabel {
+    if (!canAnalyze) {
+      return 'AI needs a captured label image';
+    }
+    return switch (state) {
+      _AiAnalysisState.idle => 'Improve with AI',
+      _AiAnalysisState.uploading => 'Uploading image',
+      _AiAnalysisState.analyzing => 'Analyzing label',
+      _AiAnalysisState.received => 'Analyze with AI again',
+      _AiAnalysisState.failed => 'Retry AI analysis',
+    };
   }
 }
 

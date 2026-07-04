@@ -8,6 +8,7 @@ import '../../barcode/presentation/product_import_confirmation_screen.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
 import '../../food_log/domain/log_item.dart';
 import '../../food_log/presentation/add_food_quantity_screen.dart';
+import '../../ocr/application/ai_label_extraction_client.dart';
 import '../../ocr/domain/nutrition_label_ocr_draft.dart';
 import '../../ocr/presentation/ocr_product_confirmation_screen.dart';
 import '../../ocr/presentation/ocr_scan_screen.dart';
@@ -17,9 +18,14 @@ import 'create_product_screen.dart';
 enum _ProductAction { edit, delete }
 
 class ProductSearchScreen extends StatefulWidget {
-  const ProductSearchScreen({required this.store, super.key});
+  const ProductSearchScreen({
+    required this.store,
+    super.key,
+    this.aiExtractionClient,
+  });
 
   final NutrivoGoStore store;
+  final NutritionLabelAiExtractionClient? aiExtractionClient;
 
   @override
   State<ProductSearchScreen> createState() => _ProductSearchScreenState();
@@ -196,8 +202,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
     final product = await Navigator.of(context).push<Product>(
       MaterialPageRoute<Product>(
-        builder: (_) =>
-            OcrProductConfirmationScreen(store: widget.store, draft: draft),
+        builder: (_) => OcrProductConfirmationScreen(
+          store: widget.store,
+          draft: draft,
+          aiExtractionClient: widget.aiExtractionClient,
+        ),
       ),
     );
     if (!mounted || product == null) {

@@ -46,6 +46,8 @@ If image upload fails, the OCR report is still saved and synced without blocking
 
 OCR reports sync through Supabase using the same personal account model as products and logs. Row Level Security requires `user_id = auth.uid()`.
 
+If sync fails with `permission denied for table ocr_scan_reports`, apply the latest Supabase migrations. The `authenticated` role needs table privileges from GRANT statements, and RLS policies still decide which user-owned rows can be read or changed.
+
 Storage policies keep `ocr-debug-images` private and limit access to each user's own folder:
 
 `user_id/report_id/original.jpg`

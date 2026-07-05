@@ -6,6 +6,7 @@ import 'package:nutrivogo/core/database/app_database.dart';
 import 'package:nutrivogo/core/sync/record_sync_status.dart';
 import 'package:nutrivogo/features/food_log/application/nutrivo_go_store.dart';
 import 'package:nutrivogo/features/food_log/domain/meal_type.dart';
+import 'package:nutrivogo/features/ocr_reports/domain/ocr_image_saving_mode.dart';
 import 'package:nutrivogo/features/products/domain/product.dart';
 import 'package:nutrivogo/features/sync/application/sync_remote_data_source.dart';
 import 'package:nutrivogo/features/sync/application/sync_service.dart';
@@ -68,6 +69,21 @@ void main() {
     return product;
   }
 
+  Future<void> addOcrReport(NutrivoGoStore store) {
+    return store.addOcrScanReport(
+      rawOcrText: 'INFORMACION NUTRICIONAL',
+      parsedJson: const {'calories_per_100': 65},
+      correctedJson: const {'calories_per_100': 66},
+      detectedBasis: 'per_100g',
+      parserWarnings: const ['warning'],
+      platform: 'android',
+      productName: 'OCR yogurt',
+      wasParserCorrect: false,
+      userFeedback: 'Calories corrected.',
+      imagePathLocal: 'C:/temp/ocr-yogurt.jpg',
+    );
+  }
+
   test('prevents duplicate remote rows when syncing repeatedly', () async {
     final fixture = await createFixture();
     await addProductAndLog(fixture.store);
@@ -81,6 +97,19 @@ void main() {
     expect(fixture.remote.productUpsertCount, 1);
     expect(fixture.remote.logItemUpsertCount, 1);
     expect(fixture.syncService.status, SyncRunStatus.synced);
+  });
+
+  test('prevents duplicate OCR report rows when syncing repeatedly', () async {
+    final fixture = await createFixture();
+    await addOcrReport(fixture.store);
+    await fixture.syncService.refreshPendingCount();
+
+    await fixture.syncService.sync();
+    await fixture.syncService.sync();
+
+    expect(fixture.remote.ocrScanReports, hasLength(1));
+    expect(fixture.remote.ocrReportUpsertCount, 1);
+    expect(fixture.syncService.pendingOcrReportCount, 0);
   });
 
   test('failed sync does not delete local data', () async {
@@ -124,6 +153,21 @@ void main() {
     expect(fixture.syncService.pendingProductCount, 1);
     expect(fixture.syncService.pendingLogItemCount, 1);
     expect(fixture.syncService.lastError, contains('pending'));
+  });
+
+  test('OCR report remains pending when sync fails', () async {
+    final fixture = await createFixture();
+    await addOcrReport(fixture.store);
+    fixture.remote.failUpserts = true;
+
+    await fixture.syncService.sync();
+
+    final rows = await fixture.database
+        .select(fixture.database.ocrScanReportRows)
+        .get();
+    expect(rows.single.syncStatus, RecordSyncStatus.pending.storageValue);
+    expect(fixture.syncService.pendingOcrReportCount, 1);
+    expect(fixture.syncService.status, SyncRunStatus.failed);
   });
 
   test('logout hides synced user data without deleting local rows', () async {
@@ -279,6 +323,37 @@ void main() {
     expect(fixture.syncService.status, SyncRunStatus.synced);
   });
 
+  test('pulls remote OCR reports', () async {
+    final fixture = await createFixture();
+    fixture.remote.ocrScanReports['remote-ocr-1'] = _remoteOcrReportRow(
+      id: 'remote-ocr-1',
+      userId: 'user-1',
+      updatedAt: fixedNow,
+    );
+
+    await fixture.syncService.sync();
+
+    expect(fixture.store.ocrScanReports, hasLength(1));
+    expect(fixture.store.ocrScanReports.single.rawOcrText, contains('OCR'));
+    expect(fixture.syncService.pendingOcrReportCount, 0);
+  });
+
+  test('image upload failure does not block OCR report sync', () async {
+    final fixture = await createFixture();
+    await fixture.store.setOcrImageSavingMode(OcrImageSavingMode.always);
+    await addOcrReport(fixture.store);
+    fixture.remote.failImageUploads = true;
+
+    await fixture.syncService.sync();
+
+    expect(fixture.remote.ocrScanReports, hasLength(1));
+    final remoteRow = fixture.remote.ocrScanReports.values.single;
+    expect(remoteRow['image_saved'], isFalse);
+    expect(remoteRow['image_storage_path'], isNull);
+    expect(fixture.syncService.status, SyncRunStatus.synced);
+    expect(fixture.syncService.pendingOcrReportCount, 0);
+  });
+
   test('app resume pulls remote changes immediately', () async {
     final fixture = await createFixture(autoSyncEnabled: true);
     fixture.remote.products['remote-product-2'] = _remoteProductRow(
@@ -317,6 +392,24 @@ void main() {
     expect(migration, contains('Users can update their log items'));
     expect(migration, contains('Users can delete their log items'));
   });
+
+  test('Supabase migration has RLS and storage policies for OCR reports', () {
+    final migration = File(
+      'supabase/migrations/003_create_ocr_scan_reports.sql',
+    ).readAsStringSync();
+
+    expect(
+      migration,
+      contains('alter table public.ocr_scan_reports enable row level security'),
+    );
+    expect(migration, contains('Users can read their OCR scan reports'));
+    expect(migration, contains('Users can insert their OCR scan reports'));
+    expect(migration, contains('Users can update their OCR scan reports'));
+    expect(migration, contains('Users can delete their OCR scan reports'));
+    expect(migration, contains('ocr-debug-images'));
+    expect(migration, contains('Users can read their OCR debug images'));
+    expect(migration, contains('Users can upload their OCR debug images'));
+  });
 }
 
 Map<String, dynamic> _remoteProductRow({
@@ -349,6 +442,38 @@ Map<String, dynamic> _remoteProductRow({
   };
 }
 
+Map<String, dynamic> _remoteOcrReportRow({
+  required String id,
+  required String userId,
+  required DateTime updatedAt,
+}) {
+  return {
+    'id': id,
+    'user_id': userId,
+    'raw_ocr_text': 'REMOTE OCR TEXT',
+    'parsed_json': {'calories_per_100': 65},
+    'corrected_json': {'calories_per_100': 66},
+    'detected_basis': 'per_100g',
+    'parser_warnings': ['warning'],
+    'parser_confidence': null,
+    'was_parser_correct': false,
+    'user_feedback': 'Remote correction.',
+    'product_id': null,
+    'product_name': 'Remote OCR yogurt',
+    'barcode': null,
+    'source': 'ocr',
+    'platform': 'android',
+    'app_version': '1.0.0+1',
+    'image_saved': false,
+    'image_storage_path': null,
+    'image_crop_storage_path': null,
+    'image_path_local': null,
+    'created_at': updatedAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+    'deleted_at': null,
+  };
+}
+
 class _Fixture {
   const _Fixture({
     required this.database,
@@ -373,6 +498,7 @@ class _FakeSyncRemoteDataSource implements SyncRemoteDataSource {
   String? currentUserEmail;
 
   bool failUpserts = false;
+  bool failImageUploads = false;
   int fetchProductsCount = 0;
   int fetchLogItemsCount = 0;
   int fetchOcrReportsCount = 0;
@@ -443,6 +569,9 @@ class _FakeSyncRemoteDataSource implements SyncRemoteDataSource {
     required String reportId,
     required String imagePathLocal,
   }) async {
+    if (failImageUploads) {
+      throw const SocketException('image upload offline');
+    }
     return OcrReportImageUploadResult(
       storagePath: '$userId/$reportId/original.jpg',
     );

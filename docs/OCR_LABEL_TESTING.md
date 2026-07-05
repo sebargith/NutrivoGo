@@ -2,6 +2,17 @@
 
 NutrivoGo OCR is mobile-first. Android can scan nutrition labels with the camera. Windows shows an unsupported OCR message and keeps manual product creation available.
 
+Use OCR Reports to collect real failed cases before changing the parser:
+
+1. Scan the label on Android.
+2. Review and correct values in the OCR confirmation screen.
+3. Mark whether the parser was correct, incorrect, or unsure.
+4. Add a short comment when the parser failed.
+5. Open Settings > OCR Reports.
+6. Export OCR cases before asking Codex to improve the parser.
+
+Parser fixes should use real exported failed cases as regression tests.
+
 ## Android Flow
 
 1. Open Add Food.

@@ -7,6 +7,8 @@ import '../../products/domain/product.dart';
 import '../application/ocr_product_import_saver.dart';
 import '../domain/nutrition_label_ocr_draft.dart';
 
+enum _ParserFeedback { correct, incorrect, unsure }
+
 class OcrProductConfirmationScreen extends StatefulWidget {
   const OcrProductConfirmationScreen({
     required this.store,
@@ -43,7 +45,9 @@ class _OcrProductConfirmationScreenState
   final _saturatedFatController = TextEditingController();
   final _sodiumController = TextEditingController();
   final _fiberController = TextEditingController();
+  final _feedbackController = TextEditingController();
   late BaseUnit _baseUnit;
+  _ParserFeedback _parserFeedback = _ParserFeedback.unsure;
   bool _isSaving = false;
 
   @override
@@ -81,6 +85,7 @@ class _OcrProductConfirmationScreenState
     _saturatedFatController.dispose();
     _sodiumController.dispose();
     _fiberController.dispose();
+    _feedbackController.dispose();
     super.dispose();
   }
 
@@ -221,6 +226,14 @@ class _OcrProductConfirmationScreenState
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  _ParserFeedbackCard(
+                    value: _parserFeedback,
+                    feedbackController: _feedbackController,
+                    onChanged: (value) {
+                      setState(() => _parserFeedback = value);
+                    },
+                  ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     onPressed: _isSaving ? null : _save,
@@ -259,8 +272,17 @@ class _OcrProductConfirmationScreenState
       detectedBasis: widget.draft.detectedBasis,
       perServingValues: widget.draft.perServingValues,
       normalizedFromServing: widget.draft.normalizedFromServing,
+      warnings: widget.draft.warnings,
+      parserConfidence: widget.draft.parserConfidence,
+      imagePathLocal: widget.draft.imagePathLocal,
     );
-    final product = await widget.saver.save(widget.store, draft);
+    final product = await widget.saver.save(
+      widget.store,
+      draft,
+      parsedDraft: widget.draft,
+      wasParserCorrect: _wasParserCorrect,
+      userFeedback: _emptyToNull(_feedbackController.text),
+    );
     if (!mounted) {
       return;
     }
@@ -305,6 +327,102 @@ class _OcrProductConfirmationScreenState
         .toStringAsFixed(2)
         .replaceAll(RegExp(r'0+$'), '')
         .replaceAll(RegExp(r'\.$'), '');
+  }
+
+  bool? get _wasParserCorrect {
+    return switch (_parserFeedback) {
+      _ParserFeedback.correct => true,
+      _ParserFeedback.incorrect => false,
+      _ParserFeedback.unsure => null,
+    };
+  }
+}
+
+class _ParserFeedbackCard extends StatelessWidget {
+  const _ParserFeedbackCard({
+    required this.value,
+    required this.feedbackController,
+    required this.onChanged,
+  });
+
+  final _ParserFeedback value;
+  final TextEditingController feedbackController;
+  final ValueChanged<_ParserFeedback> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                'El OCR detecto correctamente la informacion?',
+                style: theme.textTheme.titleSmall,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _FeedbackChip(
+                  label: 'Si, estaba correcto',
+                  selected: value == _ParserFeedback.correct,
+                  onSelected: () => onChanged(_ParserFeedback.correct),
+                ),
+                _FeedbackChip(
+                  label: 'No, tuve que corregir valores',
+                  selected: value == _ParserFeedback.incorrect,
+                  onSelected: () => onChanged(_ParserFeedback.incorrect),
+                ),
+                _FeedbackChip(
+                  label: 'No estoy seguro',
+                  selected: value == _ParserFeedback.unsure,
+                  onSelected: () => onChanged(_ParserFeedback.unsure),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: feedbackController,
+              minLines: 1,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Comentario opcional sobre el error',
+                prefixIcon: Icon(Icons.comment_outlined),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FeedbackChip extends StatelessWidget {
+  const _FeedbackChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    );
   }
 }
 

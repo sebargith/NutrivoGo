@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+
+import '../../../shared/app_info.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
 import '../../products/domain/product.dart';
 import '../domain/nutrition_label_ocr_draft.dart';
@@ -5,11 +8,17 @@ import '../domain/nutrition_label_ocr_draft.dart';
 class OcrProductImportSaver {
   const OcrProductImportSaver();
 
-  Future<Product> save(NutrivoGoStore store, NutritionLabelOcrDraft draft) {
+  Future<Product> save(
+    NutrivoGoStore store,
+    NutritionLabelOcrDraft draft, {
+    NutritionLabelOcrDraft? parsedDraft,
+    bool? wasParserCorrect,
+    String? userFeedback,
+  }) async {
     if (!draft.hasRequiredNutrition) {
       throw ArgumentError('OCR product is missing required nutrition.');
     }
-    return store.addProduct(
+    final product = await store.addProduct(
       name: draft.name,
       brand: draft.brand,
       servingSize: draft.servingSize,
@@ -25,5 +34,24 @@ class OcrProductImportSaver {
       sodiumPer100: draft.sodiumPer100,
       fiberPer100: draft.fiberPer100,
     );
+    final originalDraft = parsedDraft ?? draft;
+    await store.addOcrScanReport(
+      rawOcrText: originalDraft.rawText,
+      parsedJson: originalDraft.toReportJson(),
+      correctedJson: draft.toReportJson(),
+      detectedBasis: originalDraft.basisStorageValue,
+      parserWarnings: originalDraft.warnings,
+      parserConfidence: originalDraft.parserConfidence,
+      wasParserCorrect: wasParserCorrect,
+      userFeedback: userFeedback,
+      productId: product.id,
+      productName: product.name,
+      barcode: product.barcode,
+      source: 'ocr',
+      platform: defaultTargetPlatform.name,
+      appVersion: AppInfo.version,
+      imagePathLocal: originalDraft.imagePathLocal,
+    );
+    return product;
   }
 }

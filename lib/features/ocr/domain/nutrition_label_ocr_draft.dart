@@ -44,6 +44,8 @@ class NutritionLabelOcrDraft {
     this.perServingValues,
     this.normalizedFromServing = false,
     this.warnings = const <String>[],
+    this.parserConfidence,
+    this.imagePathLocal,
   });
 
   final String rawText;
@@ -64,6 +66,8 @@ class NutritionLabelOcrDraft {
   final OcrNutritionValues? perServingValues;
   final bool normalizedFromServing;
   final List<String> warnings;
+  final double? parserConfidence;
+  final String? imagePathLocal;
 
   bool get hasRequiredNutrition {
     return name.trim().isNotEmpty &&
@@ -88,6 +92,39 @@ class NutritionLabelOcrDraft {
       OcrNutritionBasis.per100ml => 'Por 100 ml',
       OcrNutritionBasis.perServing => 'Por porción',
       OcrNutritionBasis.unknown => 'No detectado',
+    };
+  }
+
+  String get basisStorageValue {
+    return switch (detectedBasis) {
+      OcrNutritionBasis.per100g => 'per_100g',
+      OcrNutritionBasis.per100ml => 'per_100ml',
+      OcrNutritionBasis.perServing => 'per_serving',
+      OcrNutritionBasis.unknown => 'unknown',
+    };
+  }
+
+  Map<String, Object?> toReportJson({String source = 'ocr'}) {
+    return {
+      'name': name,
+      'brand': brand,
+      'serving_size': servingSize,
+      'serving_unit': servingUnit,
+      'base_unit': baseUnit.label,
+      'basis': basisStorageValue,
+      'calories_per_100': caloriesPer100,
+      'protein_per_100': proteinPer100,
+      'carbs_per_100': carbsPer100,
+      'fat_per_100': fatPer100,
+      'saturated_fat_per_100': saturatedFatPer100,
+      'sugar_per_100': sugarPer100,
+      'sodium_per_100': sodiumPer100,
+      'fiber_per_100': fiberPer100,
+      'per_serving': perServingValues?.toReportJson(),
+      'normalized_from_serving': normalizedFromServing,
+      'warnings': warnings,
+      'confidence': parserConfidence,
+      'source': source,
     };
   }
 
@@ -123,6 +160,8 @@ class NutritionLabelOcrDraft {
     OcrNutritionValues? perServingValues,
     bool? normalizedFromServing,
     List<String>? warnings,
+    double? parserConfidence,
+    String? imagePathLocal,
   }) {
     return NutritionLabelOcrDraft(
       rawText: rawText ?? this.rawText,
@@ -144,6 +183,23 @@ class NutritionLabelOcrDraft {
       normalizedFromServing:
           normalizedFromServing ?? this.normalizedFromServing,
       warnings: warnings ?? this.warnings,
+      parserConfidence: parserConfidence ?? this.parserConfidence,
+      imagePathLocal: imagePathLocal ?? this.imagePathLocal,
     );
+  }
+}
+
+extension OcrNutritionValuesReportJson on OcrNutritionValues {
+  Map<String, Object?> toReportJson() {
+    return {
+      'calories_kcal': calories,
+      'protein_g': protein,
+      'carbs_g': carbs,
+      'fat_g': fat,
+      'sugar_g': sugar,
+      'saturated_fat_g': saturatedFat,
+      'sodium_mg': sodium,
+      'fiber_g': fiber,
+    };
   }
 }

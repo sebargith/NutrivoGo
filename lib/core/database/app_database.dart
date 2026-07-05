@@ -65,14 +65,64 @@ class LogItemRows extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [ProductRows, LogItemRows])
+@DataClassName('OcrScanReportRow')
+class OcrScanReportRows extends Table {
+  @override
+  String get tableName => 'ocr_scan_reports';
+
+  TextColumn get id => text()();
+  TextColumn get rawOcrText => text()();
+  TextColumn get parsedJson => text()();
+  TextColumn get correctedJson => text().nullable()();
+  TextColumn get detectedBasis => text().nullable()();
+  TextColumn get parserWarnings => text().nullable()();
+  RealColumn get parserConfidence => real().nullable()();
+  BoolColumn get wasParserCorrect => boolean().nullable()();
+  TextColumn get userFeedback => text().nullable()();
+  TextColumn get productId => text().nullable()();
+  TextColumn get productName => text().nullable()();
+  TextColumn get barcode => text().nullable()();
+  TextColumn get source => text().withDefault(const Constant('ocr'))();
+  TextColumn get platform => text()();
+  TextColumn get appVersion => text().nullable()();
+  BoolColumn get imageSaved => boolean().withDefault(const Constant(false))();
+  TextColumn get imageStoragePath => text().nullable()();
+  TextColumn get imageCropStoragePath => text().nullable()();
+  TextColumn get imagePathLocal => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get userId => text().nullable()();
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+  DateTimeColumn get lastSyncedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DataClassName('AppSettingRow')
+class AppSettingRows extends Table {
+  @override
+  String get tableName => 'app_settings';
+
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {key};
+}
+
+@DriftDatabase(
+  tables: [ProductRows, LogItemRows, OcrScanReportRows, AppSettingRows],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.connect(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -93,6 +143,10 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(productRows, productRows.saturatedFatPer100);
         await migrator.addColumn(productRows, productRows.sodiumPer100);
         await migrator.addColumn(productRows, productRows.fiberPer100);
+      }
+      if (from < 4) {
+        await migrator.createTable(ocrScanReportRows);
+        await migrator.createTable(appSettingRows);
       }
     },
   );

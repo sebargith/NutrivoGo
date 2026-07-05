@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/record_sync_status.dart';
+import '../../ocr_reports/domain/ocr_image_saving_mode.dart';
+import '../../ocr_reports/domain/ocr_scan_report.dart';
 import '../../products/domain/product.dart';
 import '../domain/log_item.dart';
 import '../domain/macro_calculator.dart';
@@ -29,12 +32,15 @@ class NutrivoGoStore extends ChangeNotifier {
   final DateTime Function() _clock;
   final List<Product> _products = <Product>[];
   final List<LogItem> _logItems = <LogItem>[];
+  final List<OcrScanReport> _ocrScanReports = <OcrScanReport>[];
   String? _activeUserId;
   int _idCounter = 0;
   int _localChangeVersion = 0;
+  OcrImageSavingMode _ocrImageSavingMode = OcrImageSavingMode.incorrectOnly;
 
   late final Future<void> ready;
   bool _isLoading = true;
+  static const _ocrImageSavingModeKey = 'ocr_image_saving_mode';
 
   bool get isLoading => _isLoading;
 
@@ -45,6 +51,12 @@ class NutrivoGoStore extends ChangeNotifier {
   List<Product> get products => List.unmodifiable(_products);
 
   List<LogItem> get logItems => List.unmodifiable(_logItems);
+
+  List<OcrScanReport> get ocrScanReports {
+    return List.unmodifiable(_ocrScanReports);
+  }
+
+  OcrImageSavingMode get ocrImageSavingMode => _ocrImageSavingMode;
 
   List<Product> get recentProducts {
     final activeProductIds = _products.map((product) => product.id).toSet();
@@ -100,6 +112,7 @@ class NutrivoGoStore extends ChangeNotifier {
 
   Future<void> load() async {
     _isLoading = true;
+    await _loadSettings();
     final productRows = await _database.select(_database.productRows).get();
     final productsById = {
       for (final row in productRows)
@@ -124,12 +137,23 @@ class NutrivoGoStore extends ChangeNotifier {
           _logItemFromRow(row, productsById[row.productId]!),
     ]..sort((left, right) => left.createdAt.compareTo(right.createdAt));
 
+    final ocrReportRows = await (_database.select(
+      _database.ocrScanReportRows,
+    )..where((row) => row.deletedAt.isNull())).get();
+    final activeOcrReports = <OcrScanReport>[
+      for (final row in ocrReportRows)
+        if (_canShowUserData(row.userId)) _ocrScanReportFromRow(row),
+    ]..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+
     _products
       ..clear()
       ..addAll(activeProducts);
     _logItems
       ..clear()
       ..addAll(activeLogItems);
+    _ocrScanReports
+      ..clear()
+      ..addAll(activeOcrReports);
     _isLoading = false;
     notifyListeners();
   }
@@ -140,6 +164,23 @@ class NutrivoGoStore extends ChangeNotifier {
     }
     _activeUserId = userId;
     await load();
+  }
+
+  Future<void> setOcrImageSavingMode(OcrImageSavingMode mode) async {
+    if (_ocrImageSavingMode == mode) {
+      return;
+    }
+    _ocrImageSavingMode = mode;
+    await _database
+        .into(_database.appSettingRows)
+        .insertOnConflictUpdate(
+          AppSettingRowsCompanion(
+            key: const Value(_ocrImageSavingModeKey),
+            value: Value(mode.storageValue),
+            updatedAt: Value(_clock()),
+          ),
+        );
+    notifyListeners();
   }
 
   Future<Product> addProduct({
@@ -340,10 +381,71 @@ class NutrivoGoStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<OcrScanReport> addOcrScanReport({
+    required String rawOcrText,
+    required Map<String, Object?> parsedJson,
+    required String platform,
+    Map<String, Object?>? correctedJson,
+    String? detectedBasis,
+    List<String> parserWarnings = const <String>[],
+    double? parserConfidence,
+    bool? wasParserCorrect,
+    String? userFeedback,
+    String? productId,
+    String? productName,
+    String? barcode,
+    String source = 'ocr',
+    String? appVersion,
+    String? imagePathLocal,
+  }) async {
+    final now = _clock();
+    final report = OcrScanReport(
+      id: _makeId('ocr-report'),
+      rawOcrText: rawOcrText,
+      parsedJson: jsonEncode(parsedJson),
+      correctedJson: correctedJson == null ? null : jsonEncode(correctedJson),
+      detectedBasis: _emptyToNull(detectedBasis),
+      parserWarnings: parserWarnings.isEmpty
+          ? null
+          : jsonEncode(parserWarnings),
+      parserConfidence: parserConfidence,
+      wasParserCorrect: wasParserCorrect,
+      userFeedback: _emptyToNull(userFeedback),
+      productId: _emptyToNull(productId),
+      productName: _emptyToNull(productName),
+      barcode: _normalizeBarcode(barcode),
+      source: source,
+      platform: platform,
+      appVersion: _emptyToNull(appVersion),
+      imagePathLocal: _shouldKeepOcrImagePath(imagePathLocal, wasParserCorrect)
+          ? _emptyToNull(imagePathLocal)
+          : null,
+      createdAt: now,
+      updatedAt: now,
+      userId: _activeUserId,
+    );
+
+    await _database
+        .into(_database.ocrScanReportRows)
+        .insert(_ocrScanReportToCompanion(report));
+    _upsertOcrScanReport(report);
+    _markLocalChange();
+    notifyListeners();
+    return report;
+  }
+
   Future<void> close() async {
     if (_ownsDatabase) {
       await _database.close();
     }
+  }
+
+  Future<void> _loadSettings() async {
+    final row =
+        await (_database.select(_database.appSettingRows)
+              ..where((setting) => setting.key.equals(_ocrImageSavingModeKey)))
+            .getSingleOrNull();
+    _ocrImageSavingMode = OcrImageSavingMode.fromStorage(row?.value);
   }
 
   @override
@@ -448,6 +550,66 @@ class NutrivoGoStore extends ChangeNotifier {
     );
   }
 
+  OcrScanReport _ocrScanReportFromRow(OcrScanReportRow row) {
+    return OcrScanReport(
+      id: row.id,
+      rawOcrText: row.rawOcrText,
+      parsedJson: row.parsedJson,
+      correctedJson: row.correctedJson,
+      detectedBasis: row.detectedBasis,
+      parserWarnings: row.parserWarnings,
+      parserConfidence: row.parserConfidence,
+      wasParserCorrect: row.wasParserCorrect,
+      userFeedback: row.userFeedback,
+      productId: row.productId,
+      productName: row.productName,
+      barcode: row.barcode,
+      source: row.source,
+      platform: row.platform,
+      appVersion: row.appVersion,
+      imageSaved: row.imageSaved,
+      imageStoragePath: row.imageStoragePath,
+      imageCropStoragePath: row.imageCropStoragePath,
+      imagePathLocal: row.imagePathLocal,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      deletedAt: row.deletedAt,
+      userId: row.userId,
+      syncStatus: RecordSyncStatus.fromStorage(row.syncStatus),
+      lastSyncedAt: row.lastSyncedAt,
+    );
+  }
+
+  OcrScanReportRowsCompanion _ocrScanReportToCompanion(OcrScanReport report) {
+    return OcrScanReportRowsCompanion(
+      id: Value(report.id),
+      rawOcrText: Value(report.rawOcrText),
+      parsedJson: Value(report.parsedJson),
+      correctedJson: Value(report.correctedJson),
+      detectedBasis: Value(report.detectedBasis),
+      parserWarnings: Value(report.parserWarnings),
+      parserConfidence: Value(report.parserConfidence),
+      wasParserCorrect: Value(report.wasParserCorrect),
+      userFeedback: Value(report.userFeedback),
+      productId: Value(report.productId),
+      productName: Value(report.productName),
+      barcode: Value(report.barcode),
+      source: Value(report.source),
+      platform: Value(report.platform),
+      appVersion: Value(report.appVersion),
+      imageSaved: Value(report.imageSaved),
+      imageStoragePath: Value(report.imageStoragePath),
+      imageCropStoragePath: Value(report.imageCropStoragePath),
+      imagePathLocal: Value(report.imagePathLocal),
+      createdAt: Value(report.createdAt),
+      updatedAt: Value(report.updatedAt),
+      deletedAt: Value(report.deletedAt),
+      userId: Value(report.userId),
+      syncStatus: Value(report.syncStatus.storageValue),
+      lastSyncedAt: Value(report.lastSyncedAt),
+    );
+  }
+
   void _upsertProduct(Product product) {
     final index = _products.indexWhere((existing) => existing.id == product.id);
     if (index == -1) {
@@ -465,6 +627,20 @@ class NutrivoGoStore extends ChangeNotifier {
         _logItems[index] = item.copyWith(product: product);
       }
     }
+  }
+
+  void _upsertOcrScanReport(OcrScanReport report) {
+    final index = _ocrScanReports.indexWhere(
+      (existing) => existing.id == report.id,
+    );
+    if (index == -1) {
+      _ocrScanReports.add(report);
+    } else {
+      _ocrScanReports[index] = report;
+    }
+    _ocrScanReports.sort(
+      (left, right) => right.createdAt.compareTo(left.createdAt),
+    );
   }
 
   int _compareProducts(Product left, Product right) {
@@ -485,6 +661,17 @@ class NutrivoGoStore extends ChangeNotifier {
 
   void _markLocalChange() {
     _localChangeVersion += 1;
+  }
+
+  bool _shouldKeepOcrImagePath(String? imagePathLocal, bool? wasParserCorrect) {
+    if (_emptyToNull(imagePathLocal) == null) {
+      return false;
+    }
+    return switch (_ocrImageSavingMode) {
+      OcrImageSavingMode.never => false,
+      OcrImageSavingMode.incorrectOnly => wasParserCorrect != true,
+      OcrImageSavingMode.always => true,
+    };
   }
 
   String _makeId(String prefix) {

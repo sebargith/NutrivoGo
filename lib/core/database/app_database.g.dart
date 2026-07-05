@@ -2094,11 +2094,1706 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
   }
 }
 
+class $OcrScanReportRowsTable extends OcrScanReportRows
+    with TableInfo<$OcrScanReportRowsTable, OcrScanReportRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OcrScanReportRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rawOcrTextMeta = const VerificationMeta(
+    'rawOcrText',
+  );
+  @override
+  late final GeneratedColumn<String> rawOcrText = GeneratedColumn<String>(
+    'raw_ocr_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _parsedJsonMeta = const VerificationMeta(
+    'parsedJson',
+  );
+  @override
+  late final GeneratedColumn<String> parsedJson = GeneratedColumn<String>(
+    'parsed_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _correctedJsonMeta = const VerificationMeta(
+    'correctedJson',
+  );
+  @override
+  late final GeneratedColumn<String> correctedJson = GeneratedColumn<String>(
+    'corrected_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _detectedBasisMeta = const VerificationMeta(
+    'detectedBasis',
+  );
+  @override
+  late final GeneratedColumn<String> detectedBasis = GeneratedColumn<String>(
+    'detected_basis',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _parserWarningsMeta = const VerificationMeta(
+    'parserWarnings',
+  );
+  @override
+  late final GeneratedColumn<String> parserWarnings = GeneratedColumn<String>(
+    'parser_warnings',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _parserConfidenceMeta = const VerificationMeta(
+    'parserConfidence',
+  );
+  @override
+  late final GeneratedColumn<double> parserConfidence = GeneratedColumn<double>(
+    'parser_confidence',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _wasParserCorrectMeta = const VerificationMeta(
+    'wasParserCorrect',
+  );
+  @override
+  late final GeneratedColumn<bool> wasParserCorrect = GeneratedColumn<bool>(
+    'was_parser_correct',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("was_parser_correct" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _userFeedbackMeta = const VerificationMeta(
+    'userFeedback',
+  );
+  @override
+  late final GeneratedColumn<String> userFeedback = GeneratedColumn<String>(
+    'user_feedback',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _productNameMeta = const VerificationMeta(
+    'productName',
+  );
+  @override
+  late final GeneratedColumn<String> productName = GeneratedColumn<String>(
+    'product_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _barcodeMeta = const VerificationMeta(
+    'barcode',
+  );
+  @override
+  late final GeneratedColumn<String> barcode = GeneratedColumn<String>(
+    'barcode',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('ocr'),
+  );
+  static const VerificationMeta _platformMeta = const VerificationMeta(
+    'platform',
+  );
+  @override
+  late final GeneratedColumn<String> platform = GeneratedColumn<String>(
+    'platform',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _appVersionMeta = const VerificationMeta(
+    'appVersion',
+  );
+  @override
+  late final GeneratedColumn<String> appVersion = GeneratedColumn<String>(
+    'app_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _imageSavedMeta = const VerificationMeta(
+    'imageSaved',
+  );
+  @override
+  late final GeneratedColumn<bool> imageSaved = GeneratedColumn<bool>(
+    'image_saved',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("image_saved" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _imageStoragePathMeta = const VerificationMeta(
+    'imageStoragePath',
+  );
+  @override
+  late final GeneratedColumn<String> imageStoragePath = GeneratedColumn<String>(
+    'image_storage_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _imageCropStoragePathMeta =
+      const VerificationMeta('imageCropStoragePath');
+  @override
+  late final GeneratedColumn<String> imageCropStoragePath =
+      GeneratedColumn<String>(
+        'image_crop_storage_path',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _imagePathLocalMeta = const VerificationMeta(
+    'imagePathLocal',
+  );
+  @override
+  late final GeneratedColumn<String> imagePathLocal = GeneratedColumn<String>(
+    'image_path_local',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _lastSyncedAtMeta = const VerificationMeta(
+    'lastSyncedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+    'last_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    rawOcrText,
+    parsedJson,
+    correctedJson,
+    detectedBasis,
+    parserWarnings,
+    parserConfidence,
+    wasParserCorrect,
+    userFeedback,
+    productId,
+    productName,
+    barcode,
+    source,
+    platform,
+    appVersion,
+    imageSaved,
+    imageStoragePath,
+    imageCropStoragePath,
+    imagePathLocal,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    userId,
+    syncStatus,
+    lastSyncedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ocr_scan_reports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OcrScanReportRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('raw_ocr_text')) {
+      context.handle(
+        _rawOcrTextMeta,
+        rawOcrText.isAcceptableOrUnknown(
+          data['raw_ocr_text']!,
+          _rawOcrTextMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_rawOcrTextMeta);
+    }
+    if (data.containsKey('parsed_json')) {
+      context.handle(
+        _parsedJsonMeta,
+        parsedJson.isAcceptableOrUnknown(data['parsed_json']!, _parsedJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_parsedJsonMeta);
+    }
+    if (data.containsKey('corrected_json')) {
+      context.handle(
+        _correctedJsonMeta,
+        correctedJson.isAcceptableOrUnknown(
+          data['corrected_json']!,
+          _correctedJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('detected_basis')) {
+      context.handle(
+        _detectedBasisMeta,
+        detectedBasis.isAcceptableOrUnknown(
+          data['detected_basis']!,
+          _detectedBasisMeta,
+        ),
+      );
+    }
+    if (data.containsKey('parser_warnings')) {
+      context.handle(
+        _parserWarningsMeta,
+        parserWarnings.isAcceptableOrUnknown(
+          data['parser_warnings']!,
+          _parserWarningsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('parser_confidence')) {
+      context.handle(
+        _parserConfidenceMeta,
+        parserConfidence.isAcceptableOrUnknown(
+          data['parser_confidence']!,
+          _parserConfidenceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('was_parser_correct')) {
+      context.handle(
+        _wasParserCorrectMeta,
+        wasParserCorrect.isAcceptableOrUnknown(
+          data['was_parser_correct']!,
+          _wasParserCorrectMeta,
+        ),
+      );
+    }
+    if (data.containsKey('user_feedback')) {
+      context.handle(
+        _userFeedbackMeta,
+        userFeedback.isAcceptableOrUnknown(
+          data['user_feedback']!,
+          _userFeedbackMeta,
+        ),
+      );
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    }
+    if (data.containsKey('product_name')) {
+      context.handle(
+        _productNameMeta,
+        productName.isAcceptableOrUnknown(
+          data['product_name']!,
+          _productNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('barcode')) {
+      context.handle(
+        _barcodeMeta,
+        barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('platform')) {
+      context.handle(
+        _platformMeta,
+        platform.isAcceptableOrUnknown(data['platform']!, _platformMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_platformMeta);
+    }
+    if (data.containsKey('app_version')) {
+      context.handle(
+        _appVersionMeta,
+        appVersion.isAcceptableOrUnknown(data['app_version']!, _appVersionMeta),
+      );
+    }
+    if (data.containsKey('image_saved')) {
+      context.handle(
+        _imageSavedMeta,
+        imageSaved.isAcceptableOrUnknown(data['image_saved']!, _imageSavedMeta),
+      );
+    }
+    if (data.containsKey('image_storage_path')) {
+      context.handle(
+        _imageStoragePathMeta,
+        imageStoragePath.isAcceptableOrUnknown(
+          data['image_storage_path']!,
+          _imageStoragePathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('image_crop_storage_path')) {
+      context.handle(
+        _imageCropStoragePathMeta,
+        imageCropStoragePath.isAcceptableOrUnknown(
+          data['image_crop_storage_path']!,
+          _imageCropStoragePathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('image_path_local')) {
+      context.handle(
+        _imagePathLocalMeta,
+        imagePathLocal.isAcceptableOrUnknown(
+          data['image_path_local']!,
+          _imagePathLocalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+        _lastSyncedAtMeta,
+        lastSyncedAt.isAcceptableOrUnknown(
+          data['last_synced_at']!,
+          _lastSyncedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  OcrScanReportRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OcrScanReportRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      rawOcrText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raw_ocr_text'],
+      )!,
+      parsedJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parsed_json'],
+      )!,
+      correctedJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}corrected_json'],
+      ),
+      detectedBasis: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}detected_basis'],
+      ),
+      parserWarnings: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parser_warnings'],
+      ),
+      parserConfidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}parser_confidence'],
+      ),
+      wasParserCorrect: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}was_parser_correct'],
+      ),
+      userFeedback: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_feedback'],
+      ),
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      ),
+      productName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_name'],
+      ),
+      barcode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}barcode'],
+      ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      platform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}platform'],
+      )!,
+      appVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}app_version'],
+      ),
+      imageSaved: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}image_saved'],
+      )!,
+      imageStoragePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_storage_path'],
+      ),
+      imageCropStoragePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_crop_storage_path'],
+      ),
+      imagePathLocal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_path_local'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_synced_at'],
+      ),
+    );
+  }
+
+  @override
+  $OcrScanReportRowsTable createAlias(String alias) {
+    return $OcrScanReportRowsTable(attachedDatabase, alias);
+  }
+}
+
+class OcrScanReportRow extends DataClass
+    implements Insertable<OcrScanReportRow> {
+  final String id;
+  final String rawOcrText;
+  final String parsedJson;
+  final String? correctedJson;
+  final String? detectedBasis;
+  final String? parserWarnings;
+  final double? parserConfidence;
+  final bool? wasParserCorrect;
+  final String? userFeedback;
+  final String? productId;
+  final String? productName;
+  final String? barcode;
+  final String source;
+  final String platform;
+  final String? appVersion;
+  final bool imageSaved;
+  final String? imageStoragePath;
+  final String? imageCropStoragePath;
+  final String? imagePathLocal;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? userId;
+  final String syncStatus;
+  final DateTime? lastSyncedAt;
+  const OcrScanReportRow({
+    required this.id,
+    required this.rawOcrText,
+    required this.parsedJson,
+    this.correctedJson,
+    this.detectedBasis,
+    this.parserWarnings,
+    this.parserConfidence,
+    this.wasParserCorrect,
+    this.userFeedback,
+    this.productId,
+    this.productName,
+    this.barcode,
+    required this.source,
+    required this.platform,
+    this.appVersion,
+    required this.imageSaved,
+    this.imageStoragePath,
+    this.imageCropStoragePath,
+    this.imagePathLocal,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    this.userId,
+    required this.syncStatus,
+    this.lastSyncedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['raw_ocr_text'] = Variable<String>(rawOcrText);
+    map['parsed_json'] = Variable<String>(parsedJson);
+    if (!nullToAbsent || correctedJson != null) {
+      map['corrected_json'] = Variable<String>(correctedJson);
+    }
+    if (!nullToAbsent || detectedBasis != null) {
+      map['detected_basis'] = Variable<String>(detectedBasis);
+    }
+    if (!nullToAbsent || parserWarnings != null) {
+      map['parser_warnings'] = Variable<String>(parserWarnings);
+    }
+    if (!nullToAbsent || parserConfidence != null) {
+      map['parser_confidence'] = Variable<double>(parserConfidence);
+    }
+    if (!nullToAbsent || wasParserCorrect != null) {
+      map['was_parser_correct'] = Variable<bool>(wasParserCorrect);
+    }
+    if (!nullToAbsent || userFeedback != null) {
+      map['user_feedback'] = Variable<String>(userFeedback);
+    }
+    if (!nullToAbsent || productId != null) {
+      map['product_id'] = Variable<String>(productId);
+    }
+    if (!nullToAbsent || productName != null) {
+      map['product_name'] = Variable<String>(productName);
+    }
+    if (!nullToAbsent || barcode != null) {
+      map['barcode'] = Variable<String>(barcode);
+    }
+    map['source'] = Variable<String>(source);
+    map['platform'] = Variable<String>(platform);
+    if (!nullToAbsent || appVersion != null) {
+      map['app_version'] = Variable<String>(appVersion);
+    }
+    map['image_saved'] = Variable<bool>(imageSaved);
+    if (!nullToAbsent || imageStoragePath != null) {
+      map['image_storage_path'] = Variable<String>(imageStoragePath);
+    }
+    if (!nullToAbsent || imageCropStoragePath != null) {
+      map['image_crop_storage_path'] = Variable<String>(imageCropStoragePath);
+    }
+    if (!nullToAbsent || imagePathLocal != null) {
+      map['image_path_local'] = Variable<String>(imagePathLocal);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    map['sync_status'] = Variable<String>(syncStatus);
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    return map;
+  }
+
+  OcrScanReportRowsCompanion toCompanion(bool nullToAbsent) {
+    return OcrScanReportRowsCompanion(
+      id: Value(id),
+      rawOcrText: Value(rawOcrText),
+      parsedJson: Value(parsedJson),
+      correctedJson: correctedJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(correctedJson),
+      detectedBasis: detectedBasis == null && nullToAbsent
+          ? const Value.absent()
+          : Value(detectedBasis),
+      parserWarnings: parserWarnings == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parserWarnings),
+      parserConfidence: parserConfidence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parserConfidence),
+      wasParserCorrect: wasParserCorrect == null && nullToAbsent
+          ? const Value.absent()
+          : Value(wasParserCorrect),
+      userFeedback: userFeedback == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userFeedback),
+      productId: productId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(productId),
+      productName: productName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(productName),
+      barcode: barcode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(barcode),
+      source: Value(source),
+      platform: Value(platform),
+      appVersion: appVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(appVersion),
+      imageSaved: Value(imageSaved),
+      imageStoragePath: imageStoragePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageStoragePath),
+      imageCropStoragePath: imageCropStoragePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageCropStoragePath),
+      imagePathLocal: imagePathLocal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imagePathLocal),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      syncStatus: Value(syncStatus),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
+    );
+  }
+
+  factory OcrScanReportRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OcrScanReportRow(
+      id: serializer.fromJson<String>(json['id']),
+      rawOcrText: serializer.fromJson<String>(json['rawOcrText']),
+      parsedJson: serializer.fromJson<String>(json['parsedJson']),
+      correctedJson: serializer.fromJson<String?>(json['correctedJson']),
+      detectedBasis: serializer.fromJson<String?>(json['detectedBasis']),
+      parserWarnings: serializer.fromJson<String?>(json['parserWarnings']),
+      parserConfidence: serializer.fromJson<double?>(json['parserConfidence']),
+      wasParserCorrect: serializer.fromJson<bool?>(json['wasParserCorrect']),
+      userFeedback: serializer.fromJson<String?>(json['userFeedback']),
+      productId: serializer.fromJson<String?>(json['productId']),
+      productName: serializer.fromJson<String?>(json['productName']),
+      barcode: serializer.fromJson<String?>(json['barcode']),
+      source: serializer.fromJson<String>(json['source']),
+      platform: serializer.fromJson<String>(json['platform']),
+      appVersion: serializer.fromJson<String?>(json['appVersion']),
+      imageSaved: serializer.fromJson<bool>(json['imageSaved']),
+      imageStoragePath: serializer.fromJson<String?>(json['imageStoragePath']),
+      imageCropStoragePath: serializer.fromJson<String?>(
+        json['imageCropStoragePath'],
+      ),
+      imagePathLocal: serializer.fromJson<String?>(json['imagePathLocal']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'rawOcrText': serializer.toJson<String>(rawOcrText),
+      'parsedJson': serializer.toJson<String>(parsedJson),
+      'correctedJson': serializer.toJson<String?>(correctedJson),
+      'detectedBasis': serializer.toJson<String?>(detectedBasis),
+      'parserWarnings': serializer.toJson<String?>(parserWarnings),
+      'parserConfidence': serializer.toJson<double?>(parserConfidence),
+      'wasParserCorrect': serializer.toJson<bool?>(wasParserCorrect),
+      'userFeedback': serializer.toJson<String?>(userFeedback),
+      'productId': serializer.toJson<String?>(productId),
+      'productName': serializer.toJson<String?>(productName),
+      'barcode': serializer.toJson<String?>(barcode),
+      'source': serializer.toJson<String>(source),
+      'platform': serializer.toJson<String>(platform),
+      'appVersion': serializer.toJson<String?>(appVersion),
+      'imageSaved': serializer.toJson<bool>(imageSaved),
+      'imageStoragePath': serializer.toJson<String?>(imageStoragePath),
+      'imageCropStoragePath': serializer.toJson<String?>(imageCropStoragePath),
+      'imagePathLocal': serializer.toJson<String?>(imagePathLocal),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'userId': serializer.toJson<String?>(userId),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+    };
+  }
+
+  OcrScanReportRow copyWith({
+    String? id,
+    String? rawOcrText,
+    String? parsedJson,
+    Value<String?> correctedJson = const Value.absent(),
+    Value<String?> detectedBasis = const Value.absent(),
+    Value<String?> parserWarnings = const Value.absent(),
+    Value<double?> parserConfidence = const Value.absent(),
+    Value<bool?> wasParserCorrect = const Value.absent(),
+    Value<String?> userFeedback = const Value.absent(),
+    Value<String?> productId = const Value.absent(),
+    Value<String?> productName = const Value.absent(),
+    Value<String?> barcode = const Value.absent(),
+    String? source,
+    String? platform,
+    Value<String?> appVersion = const Value.absent(),
+    bool? imageSaved,
+    Value<String?> imageStoragePath = const Value.absent(),
+    Value<String?> imageCropStoragePath = const Value.absent(),
+    Value<String?> imagePathLocal = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> userId = const Value.absent(),
+    String? syncStatus,
+    Value<DateTime?> lastSyncedAt = const Value.absent(),
+  }) => OcrScanReportRow(
+    id: id ?? this.id,
+    rawOcrText: rawOcrText ?? this.rawOcrText,
+    parsedJson: parsedJson ?? this.parsedJson,
+    correctedJson: correctedJson.present
+        ? correctedJson.value
+        : this.correctedJson,
+    detectedBasis: detectedBasis.present
+        ? detectedBasis.value
+        : this.detectedBasis,
+    parserWarnings: parserWarnings.present
+        ? parserWarnings.value
+        : this.parserWarnings,
+    parserConfidence: parserConfidence.present
+        ? parserConfidence.value
+        : this.parserConfidence,
+    wasParserCorrect: wasParserCorrect.present
+        ? wasParserCorrect.value
+        : this.wasParserCorrect,
+    userFeedback: userFeedback.present ? userFeedback.value : this.userFeedback,
+    productId: productId.present ? productId.value : this.productId,
+    productName: productName.present ? productName.value : this.productName,
+    barcode: barcode.present ? barcode.value : this.barcode,
+    source: source ?? this.source,
+    platform: platform ?? this.platform,
+    appVersion: appVersion.present ? appVersion.value : this.appVersion,
+    imageSaved: imageSaved ?? this.imageSaved,
+    imageStoragePath: imageStoragePath.present
+        ? imageStoragePath.value
+        : this.imageStoragePath,
+    imageCropStoragePath: imageCropStoragePath.present
+        ? imageCropStoragePath.value
+        : this.imageCropStoragePath,
+    imagePathLocal: imagePathLocal.present
+        ? imagePathLocal.value
+        : this.imagePathLocal,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    userId: userId.present ? userId.value : this.userId,
+    syncStatus: syncStatus ?? this.syncStatus,
+    lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+  );
+  OcrScanReportRow copyWithCompanion(OcrScanReportRowsCompanion data) {
+    return OcrScanReportRow(
+      id: data.id.present ? data.id.value : this.id,
+      rawOcrText: data.rawOcrText.present
+          ? data.rawOcrText.value
+          : this.rawOcrText,
+      parsedJson: data.parsedJson.present
+          ? data.parsedJson.value
+          : this.parsedJson,
+      correctedJson: data.correctedJson.present
+          ? data.correctedJson.value
+          : this.correctedJson,
+      detectedBasis: data.detectedBasis.present
+          ? data.detectedBasis.value
+          : this.detectedBasis,
+      parserWarnings: data.parserWarnings.present
+          ? data.parserWarnings.value
+          : this.parserWarnings,
+      parserConfidence: data.parserConfidence.present
+          ? data.parserConfidence.value
+          : this.parserConfidence,
+      wasParserCorrect: data.wasParserCorrect.present
+          ? data.wasParserCorrect.value
+          : this.wasParserCorrect,
+      userFeedback: data.userFeedback.present
+          ? data.userFeedback.value
+          : this.userFeedback,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      productName: data.productName.present
+          ? data.productName.value
+          : this.productName,
+      barcode: data.barcode.present ? data.barcode.value : this.barcode,
+      source: data.source.present ? data.source.value : this.source,
+      platform: data.platform.present ? data.platform.value : this.platform,
+      appVersion: data.appVersion.present
+          ? data.appVersion.value
+          : this.appVersion,
+      imageSaved: data.imageSaved.present
+          ? data.imageSaved.value
+          : this.imageSaved,
+      imageStoragePath: data.imageStoragePath.present
+          ? data.imageStoragePath.value
+          : this.imageStoragePath,
+      imageCropStoragePath: data.imageCropStoragePath.present
+          ? data.imageCropStoragePath.value
+          : this.imageCropStoragePath,
+      imagePathLocal: data.imagePathLocal.present
+          ? data.imagePathLocal.value
+          : this.imagePathLocal,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OcrScanReportRow(')
+          ..write('id: $id, ')
+          ..write('rawOcrText: $rawOcrText, ')
+          ..write('parsedJson: $parsedJson, ')
+          ..write('correctedJson: $correctedJson, ')
+          ..write('detectedBasis: $detectedBasis, ')
+          ..write('parserWarnings: $parserWarnings, ')
+          ..write('parserConfidence: $parserConfidence, ')
+          ..write('wasParserCorrect: $wasParserCorrect, ')
+          ..write('userFeedback: $userFeedback, ')
+          ..write('productId: $productId, ')
+          ..write('productName: $productName, ')
+          ..write('barcode: $barcode, ')
+          ..write('source: $source, ')
+          ..write('platform: $platform, ')
+          ..write('appVersion: $appVersion, ')
+          ..write('imageSaved: $imageSaved, ')
+          ..write('imageStoragePath: $imageStoragePath, ')
+          ..write('imageCropStoragePath: $imageCropStoragePath, ')
+          ..write('imagePathLocal: $imagePathLocal, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('userId: $userId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    rawOcrText,
+    parsedJson,
+    correctedJson,
+    detectedBasis,
+    parserWarnings,
+    parserConfidence,
+    wasParserCorrect,
+    userFeedback,
+    productId,
+    productName,
+    barcode,
+    source,
+    platform,
+    appVersion,
+    imageSaved,
+    imageStoragePath,
+    imageCropStoragePath,
+    imagePathLocal,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    userId,
+    syncStatus,
+    lastSyncedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OcrScanReportRow &&
+          other.id == this.id &&
+          other.rawOcrText == this.rawOcrText &&
+          other.parsedJson == this.parsedJson &&
+          other.correctedJson == this.correctedJson &&
+          other.detectedBasis == this.detectedBasis &&
+          other.parserWarnings == this.parserWarnings &&
+          other.parserConfidence == this.parserConfidence &&
+          other.wasParserCorrect == this.wasParserCorrect &&
+          other.userFeedback == this.userFeedback &&
+          other.productId == this.productId &&
+          other.productName == this.productName &&
+          other.barcode == this.barcode &&
+          other.source == this.source &&
+          other.platform == this.platform &&
+          other.appVersion == this.appVersion &&
+          other.imageSaved == this.imageSaved &&
+          other.imageStoragePath == this.imageStoragePath &&
+          other.imageCropStoragePath == this.imageCropStoragePath &&
+          other.imagePathLocal == this.imagePathLocal &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.userId == this.userId &&
+          other.syncStatus == this.syncStatus &&
+          other.lastSyncedAt == this.lastSyncedAt);
+}
+
+class OcrScanReportRowsCompanion extends UpdateCompanion<OcrScanReportRow> {
+  final Value<String> id;
+  final Value<String> rawOcrText;
+  final Value<String> parsedJson;
+  final Value<String?> correctedJson;
+  final Value<String?> detectedBasis;
+  final Value<String?> parserWarnings;
+  final Value<double?> parserConfidence;
+  final Value<bool?> wasParserCorrect;
+  final Value<String?> userFeedback;
+  final Value<String?> productId;
+  final Value<String?> productName;
+  final Value<String?> barcode;
+  final Value<String> source;
+  final Value<String> platform;
+  final Value<String?> appVersion;
+  final Value<bool> imageSaved;
+  final Value<String?> imageStoragePath;
+  final Value<String?> imageCropStoragePath;
+  final Value<String?> imagePathLocal;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> userId;
+  final Value<String> syncStatus;
+  final Value<DateTime?> lastSyncedAt;
+  final Value<int> rowid;
+  const OcrScanReportRowsCompanion({
+    this.id = const Value.absent(),
+    this.rawOcrText = const Value.absent(),
+    this.parsedJson = const Value.absent(),
+    this.correctedJson = const Value.absent(),
+    this.detectedBasis = const Value.absent(),
+    this.parserWarnings = const Value.absent(),
+    this.parserConfidence = const Value.absent(),
+    this.wasParserCorrect = const Value.absent(),
+    this.userFeedback = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.productName = const Value.absent(),
+    this.barcode = const Value.absent(),
+    this.source = const Value.absent(),
+    this.platform = const Value.absent(),
+    this.appVersion = const Value.absent(),
+    this.imageSaved = const Value.absent(),
+    this.imageStoragePath = const Value.absent(),
+    this.imageCropStoragePath = const Value.absent(),
+    this.imagePathLocal = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OcrScanReportRowsCompanion.insert({
+    required String id,
+    required String rawOcrText,
+    required String parsedJson,
+    this.correctedJson = const Value.absent(),
+    this.detectedBasis = const Value.absent(),
+    this.parserWarnings = const Value.absent(),
+    this.parserConfidence = const Value.absent(),
+    this.wasParserCorrect = const Value.absent(),
+    this.userFeedback = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.productName = const Value.absent(),
+    this.barcode = const Value.absent(),
+    this.source = const Value.absent(),
+    required String platform,
+    this.appVersion = const Value.absent(),
+    this.imageSaved = const Value.absent(),
+    this.imageStoragePath = const Value.absent(),
+    this.imageCropStoragePath = const Value.absent(),
+    this.imagePathLocal = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       rawOcrText = Value(rawOcrText),
+       parsedJson = Value(parsedJson),
+       platform = Value(platform),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<OcrScanReportRow> custom({
+    Expression<String>? id,
+    Expression<String>? rawOcrText,
+    Expression<String>? parsedJson,
+    Expression<String>? correctedJson,
+    Expression<String>? detectedBasis,
+    Expression<String>? parserWarnings,
+    Expression<double>? parserConfidence,
+    Expression<bool>? wasParserCorrect,
+    Expression<String>? userFeedback,
+    Expression<String>? productId,
+    Expression<String>? productName,
+    Expression<String>? barcode,
+    Expression<String>? source,
+    Expression<String>? platform,
+    Expression<String>? appVersion,
+    Expression<bool>? imageSaved,
+    Expression<String>? imageStoragePath,
+    Expression<String>? imageCropStoragePath,
+    Expression<String>? imagePathLocal,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? userId,
+    Expression<String>? syncStatus,
+    Expression<DateTime>? lastSyncedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (rawOcrText != null) 'raw_ocr_text': rawOcrText,
+      if (parsedJson != null) 'parsed_json': parsedJson,
+      if (correctedJson != null) 'corrected_json': correctedJson,
+      if (detectedBasis != null) 'detected_basis': detectedBasis,
+      if (parserWarnings != null) 'parser_warnings': parserWarnings,
+      if (parserConfidence != null) 'parser_confidence': parserConfidence,
+      if (wasParserCorrect != null) 'was_parser_correct': wasParserCorrect,
+      if (userFeedback != null) 'user_feedback': userFeedback,
+      if (productId != null) 'product_id': productId,
+      if (productName != null) 'product_name': productName,
+      if (barcode != null) 'barcode': barcode,
+      if (source != null) 'source': source,
+      if (platform != null) 'platform': platform,
+      if (appVersion != null) 'app_version': appVersion,
+      if (imageSaved != null) 'image_saved': imageSaved,
+      if (imageStoragePath != null) 'image_storage_path': imageStoragePath,
+      if (imageCropStoragePath != null)
+        'image_crop_storage_path': imageCropStoragePath,
+      if (imagePathLocal != null) 'image_path_local': imagePathLocal,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (userId != null) 'user_id': userId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OcrScanReportRowsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? rawOcrText,
+    Value<String>? parsedJson,
+    Value<String?>? correctedJson,
+    Value<String?>? detectedBasis,
+    Value<String?>? parserWarnings,
+    Value<double?>? parserConfidence,
+    Value<bool?>? wasParserCorrect,
+    Value<String?>? userFeedback,
+    Value<String?>? productId,
+    Value<String?>? productName,
+    Value<String?>? barcode,
+    Value<String>? source,
+    Value<String>? platform,
+    Value<String?>? appVersion,
+    Value<bool>? imageSaved,
+    Value<String?>? imageStoragePath,
+    Value<String?>? imageCropStoragePath,
+    Value<String?>? imagePathLocal,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? userId,
+    Value<String>? syncStatus,
+    Value<DateTime?>? lastSyncedAt,
+    Value<int>? rowid,
+  }) {
+    return OcrScanReportRowsCompanion(
+      id: id ?? this.id,
+      rawOcrText: rawOcrText ?? this.rawOcrText,
+      parsedJson: parsedJson ?? this.parsedJson,
+      correctedJson: correctedJson ?? this.correctedJson,
+      detectedBasis: detectedBasis ?? this.detectedBasis,
+      parserWarnings: parserWarnings ?? this.parserWarnings,
+      parserConfidence: parserConfidence ?? this.parserConfidence,
+      wasParserCorrect: wasParserCorrect ?? this.wasParserCorrect,
+      userFeedback: userFeedback ?? this.userFeedback,
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
+      barcode: barcode ?? this.barcode,
+      source: source ?? this.source,
+      platform: platform ?? this.platform,
+      appVersion: appVersion ?? this.appVersion,
+      imageSaved: imageSaved ?? this.imageSaved,
+      imageStoragePath: imageStoragePath ?? this.imageStoragePath,
+      imageCropStoragePath: imageCropStoragePath ?? this.imageCropStoragePath,
+      imagePathLocal: imagePathLocal ?? this.imagePathLocal,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      userId: userId ?? this.userId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (rawOcrText.present) {
+      map['raw_ocr_text'] = Variable<String>(rawOcrText.value);
+    }
+    if (parsedJson.present) {
+      map['parsed_json'] = Variable<String>(parsedJson.value);
+    }
+    if (correctedJson.present) {
+      map['corrected_json'] = Variable<String>(correctedJson.value);
+    }
+    if (detectedBasis.present) {
+      map['detected_basis'] = Variable<String>(detectedBasis.value);
+    }
+    if (parserWarnings.present) {
+      map['parser_warnings'] = Variable<String>(parserWarnings.value);
+    }
+    if (parserConfidence.present) {
+      map['parser_confidence'] = Variable<double>(parserConfidence.value);
+    }
+    if (wasParserCorrect.present) {
+      map['was_parser_correct'] = Variable<bool>(wasParserCorrect.value);
+    }
+    if (userFeedback.present) {
+      map['user_feedback'] = Variable<String>(userFeedback.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (productName.present) {
+      map['product_name'] = Variable<String>(productName.value);
+    }
+    if (barcode.present) {
+      map['barcode'] = Variable<String>(barcode.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (platform.present) {
+      map['platform'] = Variable<String>(platform.value);
+    }
+    if (appVersion.present) {
+      map['app_version'] = Variable<String>(appVersion.value);
+    }
+    if (imageSaved.present) {
+      map['image_saved'] = Variable<bool>(imageSaved.value);
+    }
+    if (imageStoragePath.present) {
+      map['image_storage_path'] = Variable<String>(imageStoragePath.value);
+    }
+    if (imageCropStoragePath.present) {
+      map['image_crop_storage_path'] = Variable<String>(
+        imageCropStoragePath.value,
+      );
+    }
+    if (imagePathLocal.present) {
+      map['image_path_local'] = Variable<String>(imagePathLocal.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OcrScanReportRowsCompanion(')
+          ..write('id: $id, ')
+          ..write('rawOcrText: $rawOcrText, ')
+          ..write('parsedJson: $parsedJson, ')
+          ..write('correctedJson: $correctedJson, ')
+          ..write('detectedBasis: $detectedBasis, ')
+          ..write('parserWarnings: $parserWarnings, ')
+          ..write('parserConfidence: $parserConfidence, ')
+          ..write('wasParserCorrect: $wasParserCorrect, ')
+          ..write('userFeedback: $userFeedback, ')
+          ..write('productId: $productId, ')
+          ..write('productName: $productName, ')
+          ..write('barcode: $barcode, ')
+          ..write('source: $source, ')
+          ..write('platform: $platform, ')
+          ..write('appVersion: $appVersion, ')
+          ..write('imageSaved: $imageSaved, ')
+          ..write('imageStoragePath: $imageStoragePath, ')
+          ..write('imageCropStoragePath: $imageCropStoragePath, ')
+          ..write('imagePathLocal: $imagePathLocal, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('userId: $userId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AppSettingRowsTable extends AppSettingRows
+    with TableInfo<$AppSettingRowsTable, AppSettingRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppSettingRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, value, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AppSettingRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  AppSettingRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppSettingRow(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AppSettingRowsTable createAlias(String alias) {
+    return $AppSettingRowsTable(attachedDatabase, alias);
+  }
+}
+
+class AppSettingRow extends DataClass implements Insertable<AppSettingRow> {
+  final String key;
+  final String value;
+  final DateTime updatedAt;
+  const AppSettingRow({
+    required this.key,
+    required this.value,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  AppSettingRowsCompanion toCompanion(bool nullToAbsent) {
+    return AppSettingRowsCompanion(
+      key: Value(key),
+      value: Value(value),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory AppSettingRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppSettingRow(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  AppSettingRow copyWith({String? key, String? value, DateTime? updatedAt}) =>
+      AppSettingRow(
+        key: key ?? this.key,
+        value: value ?? this.value,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  AppSettingRow copyWithCompanion(AppSettingRowsCompanion data) {
+    return AppSettingRow(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingRow(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppSettingRow &&
+          other.key == this.key &&
+          other.value == this.value &&
+          other.updatedAt == this.updatedAt);
+}
+
+class AppSettingRowsCompanion extends UpdateCompanion<AppSettingRow> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const AppSettingRowsCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AppSettingRowsCompanion.insert({
+    required String key,
+    required String value,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       value = Value(value),
+       updatedAt = Value(updatedAt);
+  static Insertable<AppSettingRow> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AppSettingRowsCompanion copyWith({
+    Value<String>? key,
+    Value<String>? value,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return AppSettingRowsCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingRowsCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ProductRowsTable productRows = $ProductRowsTable(this);
   late final $LogItemRowsTable logItemRows = $LogItemRowsTable(this);
+  late final $OcrScanReportRowsTable ocrScanReportRows =
+      $OcrScanReportRowsTable(this);
+  late final $AppSettingRowsTable appSettingRows = $AppSettingRowsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2106,6 +3801,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     productRows,
     logItemRows,
+    ocrScanReportRows,
+    appSettingRows,
   ];
 }
 
@@ -3048,6 +4745,795 @@ typedef $$LogItemRowsTableProcessedTableManager =
       LogItemRow,
       PrefetchHooks Function()
     >;
+typedef $$OcrScanReportRowsTableCreateCompanionBuilder =
+    OcrScanReportRowsCompanion Function({
+      required String id,
+      required String rawOcrText,
+      required String parsedJson,
+      Value<String?> correctedJson,
+      Value<String?> detectedBasis,
+      Value<String?> parserWarnings,
+      Value<double?> parserConfidence,
+      Value<bool?> wasParserCorrect,
+      Value<String?> userFeedback,
+      Value<String?> productId,
+      Value<String?> productName,
+      Value<String?> barcode,
+      Value<String> source,
+      required String platform,
+      Value<String?> appVersion,
+      Value<bool> imageSaved,
+      Value<String?> imageStoragePath,
+      Value<String?> imageCropStoragePath,
+      Value<String?> imagePathLocal,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> userId,
+      Value<String> syncStatus,
+      Value<DateTime?> lastSyncedAt,
+      Value<int> rowid,
+    });
+typedef $$OcrScanReportRowsTableUpdateCompanionBuilder =
+    OcrScanReportRowsCompanion Function({
+      Value<String> id,
+      Value<String> rawOcrText,
+      Value<String> parsedJson,
+      Value<String?> correctedJson,
+      Value<String?> detectedBasis,
+      Value<String?> parserWarnings,
+      Value<double?> parserConfidence,
+      Value<bool?> wasParserCorrect,
+      Value<String?> userFeedback,
+      Value<String?> productId,
+      Value<String?> productName,
+      Value<String?> barcode,
+      Value<String> source,
+      Value<String> platform,
+      Value<String?> appVersion,
+      Value<bool> imageSaved,
+      Value<String?> imageStoragePath,
+      Value<String?> imageCropStoragePath,
+      Value<String?> imagePathLocal,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> userId,
+      Value<String> syncStatus,
+      Value<DateTime?> lastSyncedAt,
+      Value<int> rowid,
+    });
+
+class $$OcrScanReportRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $OcrScanReportRowsTable> {
+  $$OcrScanReportRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rawOcrText => $composableBuilder(
+    column: $table.rawOcrText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get parsedJson => $composableBuilder(
+    column: $table.parsedJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get correctedJson => $composableBuilder(
+    column: $table.correctedJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get detectedBasis => $composableBuilder(
+    column: $table.detectedBasis,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get parserWarnings => $composableBuilder(
+    column: $table.parserWarnings,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get parserConfidence => $composableBuilder(
+    column: $table.parserConfidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get wasParserCorrect => $composableBuilder(
+    column: $table.wasParserCorrect,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userFeedback => $composableBuilder(
+    column: $table.userFeedback,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productName => $composableBuilder(
+    column: $table.productName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get barcode => $composableBuilder(
+    column: $table.barcode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get platform => $composableBuilder(
+    column: $table.platform,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get imageSaved => $composableBuilder(
+    column: $table.imageSaved,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageStoragePath => $composableBuilder(
+    column: $table.imageStoragePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageCropStoragePath => $composableBuilder(
+    column: $table.imageCropStoragePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imagePathLocal => $composableBuilder(
+    column: $table.imagePathLocal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OcrScanReportRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OcrScanReportRowsTable> {
+  $$OcrScanReportRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rawOcrText => $composableBuilder(
+    column: $table.rawOcrText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get parsedJson => $composableBuilder(
+    column: $table.parsedJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get correctedJson => $composableBuilder(
+    column: $table.correctedJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get detectedBasis => $composableBuilder(
+    column: $table.detectedBasis,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get parserWarnings => $composableBuilder(
+    column: $table.parserWarnings,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get parserConfidence => $composableBuilder(
+    column: $table.parserConfidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get wasParserCorrect => $composableBuilder(
+    column: $table.wasParserCorrect,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userFeedback => $composableBuilder(
+    column: $table.userFeedback,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productName => $composableBuilder(
+    column: $table.productName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get barcode => $composableBuilder(
+    column: $table.barcode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get platform => $composableBuilder(
+    column: $table.platform,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get imageSaved => $composableBuilder(
+    column: $table.imageSaved,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imageStoragePath => $composableBuilder(
+    column: $table.imageStoragePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imageCropStoragePath => $composableBuilder(
+    column: $table.imageCropStoragePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imagePathLocal => $composableBuilder(
+    column: $table.imagePathLocal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OcrScanReportRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OcrScanReportRowsTable> {
+  $$OcrScanReportRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get rawOcrText => $composableBuilder(
+    column: $table.rawOcrText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get parsedJson => $composableBuilder(
+    column: $table.parsedJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get correctedJson => $composableBuilder(
+    column: $table.correctedJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get detectedBasis => $composableBuilder(
+    column: $table.detectedBasis,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get parserWarnings => $composableBuilder(
+    column: $table.parserWarnings,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get parserConfidence => $composableBuilder(
+    column: $table.parserConfidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get wasParserCorrect => $composableBuilder(
+    column: $table.wasParserCorrect,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get userFeedback => $composableBuilder(
+    column: $table.userFeedback,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<String> get productName => $composableBuilder(
+    column: $table.productName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get barcode =>
+      $composableBuilder(column: $table.barcode, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get platform =>
+      $composableBuilder(column: $table.platform, builder: (column) => column);
+
+  GeneratedColumn<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get imageSaved => $composableBuilder(
+    column: $table.imageSaved,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get imageStoragePath => $composableBuilder(
+    column: $table.imageStoragePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get imageCropStoragePath => $composableBuilder(
+    column: $table.imageCropStoragePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get imagePathLocal => $composableBuilder(
+    column: $table.imagePathLocal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$OcrScanReportRowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OcrScanReportRowsTable,
+          OcrScanReportRow,
+          $$OcrScanReportRowsTableFilterComposer,
+          $$OcrScanReportRowsTableOrderingComposer,
+          $$OcrScanReportRowsTableAnnotationComposer,
+          $$OcrScanReportRowsTableCreateCompanionBuilder,
+          $$OcrScanReportRowsTableUpdateCompanionBuilder,
+          (
+            OcrScanReportRow,
+            BaseReferences<
+              _$AppDatabase,
+              $OcrScanReportRowsTable,
+              OcrScanReportRow
+            >,
+          ),
+          OcrScanReportRow,
+          PrefetchHooks Function()
+        > {
+  $$OcrScanReportRowsTableTableManager(
+    _$AppDatabase db,
+    $OcrScanReportRowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OcrScanReportRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OcrScanReportRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OcrScanReportRowsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> rawOcrText = const Value.absent(),
+                Value<String> parsedJson = const Value.absent(),
+                Value<String?> correctedJson = const Value.absent(),
+                Value<String?> detectedBasis = const Value.absent(),
+                Value<String?> parserWarnings = const Value.absent(),
+                Value<double?> parserConfidence = const Value.absent(),
+                Value<bool?> wasParserCorrect = const Value.absent(),
+                Value<String?> userFeedback = const Value.absent(),
+                Value<String?> productId = const Value.absent(),
+                Value<String?> productName = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String> platform = const Value.absent(),
+                Value<String?> appVersion = const Value.absent(),
+                Value<bool> imageSaved = const Value.absent(),
+                Value<String?> imageStoragePath = const Value.absent(),
+                Value<String?> imageCropStoragePath = const Value.absent(),
+                Value<String?> imagePathLocal = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OcrScanReportRowsCompanion(
+                id: id,
+                rawOcrText: rawOcrText,
+                parsedJson: parsedJson,
+                correctedJson: correctedJson,
+                detectedBasis: detectedBasis,
+                parserWarnings: parserWarnings,
+                parserConfidence: parserConfidence,
+                wasParserCorrect: wasParserCorrect,
+                userFeedback: userFeedback,
+                productId: productId,
+                productName: productName,
+                barcode: barcode,
+                source: source,
+                platform: platform,
+                appVersion: appVersion,
+                imageSaved: imageSaved,
+                imageStoragePath: imageStoragePath,
+                imageCropStoragePath: imageCropStoragePath,
+                imagePathLocal: imagePathLocal,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                userId: userId,
+                syncStatus: syncStatus,
+                lastSyncedAt: lastSyncedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String rawOcrText,
+                required String parsedJson,
+                Value<String?> correctedJson = const Value.absent(),
+                Value<String?> detectedBasis = const Value.absent(),
+                Value<String?> parserWarnings = const Value.absent(),
+                Value<double?> parserConfidence = const Value.absent(),
+                Value<bool?> wasParserCorrect = const Value.absent(),
+                Value<String?> userFeedback = const Value.absent(),
+                Value<String?> productId = const Value.absent(),
+                Value<String?> productName = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                required String platform,
+                Value<String?> appVersion = const Value.absent(),
+                Value<bool> imageSaved = const Value.absent(),
+                Value<String?> imageStoragePath = const Value.absent(),
+                Value<String?> imageCropStoragePath = const Value.absent(),
+                Value<String?> imagePathLocal = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OcrScanReportRowsCompanion.insert(
+                id: id,
+                rawOcrText: rawOcrText,
+                parsedJson: parsedJson,
+                correctedJson: correctedJson,
+                detectedBasis: detectedBasis,
+                parserWarnings: parserWarnings,
+                parserConfidence: parserConfidence,
+                wasParserCorrect: wasParserCorrect,
+                userFeedback: userFeedback,
+                productId: productId,
+                productName: productName,
+                barcode: barcode,
+                source: source,
+                platform: platform,
+                appVersion: appVersion,
+                imageSaved: imageSaved,
+                imageStoragePath: imageStoragePath,
+                imageCropStoragePath: imageCropStoragePath,
+                imagePathLocal: imagePathLocal,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                userId: userId,
+                syncStatus: syncStatus,
+                lastSyncedAt: lastSyncedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OcrScanReportRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OcrScanReportRowsTable,
+      OcrScanReportRow,
+      $$OcrScanReportRowsTableFilterComposer,
+      $$OcrScanReportRowsTableOrderingComposer,
+      $$OcrScanReportRowsTableAnnotationComposer,
+      $$OcrScanReportRowsTableCreateCompanionBuilder,
+      $$OcrScanReportRowsTableUpdateCompanionBuilder,
+      (
+        OcrScanReportRow,
+        BaseReferences<
+          _$AppDatabase,
+          $OcrScanReportRowsTable,
+          OcrScanReportRow
+        >,
+      ),
+      OcrScanReportRow,
+      PrefetchHooks Function()
+    >;
+typedef $$AppSettingRowsTableCreateCompanionBuilder =
+    AppSettingRowsCompanion Function({
+      required String key,
+      required String value,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$AppSettingRowsTableUpdateCompanionBuilder =
+    AppSettingRowsCompanion Function({
+      Value<String> key,
+      Value<String> value,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$AppSettingRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $AppSettingRowsTable> {
+  $$AppSettingRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AppSettingRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppSettingRowsTable> {
+  $$AppSettingRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AppSettingRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppSettingRowsTable> {
+  $$AppSettingRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$AppSettingRowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AppSettingRowsTable,
+          AppSettingRow,
+          $$AppSettingRowsTableFilterComposer,
+          $$AppSettingRowsTableOrderingComposer,
+          $$AppSettingRowsTableAnnotationComposer,
+          $$AppSettingRowsTableCreateCompanionBuilder,
+          $$AppSettingRowsTableUpdateCompanionBuilder,
+          (
+            AppSettingRow,
+            BaseReferences<_$AppDatabase, $AppSettingRowsTable, AppSettingRow>,
+          ),
+          AppSettingRow,
+          PrefetchHooks Function()
+        > {
+  $$AppSettingRowsTableTableManager(
+    _$AppDatabase db,
+    $AppSettingRowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppSettingRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppSettingRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppSettingRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingRowsCompanion(
+                key: key,
+                value: value,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String value,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingRowsCompanion.insert(
+                key: key,
+                value: value,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AppSettingRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AppSettingRowsTable,
+      AppSettingRow,
+      $$AppSettingRowsTableFilterComposer,
+      $$AppSettingRowsTableOrderingComposer,
+      $$AppSettingRowsTableAnnotationComposer,
+      $$AppSettingRowsTableCreateCompanionBuilder,
+      $$AppSettingRowsTableUpdateCompanionBuilder,
+      (
+        AppSettingRow,
+        BaseReferences<_$AppDatabase, $AppSettingRowsTable, AppSettingRow>,
+      ),
+      AppSettingRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3056,4 +5542,8 @@ class $AppDatabaseManager {
       $$ProductRowsTableTableManager(_db, _db.productRows);
   $$LogItemRowsTableTableManager get logItemRows =>
       $$LogItemRowsTableTableManager(_db, _db.logItemRows);
+  $$OcrScanReportRowsTableTableManager get ocrScanReportRows =>
+      $$OcrScanReportRowsTableTableManager(_db, _db.ocrScanReportRows);
+  $$AppSettingRowsTableTableManager get appSettingRows =>
+      $$AppSettingRowsTableTableManager(_db, _db.appSettingRows);
 }

@@ -375,10 +375,13 @@ class _FakeSyncRemoteDataSource implements SyncRemoteDataSource {
   bool failUpserts = false;
   int fetchProductsCount = 0;
   int fetchLogItemsCount = 0;
+  int fetchOcrReportsCount = 0;
   int productUpsertCount = 0;
   int logItemUpsertCount = 0;
+  int ocrReportUpsertCount = 0;
   final products = <String, Map<String, dynamic>>{};
   final logItems = <String, Map<String, dynamic>>{};
+  final ocrScanReports = <String, Map<String, dynamic>>{};
 
   @override
   Future<List<Map<String, dynamic>>> fetchProducts(String userId) async {
@@ -399,6 +402,15 @@ class _FakeSyncRemoteDataSource implements SyncRemoteDataSource {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> fetchOcrScanReports(String userId) async {
+    fetchOcrReportsCount += 1;
+    return [
+      for (final row in ocrScanReports.values)
+        if (row['user_id'] == userId) Map<String, dynamic>.from(row),
+    ];
+  }
+
+  @override
   Future<void> upsertProduct(Map<String, dynamic> row) async {
     if (failUpserts) {
       throw const SocketException('offline');
@@ -414,5 +426,25 @@ class _FakeSyncRemoteDataSource implements SyncRemoteDataSource {
     }
     logItemUpsertCount += 1;
     logItems[row['id'] as String] = Map<String, dynamic>.from(row);
+  }
+
+  @override
+  Future<void> upsertOcrScanReport(Map<String, dynamic> row) async {
+    if (failUpserts) {
+      throw const SocketException('offline');
+    }
+    ocrReportUpsertCount += 1;
+    ocrScanReports[row['id'] as String] = Map<String, dynamic>.from(row);
+  }
+
+  @override
+  Future<OcrReportImageUploadResult?> uploadOcrReportImage({
+    required String userId,
+    required String reportId,
+    required String imagePathLocal,
+  }) async {
+    return OcrReportImageUploadResult(
+      storagePath: '$userId/$reportId/original.jpg',
+    );
   }
 }

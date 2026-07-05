@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -68,6 +69,7 @@ class SyncService extends ChangeNotifier {
   DateTime? _lastSuccessfulSyncAt;
   int _pendingProductCount = 0;
   int _pendingLogItemCount = 0;
+  int _pendingOcrReportCount = 0;
   bool _disposed = false;
   Timer? _autoSyncTimer;
   Timer? _remoteSyncTimer;
@@ -88,7 +90,10 @@ class SyncService extends ChangeNotifier {
 
   int get pendingLogItemCount => _pendingLogItemCount;
 
-  int get pendingCount => _pendingProductCount + _pendingLogItemCount;
+  int get pendingOcrReportCount => _pendingOcrReportCount;
+
+  int get pendingCount =>
+      _pendingProductCount + _pendingLogItemCount + _pendingOcrReportCount;
 
   bool get isSyncing => _status == SyncRunStatus.syncing;
 
@@ -124,6 +129,9 @@ class SyncService extends ChangeNotifier {
     final currentUserId = remote.currentUserId;
     final productRows = await database.select(database.productRows).get();
     final logItemRows = await database.select(database.logItemRows).get();
+    final ocrReportRows = await database
+        .select(database.ocrScanReportRows)
+        .get();
 
     _pendingProductCount = productRows
         .where(
@@ -137,6 +145,13 @@ class SyncService extends ChangeNotifier {
           (row) =>
               _canManageRow(row.userId, currentUserId) &&
               _logItemNeedsSync(row),
+        )
+        .length;
+    _pendingOcrReportCount = ocrReportRows
+        .where(
+          (row) =>
+              _canManageRow(row.userId, currentUserId) &&
+              _ocrReportNeedsSync(row),
         )
         .length;
 
@@ -177,6 +192,8 @@ class SyncService extends ChangeNotifier {
       await _pullLogItems(userId);
       await _pushProducts(userId);
       await _pushLogItems(userId);
+      await _pullOcrScanReports(userId);
+      await _pushOcrScanReports(userId);
       await store.load();
       await refreshPendingCount();
       _lastSuccessfulSyncAt = _clock();
@@ -278,6 +295,32 @@ class SyncService extends ChangeNotifier {
     }
   }
 
+  Future<void> _pullOcrScanReports(String userId) async {
+    final remoteRows = await remote.fetchOcrScanReports(userId);
+
+    for (final row in remoteRows) {
+      final id = row['id'] as String;
+      final local = await (database.select(
+        database.ocrScanReportRows,
+      )..where((table) => table.id.equals(id))).getSingleOrNull();
+      if (local != null && !_sameOrUnownedUser(local.userId, userId)) {
+        continue;
+      }
+
+      final remoteUpdatedAt = _readDate(row['updated_at']);
+      final shouldApply =
+          local == null ||
+          !local.updatedAt.toUtc().isAfter(remoteUpdatedAt.toUtc());
+      if (!shouldApply) {
+        continue;
+      }
+
+      await database
+          .into(database.ocrScanReportRows)
+          .insertOnConflictUpdate(_ocrReportCompanionFromRemote(row, userId));
+    }
+  }
+
   Future<void> _pushProducts(String userId) async {
     final rows = await database.select(database.productRows).get();
     for (final row in rows.where(
@@ -309,6 +352,38 @@ class SyncService extends ChangeNotifier {
           userId: Value(userId),
           syncStatus: Value(RecordSyncStatus.synced.storageValue),
           lastSyncedAt: Value(_clock()),
+        ),
+      );
+    }
+  }
+
+  Future<void> _pushOcrScanReports(String userId) async {
+    final rows = await database.select(database.ocrScanReportRows).get();
+    for (final row in rows.where(
+      (row) => _canPush(row.userId, userId) && _ocrReportNeedsSync(row),
+    )) {
+      final imageUpload = await _tryUploadOcrReportImage(row, userId);
+      await remote.upsertOcrScanReport(
+        _ocrReportRemoteMap(
+          row,
+          userId,
+          imageSavedOverride: imageUpload?.storagePath == null ? null : true,
+          imageStoragePathOverride: imageUpload?.storagePath,
+        ),
+      );
+      await (database.update(
+        database.ocrScanReportRows,
+      )..where((table) => table.id.equals(row.id))).write(
+        OcrScanReportRowsCompanion(
+          userId: Value(userId),
+          syncStatus: Value(RecordSyncStatus.synced.storageValue),
+          lastSyncedAt: Value(_clock()),
+          imageSaved: imageUpload?.storagePath == null
+              ? const Value.absent()
+              : const Value(true),
+          imageStoragePath: imageUpload?.storagePath == null
+              ? const Value.absent()
+              : Value(imageUpload!.storagePath),
         ),
       );
     }
@@ -371,6 +446,40 @@ class SyncService extends ChangeNotifier {
     );
   }
 
+  OcrScanReportRowsCompanion _ocrReportCompanionFromRemote(
+    Map<String, dynamic> row,
+    String userId,
+  ) {
+    final now = _clock();
+    return OcrScanReportRowsCompanion(
+      id: Value(row['id'] as String),
+      userId: Value(userId),
+      rawOcrText: Value(row['raw_ocr_text'] as String),
+      parsedJson: Value(_jsonText(row['parsed_json'])),
+      correctedJson: Value(_nullableJsonText(row['corrected_json'])),
+      detectedBasis: Value(row['detected_basis'] as String?),
+      parserWarnings: Value(_nullableJsonText(row['parser_warnings'])),
+      parserConfidence: Value((row['parser_confidence'] as num?)?.toDouble()),
+      wasParserCorrect: Value(row['was_parser_correct'] as bool?),
+      userFeedback: Value(row['user_feedback'] as String?),
+      productId: Value(row['product_id'] as String?),
+      productName: Value(row['product_name'] as String?),
+      barcode: Value(row['barcode'] as String?),
+      source: Value(row['source'] as String? ?? 'ocr'),
+      platform: Value(row['platform'] as String? ?? 'unknown'),
+      appVersion: Value(row['app_version'] as String?),
+      imageSaved: Value(row['image_saved'] as bool? ?? false),
+      imageStoragePath: Value(row['image_storage_path'] as String?),
+      imageCropStoragePath: Value(row['image_crop_storage_path'] as String?),
+      imagePathLocal: const Value(null),
+      createdAt: Value(_readDate(row['created_at'])),
+      updatedAt: Value(_readDate(row['updated_at'])),
+      deletedAt: Value(_readNullableDate(row['deleted_at'])),
+      syncStatus: Value(RecordSyncStatus.synced.storageValue),
+      lastSyncedAt: Value(now),
+    );
+  }
+
   Map<String, dynamic> _productRemoteMap(ProductRow row, String userId) {
     return {
       'id': row.id,
@@ -408,6 +517,39 @@ class SyncService extends ChangeNotifier {
       'protein': row.protein,
       'carbs': row.carbs,
       'fat': row.fat,
+      'created_at': _toIso(row.createdAt),
+      'updated_at': _toIso(row.updatedAt),
+      'deleted_at': _toIsoOrNull(row.deletedAt),
+    };
+  }
+
+  Map<String, dynamic> _ocrReportRemoteMap(
+    OcrScanReportRow row,
+    String userId, {
+    bool? imageSavedOverride,
+    String? imageStoragePathOverride,
+  }) {
+    return {
+      'id': row.id,
+      'user_id': userId,
+      'raw_ocr_text': row.rawOcrText,
+      'parsed_json': _decodeJson(row.parsedJson),
+      'corrected_json': _decodeNullableJson(row.correctedJson),
+      'detected_basis': row.detectedBasis,
+      'parser_warnings': _decodeNullableJson(row.parserWarnings),
+      'parser_confidence': row.parserConfidence,
+      'was_parser_correct': row.wasParserCorrect,
+      'user_feedback': row.userFeedback,
+      'product_id': row.productId,
+      'product_name': row.productName,
+      'barcode': row.barcode,
+      'source': row.source,
+      'platform': row.platform,
+      'app_version': row.appVersion,
+      'image_saved': imageSavedOverride ?? row.imageSaved,
+      'image_storage_path': imageStoragePathOverride ?? row.imageStoragePath,
+      'image_crop_storage_path': row.imageCropStoragePath,
+      'image_path_local': null,
       'created_at': _toIso(row.createdAt),
       'updated_at': _toIso(row.updatedAt),
       'deleted_at': _toIsoOrNull(row.deletedAt),
@@ -482,6 +624,32 @@ class SyncService extends ChangeNotifier {
         row.userId == null;
   }
 
+  bool _ocrReportNeedsSync(OcrScanReportRow row) {
+    return row.syncStatus != RecordSyncStatus.synced.storageValue ||
+        row.userId == null;
+  }
+
+  Future<OcrReportImageUploadResult?> _tryUploadOcrReportImage(
+    OcrScanReportRow row,
+    String userId,
+  ) async {
+    final imagePathLocal = row.imagePathLocal;
+    if (imagePathLocal == null ||
+        imagePathLocal.trim().isEmpty ||
+        row.imageStoragePath != null) {
+      return null;
+    }
+    try {
+      return await remote.uploadOcrReportImage(
+        userId: userId,
+        reportId: row.id,
+        imagePathLocal: imagePathLocal,
+      );
+    } on Object {
+      return null;
+    }
+  }
+
   bool _canManageRow(String? rowUserId, String? currentUserId) {
     if (currentUserId == null) {
       return rowUserId == null;
@@ -544,6 +712,38 @@ class SyncService extends ChangeNotifier {
       return null;
     }
     return _toIso(value);
+  }
+
+  String _jsonText(Object? value) {
+    if (value == null) {
+      return '{}';
+    }
+    if (value is String) {
+      return value;
+    }
+    return jsonEncode(value);
+  }
+
+  String? _nullableJsonText(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    return _jsonText(value);
+  }
+
+  Object? _decodeNullableJson(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    return _decodeJson(value);
+  }
+
+  Object _decodeJson(String value) {
+    try {
+      return jsonDecode(value) as Object;
+    } on FormatException {
+      return {'raw': value};
+    }
   }
 
   void _notifyIfAlive() {

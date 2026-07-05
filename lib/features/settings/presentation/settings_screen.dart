@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../shared/app_info.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
+import '../../ocr_reports/domain/ocr_image_saving_mode.dart';
+import '../../ocr_reports/presentation/ocr_reports_screen.dart';
 import '../../sync/application/sync_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -61,6 +63,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   authController: widget.authController,
                   syncService: widget.syncService,
                 ),
+                const SizedBox(height: 12),
+                _OcrReportsCard(store: widget.store),
                 const SizedBox(height: 12),
                 _StorageCard(store: widget.store),
               ],
@@ -378,7 +382,7 @@ class _SyncCard extends StatelessWidget {
                 _SyncSummaryRow(
                   label: 'Pending',
                   value:
-                      '${service.pendingProductCount} products, ${service.pendingLogItemCount} logs',
+                      '${service.pendingProductCount} products, ${service.pendingLogItemCount} logs, ${service.pendingOcrReportCount} OCR reports',
                 ),
                 _SyncSummaryRow(
                   label: 'Last error',
@@ -401,6 +405,11 @@ class _SyncCard extends StatelessWidget {
                     _StatusChip(
                       icon: Icons.receipt_long_outlined,
                       label: '${service.pendingLogItemCount} logs pending',
+                    ),
+                    _StatusChip(
+                      icon: Icons.document_scanner_outlined,
+                      label:
+                          '${service.pendingOcrReportCount} OCR reports pending',
                     ),
                   ],
                 ),
@@ -578,6 +587,10 @@ class _DiagnosticsCard extends StatelessWidget {
                   value: service.pendingLogItemCount.toString(),
                 ),
                 _DiagnosticRow(
+                  label: 'Pending OCR reports',
+                  value: service.pendingOcrReportCount.toString(),
+                ),
+                _DiagnosticRow(
                   label: 'Last error',
                   value: service.lastError ?? 'None',
                 ),
@@ -616,6 +629,73 @@ class _DiagnosticRow extends StatelessWidget {
           Expanded(child: SelectableText(value)),
         ],
       ),
+    );
+  }
+}
+
+class _OcrReportsCard extends StatelessWidget {
+  const _OcrReportsCard({required this.store});
+
+  final NutrivoGoStore? store;
+
+  @override
+  Widget build(BuildContext context) {
+    final store = this.store;
+    if (store == null) {
+      return const Card(
+        child: ListTile(
+          leading: Icon(Icons.document_scanner_outlined),
+          title: Text('OCR Reports'),
+          subtitle: Text('OCR reports are not available in this run.'),
+        ),
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        return Card(
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.document_scanner_outlined),
+                title: const Text('OCR Reports'),
+                subtitle: Text(
+                  '${store.ocrScanReports.length} saved cases for parser debugging',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => OcrReportsScreen(store: store),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: DropdownButtonFormField<OcrImageSavingMode>(
+                  initialValue: store.ocrImageSavingMode,
+                  decoration: const InputDecoration(
+                    labelText: 'Guardar imagenes OCR para debug',
+                    prefixIcon: Icon(Icons.image_outlined),
+                  ),
+                  items: [
+                    for (final mode in OcrImageSavingMode.values)
+                      DropdownMenuItem(value: mode, child: Text(mode.label)),
+                  ],
+                  onChanged: (mode) {
+                    if (mode != null) {
+                      store.setOcrImageSavingMode(mode);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

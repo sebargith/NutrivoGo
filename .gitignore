@@ -34,6 +34,7 @@ migrate_working_dir/
 /coverage/
 supabase_credentials.txt
 user-credentials-dont_look-dont_upload.txt
+supabase/.temp/
 
 # Symbolication related
 app.*.symbols

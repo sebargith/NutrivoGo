@@ -27,7 +27,6 @@ class OcrNutritionValues {
 class NutritionLabelOcrDraft {
   const NutritionLabelOcrDraft({
     required this.rawText,
-    this.imagePath,
     this.name = 'Scanned product',
     this.brand,
     this.servingSize,
@@ -45,11 +44,9 @@ class NutritionLabelOcrDraft {
     this.perServingValues,
     this.normalizedFromServing = false,
     this.warnings = const <String>[],
-    this.confidence,
   });
 
   final String rawText;
-  final String? imagePath;
   final String name;
   final String? brand;
   final double? servingSize;
@@ -67,7 +64,6 @@ class NutritionLabelOcrDraft {
   final OcrNutritionValues? perServingValues;
   final bool normalizedFromServing;
   final List<String> warnings;
-  final double? confidence;
 
   bool get hasRequiredNutrition {
     return name.trim().isNotEmpty &&
@@ -110,7 +106,6 @@ class NutritionLabelOcrDraft {
 
   NutritionLabelOcrDraft copyWith({
     String? rawText,
-    String? imagePath,
     String? name,
     String? brand,
     double? servingSize,
@@ -128,11 +123,9 @@ class NutritionLabelOcrDraft {
     OcrNutritionValues? perServingValues,
     bool? normalizedFromServing,
     List<String>? warnings,
-    double? confidence,
   }) {
     return NutritionLabelOcrDraft(
       rawText: rawText ?? this.rawText,
-      imagePath: imagePath ?? this.imagePath,
       name: name ?? this.name,
       brand: brand ?? this.brand,
       servingSize: servingSize ?? this.servingSize,
@@ -151,7 +144,6 @@ class NutritionLabelOcrDraft {
       normalizedFromServing:
           normalizedFromServing ?? this.normalizedFromServing,
       warnings: warnings ?? this.warnings,
-      confidence: confidence ?? this.confidence,
     );
   }
 }

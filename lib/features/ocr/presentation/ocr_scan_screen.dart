@@ -168,9 +168,7 @@ class _OcrScanScreenState extends State<OcrScanScreen> {
       if (rawText.isEmpty) {
         throw StateError('No readable nutrition text was detected.');
       }
-      final draft = widget.parser
-          .parse(rawText)
-          .copyWith(imagePath: image.path);
+      final draft = widget.parser.parse(rawText);
       if (!mounted) {
         return;
       }

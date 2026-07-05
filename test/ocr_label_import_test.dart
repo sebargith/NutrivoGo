@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nutrivogo/core/database/app_database.dart';
 import 'package:nutrivogo/features/food_log/application/nutrivo_go_store.dart';
 import 'package:nutrivogo/features/food_log/domain/macro_calculator.dart';
-import 'package:nutrivogo/features/ocr/application/ai_label_extraction_client.dart';
 import 'package:nutrivogo/features/ocr/application/nutrition_label_ocr_parser.dart';
 import 'package:nutrivogo/features/ocr/application/ocr_product_import_saver.dart';
 import 'package:nutrivogo/features/ocr/domain/nutrition_label_ocr_draft.dart';
@@ -209,126 +208,6 @@ Proteínas 5 g
     expect(draft.reviewMessage, contains('incomplete'));
   });
 
-  test('maps AI JSON into an OCR product draft', () {
-    final draft = const NutritionLabelAiResponseMapper().fromJson({
-      'product_name': 'Yogur Protein',
-      'brand': 'Colun',
-      'serving_size': '140',
-      'serving_unit': 'g',
-      'basis': 'per_100g',
-      'calories_kcal': 65,
-      'protein_g': '8,8',
-      'carbs_g': 5.9,
-      'fat_g': '0,7',
-      'sugar_g': 5.9,
-      'saturated_fat_g': 0.4,
-      'sodium_mg': 65,
-      'fiber_g': null,
-      'per_serving': {
-        'calories_kcal': 91,
-        'protein_g': 12.3,
-        'carbs_g': 8.3,
-        'fat_g': 1,
-        'sugar_g': 8.3,
-        'saturated_fat_g': 0.6,
-        'sodium_mg': 91,
-        'fiber_g': null,
-      },
-      'warnings': ['Values inferred from table layout.'],
-      'confidence': 0.82,
-    }, currentDraft: const NutritionLabelOcrDraft(rawText: 'OCR'));
-
-    expect(draft.name, 'Yogur Protein');
-    expect(draft.brand, 'Colun');
-    expect(draft.servingSize, 140);
-    expect(draft.detectedBasis, OcrNutritionBasis.per100g);
-    expect(draft.caloriesPer100, 65);
-    expect(draft.proteinPer100, 8.8);
-    expect(draft.fatPer100, 0.7);
-    expect(draft.sodiumPer100, 65);
-    expect(draft.perServingValues?.calories, 91);
-    expect(draft.confidence, 0.82);
-    expect(
-      draft.warnings,
-      contains('AI extraction can be wrong. Review before saving.'),
-    );
-  });
-
-  test(
-    'AI JSON with missing fields keeps existing OCR values only when present',
-    () {
-      final current = const NutritionLabelOcrDraft(
-        rawText: 'OCR',
-        caloriesPer100: 100,
-        proteinPer100: 4,
-      );
-      final draft = const NutritionLabelAiResponseMapper().fromJson({
-        'basis': 'per_100g',
-        'calories_kcal': null,
-        'protein_g': null,
-        'carbs_g': null,
-        'fat_g': null,
-        'warnings': <String>[],
-        'confidence': 0.5,
-      }, currentDraft: current);
-
-      expect(draft.caloriesPer100, 100);
-      expect(draft.proteinPer100, 4);
-      expect(draft.carbsPer100, isNull);
-      expect(draft.fatPer100, isNull);
-      expect(draft.hasRequiredNutrition, isFalse);
-      expect(draft.warnings.join(' '), contains('confidence is low'));
-    },
-  );
-
-  test('AI per-serving-only output does not silently normalize', () {
-    final draft = const NutritionLabelAiResponseMapper().fromJson({
-      'serving_size': 140,
-      'serving_unit': 'g',
-      'basis': 'per_serving',
-      'calories_kcal': null,
-      'protein_g': null,
-      'carbs_g': null,
-      'fat_g': null,
-      'per_serving': {
-        'calories_kcal': 91,
-        'protein_g': '12,3',
-        'carbs_g': '8,3',
-        'fat_g': 1,
-        'sugar_g': '8,3',
-        'saturated_fat_g': '0,6',
-        'sodium_mg': 91,
-        'fiber_g': null,
-      },
-      'warnings': <String>[],
-      'confidence': 0.7,
-    }, currentDraft: const NutritionLabelOcrDraft(rawText: 'OCR'));
-
-    expect(draft.detectedBasis, OcrNutritionBasis.perServing);
-    expect(draft.normalizedFromServing, isFalse);
-    expect(draft.caloriesPer100, isNull);
-    expect(draft.perServingValues?.protein, 12.3);
-    expect(draft.warnings.join(' '), contains('per-serving values only'));
-  });
-
-  test('failed AI extraction keeps existing OCR draft unchanged', () async {
-    const current = NutritionLabelOcrDraft(
-      rawText: 'OCR',
-      caloriesPer100: 65,
-      proteinPer100: 8.8,
-      carbsPer100: 5.9,
-      fatPer100: 0.7,
-    );
-    final result = await NutritionLabelAiEnhancer(
-      client: _FailingAiClient(),
-    ).analyzeOrKeep(currentDraft: current);
-
-    expect(result.isSuccess, isFalse);
-    expect(result.draft, same(current));
-    expect(result.draft.caloriesPer100, 65);
-    expect(result.draft.proteinPer100, 8.8);
-  });
-
   test('confirmed OCR product saved locally', () async {
     final (:store, :database) = await createMemoryStore();
     const draft = NutritionLabelOcrDraft(
@@ -391,15 +270,4 @@ Proteínas 5 g
     );
     expect(find.text('Create manually'), findsOneWidget);
   });
-}
-
-class _FailingAiClient implements NutritionLabelAiExtractionClient {
-  @override
-  Future<NutritionLabelOcrDraft> analyze({
-    required NutritionLabelOcrDraft currentDraft,
-    void Function(AiLabelExtractionProgress progress)? onProgress,
-  }) {
-    onProgress?.call(AiLabelExtractionProgress.uploading);
-    throw StateError('offline');
-  }
 }

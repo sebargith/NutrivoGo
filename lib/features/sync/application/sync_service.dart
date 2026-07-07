@@ -419,6 +419,9 @@ class SyncService extends ChangeNotifier {
       ),
       sodiumPer100: Value((row['sodium_per_100'] as num?)?.toDouble()),
       fiberPer100: Value((row['fiber_per_100'] as num?)?.toDouble()),
+      packagePriceClp: Value((row['package_price_clp'] as num?)?.toDouble()),
+      packageQuantity: Value((row['package_quantity'] as num?)?.toDouble()),
+      packageQuantityUnit: Value(row['package_quantity_unit'] as String?),
     );
   }
 
@@ -443,6 +446,19 @@ class SyncService extends ChangeNotifier {
       deletedAt: Value(_readNullableDate(row['deleted_at'])),
       syncStatus: Value(RecordSyncStatus.synced.storageValue),
       lastSyncedAt: Value(now),
+      costSnapshotClp: Value((row['cost_snapshot_clp'] as num?)?.toDouble()),
+      costPer100SnapshotClp: Value(
+        (row['cost_per_100_snapshot_clp'] as num?)?.toDouble(),
+      ),
+      costPerServingSnapshotClp: Value(
+        (row['cost_per_serving_snapshot_clp'] as num?)?.toDouble(),
+      ),
+      packagePriceSnapshotClp: Value(
+        (row['package_price_snapshot_clp'] as num?)?.toDouble(),
+      ),
+      packageQuantitySnapshot: Value(
+        (row['package_quantity_snapshot'] as num?)?.toDouble(),
+      ),
     );
   }
 
@@ -502,6 +518,9 @@ class SyncService extends ChangeNotifier {
       'saturated_fat_per_100': row.saturatedFatPer100,
       'sodium_per_100': row.sodiumPer100,
       'fiber_per_100': row.fiberPer100,
+      'package_price_clp': row.packagePriceClp,
+      'package_quantity': row.packageQuantity,
+      'package_quantity_unit': row.packageQuantityUnit,
     };
   }
 
@@ -520,6 +539,11 @@ class SyncService extends ChangeNotifier {
       'created_at': _toIso(row.createdAt),
       'updated_at': _toIso(row.updatedAt),
       'deleted_at': _toIsoOrNull(row.deletedAt),
+      'cost_snapshot_clp': row.costSnapshotClp,
+      'cost_per_100_snapshot_clp': row.costPer100SnapshotClp,
+      'cost_per_serving_snapshot_clp': row.costPerServingSnapshotClp,
+      'package_price_snapshot_clp': row.packagePriceSnapshotClp,
+      'package_quantity_snapshot': row.packageQuantitySnapshot,
     };
   }
 

@@ -46,6 +46,9 @@ class NutritionLabelOcrDraft {
     this.warnings = const <String>[],
     this.parserConfidence,
     this.imagePathLocal,
+    this.packagePriceClp,
+    this.packageQuantity,
+    this.packageQuantityUnit,
   });
 
   final String rawText;
@@ -68,6 +71,9 @@ class NutritionLabelOcrDraft {
   final List<String> warnings;
   final double? parserConfidence;
   final String? imagePathLocal;
+  final double? packagePriceClp;
+  final double? packageQuantity;
+  final String? packageQuantityUnit;
 
   bool get hasRequiredNutrition {
     return name.trim().isNotEmpty &&
@@ -125,6 +131,9 @@ class NutritionLabelOcrDraft {
       'warnings': warnings,
       'confidence': parserConfidence,
       'source': source,
+      'package_price_clp': packagePriceClp,
+      'package_quantity': packageQuantity,
+      'package_quantity_unit': packageQuantityUnit,
     };
   }
 
@@ -162,6 +171,9 @@ class NutritionLabelOcrDraft {
     List<String>? warnings,
     double? parserConfidence,
     String? imagePathLocal,
+    double? packagePriceClp,
+    double? packageQuantity,
+    String? packageQuantityUnit,
   }) {
     return NutritionLabelOcrDraft(
       rawText: rawText ?? this.rawText,
@@ -185,6 +197,9 @@ class NutritionLabelOcrDraft {
       warnings: warnings ?? this.warnings,
       parserConfidence: parserConfidence ?? this.parserConfidence,
       imagePathLocal: imagePathLocal ?? this.imagePathLocal,
+      packagePriceClp: packagePriceClp ?? this.packagePriceClp,
+      packageQuantity: packageQuantity ?? this.packageQuantity,
+      packageQuantityUnit: packageQuantityUnit ?? this.packageQuantityUnit,
     );
   }
 }

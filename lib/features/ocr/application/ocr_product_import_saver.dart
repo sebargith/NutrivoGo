@@ -33,6 +33,9 @@ class OcrProductImportSaver {
       saturatedFatPer100: draft.saturatedFatPer100,
       sodiumPer100: draft.sodiumPer100,
       fiberPer100: draft.fiberPer100,
+      packagePriceClp: draft.packagePriceClp,
+      packageQuantity: draft.packageQuantity,
+      packageQuantityUnit: draft.packageQuantityUnit,
     );
     final originalDraft = parsedDraft ?? draft;
     await store.addOcrScanReport(

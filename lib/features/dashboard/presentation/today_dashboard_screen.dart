@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../shared/utils/cost_formatters.dart';
 import '../../../shared/utils/macro_formatters.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
 import '../../food_log/domain/log_item.dart';
 import '../../food_log/domain/macro_snapshot.dart';
 import '../../food_log/domain/meal_type.dart';
+import '../../food_log/presentation/quantity_display.dart';
 import '../../products/presentation/product_search_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../sync/application/sync_service.dart';
@@ -64,7 +66,19 @@ class TodayDashboardScreen extends StatelessWidget {
                   children: [
                     _Header(date: DateTime.now()),
                     const SizedBox(height: 16),
-                    _MacroGrid(totals: store.dailyTotals),
+                    _MacroGrid(
+                      totals: store.dailyTotals,
+                      dailyCost: store.dailyCostClp,
+                    ),
+                    if (store.hasUnknownDailyCosts) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Algunos alimentos no tienen precio',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                     if (store.todaysLogItems.isEmpty) ...[
                       const SizedBox(height: 16),
                       _TodayEmptyState(onAddFood: () => _openAddFood(context)),
@@ -74,6 +88,9 @@ class TodayDashboardScreen extends StatelessWidget {
                       _MealSection(
                         mealType: meal,
                         items: store.itemsForMeal(meal),
+                        cost: store.costForMeal(meal),
+                        hasUnknownCosts: store.hasUnknownCostsForMeal(meal),
+                        onAdd: () => _openAddFood(context, meal),
                         onRemove: (id) => unawaited(store.removeLogItem(id)),
                       ),
                       const SizedBox(height: 12),
@@ -88,10 +105,11 @@ class TodayDashboardScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _openAddFood(BuildContext context) {
+  Future<void> _openAddFood(BuildContext context, [MealType? mealType]) {
     return Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => ProductSearchScreen(store: store),
+        builder: (_) =>
+            ProductSearchScreen(store: store, initialMealType: mealType),
       ),
     );
   }
@@ -206,9 +224,10 @@ class _Header extends StatelessWidget {
 }
 
 class _MacroGrid extends StatelessWidget {
-  const _MacroGrid({required this.totals});
+  const _MacroGrid({required this.totals, required this.dailyCost});
 
   final MacroSnapshot totals;
+  final double? dailyCost;
 
   @override
   Widget build(BuildContext context) {
@@ -250,6 +269,13 @@ class _MacroGrid extends StatelessWidget {
               unit: 'g',
               icon: Icons.water_drop_outlined,
               color: const Color(0xFFFF8A65),
+            ),
+            _MacroCard(
+              label: 'Gasto del día',
+              value: formatClp(dailyCost),
+              unit: '',
+              icon: Icons.payments_outlined,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ],
         );
@@ -306,7 +332,7 @@ class _MacroCard extends StatelessWidget {
                   text: value,
                   children: [
                     TextSpan(
-                      text: ' $unit',
+                      text: unit.isEmpty ? '' : ' $unit',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -330,11 +356,17 @@ class _MealSection extends StatelessWidget {
   const _MealSection({
     required this.mealType,
     required this.items,
+    required this.cost,
+    required this.hasUnknownCosts,
+    required this.onAdd,
     required this.onRemove,
   });
 
   final MealType mealType;
   final List<LogItem> items;
+  final double? cost;
+  final bool hasUnknownCosts;
+  final VoidCallback onAdd;
   final ValueChanged<String> onRemove;
 
   @override
@@ -359,11 +391,36 @@ class _MealSection extends StatelessWidget {
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
-                Text(
-                  '${formatMacro(calories)} kcal',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                Wrap(
+                  spacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      '${formatMacro(calories)} kcal',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (cost != null)
+                      Text(
+                        formatClp(cost),
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      )
+                    else if (items.isNotEmpty && hasUnknownCosts)
+                      Text(
+                        'Sin precio',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    IconButton(
+                      tooltip: 'Agregar a ${mealType.label}',
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: onAdd,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -420,10 +477,11 @@ class _LogItemTile extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          '${formatQuantity(item.quantity)} ${item.unit} - '
+          '${formatQuantity(item.quantity)} ${quantityUnitLabel(item.unit)} · '
           '${formatMacro(item.macros.protein, decimals: 1)}P  '
           '${formatMacro(item.macros.carbs, decimals: 1)}C  '
-          '${formatMacro(item.macros.fat, decimals: 1)}F',
+          '${formatMacro(item.macros.fat, decimals: 1)}F'
+          '${item.costSnapshotClp == null ? '' : ' · ${formatClp(item.costSnapshotClp)}'}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

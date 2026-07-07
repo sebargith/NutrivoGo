@@ -17,6 +17,11 @@ class LogItem {
     this.userId,
     this.syncStatus = RecordSyncStatus.pending,
     this.lastSyncedAt,
+    this.costSnapshotClp,
+    this.costPer100SnapshotClp,
+    this.costPerServingSnapshotClp,
+    this.packagePriceSnapshotClp,
+    this.packageQuantitySnapshot,
   });
 
   final String id;
@@ -31,6 +36,11 @@ class LogItem {
   final String? userId;
   final RecordSyncStatus syncStatus;
   final DateTime? lastSyncedAt;
+  final double? costSnapshotClp;
+  final double? costPer100SnapshotClp;
+  final double? costPerServingSnapshotClp;
+  final double? packagePriceSnapshotClp;
+  final double? packageQuantitySnapshot;
 
   LogItem copyWith({
     Product? product,
@@ -43,6 +53,11 @@ class LogItem {
     String? userId,
     RecordSyncStatus? syncStatus,
     DateTime? lastSyncedAt,
+    double? costSnapshotClp,
+    double? costPer100SnapshotClp,
+    double? costPerServingSnapshotClp,
+    double? packagePriceSnapshotClp,
+    double? packageQuantitySnapshot,
   }) {
     return LogItem(
       id: id,
@@ -57,6 +72,15 @@ class LogItem {
       userId: userId ?? this.userId,
       syncStatus: syncStatus ?? this.syncStatus,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      costSnapshotClp: costSnapshotClp ?? this.costSnapshotClp,
+      costPer100SnapshotClp:
+          costPer100SnapshotClp ?? this.costPer100SnapshotClp,
+      costPerServingSnapshotClp:
+          costPerServingSnapshotClp ?? this.costPerServingSnapshotClp,
+      packagePriceSnapshotClp:
+          packagePriceSnapshotClp ?? this.packagePriceSnapshotClp,
+      packageQuantitySnapshot:
+          packageQuantitySnapshot ?? this.packageQuantitySnapshot,
     );
   }
 }

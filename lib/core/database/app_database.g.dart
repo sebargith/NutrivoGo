@@ -242,6 +242,39 @@ class $ProductRowsTable extends ProductRows
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _packagePriceClpMeta = const VerificationMeta(
+    'packagePriceClp',
+  );
+  @override
+  late final GeneratedColumn<double> packagePriceClp = GeneratedColumn<double>(
+    'package_price_clp',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _packageQuantityMeta = const VerificationMeta(
+    'packageQuantity',
+  );
+  @override
+  late final GeneratedColumn<double> packageQuantity = GeneratedColumn<double>(
+    'package_quantity',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _packageQuantityUnitMeta =
+      const VerificationMeta('packageQuantityUnit');
+  @override
+  late final GeneratedColumn<String> packageQuantityUnit =
+      GeneratedColumn<String>(
+        'package_quantity_unit',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -266,6 +299,9 @@ class $ProductRowsTable extends ProductRows
     saturatedFatPer100,
     sodiumPer100,
     fiberPer100,
+    packagePriceClp,
+    packageQuantity,
+    packageQuantityUnit,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -456,6 +492,33 @@ class $ProductRowsTable extends ProductRows
         ),
       );
     }
+    if (data.containsKey('package_price_clp')) {
+      context.handle(
+        _packagePriceClpMeta,
+        packagePriceClp.isAcceptableOrUnknown(
+          data['package_price_clp']!,
+          _packagePriceClpMeta,
+        ),
+      );
+    }
+    if (data.containsKey('package_quantity')) {
+      context.handle(
+        _packageQuantityMeta,
+        packageQuantity.isAcceptableOrUnknown(
+          data['package_quantity']!,
+          _packageQuantityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('package_quantity_unit')) {
+      context.handle(
+        _packageQuantityUnitMeta,
+        packageQuantityUnit.isAcceptableOrUnknown(
+          data['package_quantity_unit']!,
+          _packageQuantityUnitMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -553,6 +616,18 @@ class $ProductRowsTable extends ProductRows
         DriftSqlType.double,
         data['${effectivePrefix}fiber_per100'],
       ),
+      packagePriceClp: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}package_price_clp'],
+      ),
+      packageQuantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}package_quantity'],
+      ),
+      packageQuantityUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}package_quantity_unit'],
+      ),
     );
   }
 
@@ -585,6 +660,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
   final double? saturatedFatPer100;
   final double? sodiumPer100;
   final double? fiberPer100;
+  final double? packagePriceClp;
+  final double? packageQuantity;
+  final String? packageQuantityUnit;
   const ProductRow({
     required this.id,
     required this.name,
@@ -608,6 +686,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     this.saturatedFatPer100,
     this.sodiumPer100,
     this.fiberPer100,
+    this.packagePriceClp,
+    this.packageQuantity,
+    this.packageQuantityUnit,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -657,6 +738,15 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     }
     if (!nullToAbsent || fiberPer100 != null) {
       map['fiber_per100'] = Variable<double>(fiberPer100);
+    }
+    if (!nullToAbsent || packagePriceClp != null) {
+      map['package_price_clp'] = Variable<double>(packagePriceClp);
+    }
+    if (!nullToAbsent || packageQuantity != null) {
+      map['package_quantity'] = Variable<double>(packageQuantity);
+    }
+    if (!nullToAbsent || packageQuantityUnit != null) {
+      map['package_quantity_unit'] = Variable<String>(packageQuantityUnit);
     }
     return map;
   }
@@ -709,6 +799,15 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       fiberPer100: fiberPer100 == null && nullToAbsent
           ? const Value.absent()
           : Value(fiberPer100),
+      packagePriceClp: packagePriceClp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packagePriceClp),
+      packageQuantity: packageQuantity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packageQuantity),
+      packageQuantityUnit: packageQuantityUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packageQuantityUnit),
     );
   }
 
@@ -742,6 +841,11 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       ),
       sodiumPer100: serializer.fromJson<double?>(json['sodiumPer100']),
       fiberPer100: serializer.fromJson<double?>(json['fiberPer100']),
+      packagePriceClp: serializer.fromJson<double?>(json['packagePriceClp']),
+      packageQuantity: serializer.fromJson<double?>(json['packageQuantity']),
+      packageQuantityUnit: serializer.fromJson<String?>(
+        json['packageQuantityUnit'],
+      ),
     );
   }
   @override
@@ -770,6 +874,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       'saturatedFatPer100': serializer.toJson<double?>(saturatedFatPer100),
       'sodiumPer100': serializer.toJson<double?>(sodiumPer100),
       'fiberPer100': serializer.toJson<double?>(fiberPer100),
+      'packagePriceClp': serializer.toJson<double?>(packagePriceClp),
+      'packageQuantity': serializer.toJson<double?>(packageQuantity),
+      'packageQuantityUnit': serializer.toJson<String?>(packageQuantityUnit),
     };
   }
 
@@ -796,6 +903,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     Value<double?> saturatedFatPer100 = const Value.absent(),
     Value<double?> sodiumPer100 = const Value.absent(),
     Value<double?> fiberPer100 = const Value.absent(),
+    Value<double?> packagePriceClp = const Value.absent(),
+    Value<double?> packageQuantity = const Value.absent(),
+    Value<String?> packageQuantityUnit = const Value.absent(),
   }) => ProductRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -821,6 +931,15 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
         : this.saturatedFatPer100,
     sodiumPer100: sodiumPer100.present ? sodiumPer100.value : this.sodiumPer100,
     fiberPer100: fiberPer100.present ? fiberPer100.value : this.fiberPer100,
+    packagePriceClp: packagePriceClp.present
+        ? packagePriceClp.value
+        : this.packagePriceClp,
+    packageQuantity: packageQuantity.present
+        ? packageQuantity.value
+        : this.packageQuantity,
+    packageQuantityUnit: packageQuantityUnit.present
+        ? packageQuantityUnit.value
+        : this.packageQuantityUnit,
   );
   ProductRow copyWithCompanion(ProductRowsCompanion data) {
     return ProductRow(
@@ -868,6 +987,15 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       fiberPer100: data.fiberPer100.present
           ? data.fiberPer100.value
           : this.fiberPer100,
+      packagePriceClp: data.packagePriceClp.present
+          ? data.packagePriceClp.value
+          : this.packagePriceClp,
+      packageQuantity: data.packageQuantity.present
+          ? data.packageQuantity.value
+          : this.packageQuantity,
+      packageQuantityUnit: data.packageQuantityUnit.present
+          ? data.packageQuantityUnit.value
+          : this.packageQuantityUnit,
     );
   }
 
@@ -895,7 +1023,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
           ..write('sugarPer100: $sugarPer100, ')
           ..write('saturatedFatPer100: $saturatedFatPer100, ')
           ..write('sodiumPer100: $sodiumPer100, ')
-          ..write('fiberPer100: $fiberPer100')
+          ..write('fiberPer100: $fiberPer100, ')
+          ..write('packagePriceClp: $packagePriceClp, ')
+          ..write('packageQuantity: $packageQuantity, ')
+          ..write('packageQuantityUnit: $packageQuantityUnit')
           ..write(')'))
         .toString();
   }
@@ -924,6 +1055,9 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     saturatedFatPer100,
     sodiumPer100,
     fiberPer100,
+    packagePriceClp,
+    packageQuantity,
+    packageQuantityUnit,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -950,7 +1084,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
           other.sugarPer100 == this.sugarPer100 &&
           other.saturatedFatPer100 == this.saturatedFatPer100 &&
           other.sodiumPer100 == this.sodiumPer100 &&
-          other.fiberPer100 == this.fiberPer100);
+          other.fiberPer100 == this.fiberPer100 &&
+          other.packagePriceClp == this.packagePriceClp &&
+          other.packageQuantity == this.packageQuantity &&
+          other.packageQuantityUnit == this.packageQuantityUnit);
 }
 
 class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
@@ -976,6 +1113,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
   final Value<double?> saturatedFatPer100;
   final Value<double?> sodiumPer100;
   final Value<double?> fiberPer100;
+  final Value<double?> packagePriceClp;
+  final Value<double?> packageQuantity;
+  final Value<String?> packageQuantityUnit;
   final Value<int> rowid;
   const ProductRowsCompanion({
     this.id = const Value.absent(),
@@ -1000,6 +1140,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     this.saturatedFatPer100 = const Value.absent(),
     this.sodiumPer100 = const Value.absent(),
     this.fiberPer100 = const Value.absent(),
+    this.packagePriceClp = const Value.absent(),
+    this.packageQuantity = const Value.absent(),
+    this.packageQuantityUnit = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProductRowsCompanion.insert({
@@ -1025,6 +1168,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     this.saturatedFatPer100 = const Value.absent(),
     this.sodiumPer100 = const Value.absent(),
     this.fiberPer100 = const Value.absent(),
+    this.packagePriceClp = const Value.absent(),
+    this.packageQuantity = const Value.absent(),
+    this.packageQuantityUnit = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -1058,6 +1204,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     Expression<double>? saturatedFatPer100,
     Expression<double>? sodiumPer100,
     Expression<double>? fiberPer100,
+    Expression<double>? packagePriceClp,
+    Expression<double>? packageQuantity,
+    Expression<String>? packageQuantityUnit,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1084,6 +1233,10 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
         'saturated_fat_per100': saturatedFatPer100,
       if (sodiumPer100 != null) 'sodium_per100': sodiumPer100,
       if (fiberPer100 != null) 'fiber_per100': fiberPer100,
+      if (packagePriceClp != null) 'package_price_clp': packagePriceClp,
+      if (packageQuantity != null) 'package_quantity': packageQuantity,
+      if (packageQuantityUnit != null)
+        'package_quantity_unit': packageQuantityUnit,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1111,6 +1264,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     Value<double?>? saturatedFatPer100,
     Value<double?>? sodiumPer100,
     Value<double?>? fiberPer100,
+    Value<double?>? packagePriceClp,
+    Value<double?>? packageQuantity,
+    Value<String?>? packageQuantityUnit,
     Value<int>? rowid,
   }) {
     return ProductRowsCompanion(
@@ -1136,6 +1292,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
       saturatedFatPer100: saturatedFatPer100 ?? this.saturatedFatPer100,
       sodiumPer100: sodiumPer100 ?? this.sodiumPer100,
       fiberPer100: fiberPer100 ?? this.fiberPer100,
+      packagePriceClp: packagePriceClp ?? this.packagePriceClp,
+      packageQuantity: packageQuantity ?? this.packageQuantity,
+      packageQuantityUnit: packageQuantityUnit ?? this.packageQuantityUnit,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1209,6 +1368,17 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
     if (fiberPer100.present) {
       map['fiber_per100'] = Variable<double>(fiberPer100.value);
     }
+    if (packagePriceClp.present) {
+      map['package_price_clp'] = Variable<double>(packagePriceClp.value);
+    }
+    if (packageQuantity.present) {
+      map['package_quantity'] = Variable<double>(packageQuantity.value);
+    }
+    if (packageQuantityUnit.present) {
+      map['package_quantity_unit'] = Variable<String>(
+        packageQuantityUnit.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1240,6 +1410,9 @@ class ProductRowsCompanion extends UpdateCompanion<ProductRow> {
           ..write('saturatedFatPer100: $saturatedFatPer100, ')
           ..write('sodiumPer100: $sodiumPer100, ')
           ..write('fiberPer100: $fiberPer100, ')
+          ..write('packagePriceClp: $packagePriceClp, ')
+          ..write('packageQuantity: $packageQuantity, ')
+          ..write('packageQuantityUnit: $packageQuantityUnit, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1408,6 +1581,61 @@ class $LogItemRowsTable extends LogItemRows
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _costSnapshotClpMeta = const VerificationMeta(
+    'costSnapshotClp',
+  );
+  @override
+  late final GeneratedColumn<double> costSnapshotClp = GeneratedColumn<double>(
+    'cost_snapshot_clp',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _costPer100SnapshotClpMeta =
+      const VerificationMeta('costPer100SnapshotClp');
+  @override
+  late final GeneratedColumn<double> costPer100SnapshotClp =
+      GeneratedColumn<double>(
+        'cost_per100_snapshot_clp',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _costPerServingSnapshotClpMeta =
+      const VerificationMeta('costPerServingSnapshotClp');
+  @override
+  late final GeneratedColumn<double> costPerServingSnapshotClp =
+      GeneratedColumn<double>(
+        'cost_per_serving_snapshot_clp',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _packagePriceSnapshotClpMeta =
+      const VerificationMeta('packagePriceSnapshotClp');
+  @override
+  late final GeneratedColumn<double> packagePriceSnapshotClp =
+      GeneratedColumn<double>(
+        'package_price_snapshot_clp',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _packageQuantitySnapshotMeta =
+      const VerificationMeta('packageQuantitySnapshot');
+  @override
+  late final GeneratedColumn<double> packageQuantitySnapshot =
+      GeneratedColumn<double>(
+        'package_quantity_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1425,6 +1653,11 @@ class $LogItemRowsTable extends LogItemRows
     userId,
     syncStatus,
     lastSyncedAt,
+    costSnapshotClp,
+    costPer100SnapshotClp,
+    costPerServingSnapshotClp,
+    packagePriceSnapshotClp,
+    packageQuantitySnapshot,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1550,6 +1783,51 @@ class $LogItemRowsTable extends LogItemRows
         ),
       );
     }
+    if (data.containsKey('cost_snapshot_clp')) {
+      context.handle(
+        _costSnapshotClpMeta,
+        costSnapshotClp.isAcceptableOrUnknown(
+          data['cost_snapshot_clp']!,
+          _costSnapshotClpMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cost_per100_snapshot_clp')) {
+      context.handle(
+        _costPer100SnapshotClpMeta,
+        costPer100SnapshotClp.isAcceptableOrUnknown(
+          data['cost_per100_snapshot_clp']!,
+          _costPer100SnapshotClpMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cost_per_serving_snapshot_clp')) {
+      context.handle(
+        _costPerServingSnapshotClpMeta,
+        costPerServingSnapshotClp.isAcceptableOrUnknown(
+          data['cost_per_serving_snapshot_clp']!,
+          _costPerServingSnapshotClpMeta,
+        ),
+      );
+    }
+    if (data.containsKey('package_price_snapshot_clp')) {
+      context.handle(
+        _packagePriceSnapshotClpMeta,
+        packagePriceSnapshotClp.isAcceptableOrUnknown(
+          data['package_price_snapshot_clp']!,
+          _packagePriceSnapshotClpMeta,
+        ),
+      );
+    }
+    if (data.containsKey('package_quantity_snapshot')) {
+      context.handle(
+        _packageQuantitySnapshotMeta,
+        packageQuantitySnapshot.isAcceptableOrUnknown(
+          data['package_quantity_snapshot']!,
+          _packageQuantitySnapshotMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1619,6 +1897,26 @@ class $LogItemRowsTable extends LogItemRows
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_synced_at'],
       ),
+      costSnapshotClp: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cost_snapshot_clp'],
+      ),
+      costPer100SnapshotClp: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cost_per100_snapshot_clp'],
+      ),
+      costPerServingSnapshotClp: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cost_per_serving_snapshot_clp'],
+      ),
+      packagePriceSnapshotClp: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}package_price_snapshot_clp'],
+      ),
+      packageQuantitySnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}package_quantity_snapshot'],
+      ),
     );
   }
 
@@ -1644,6 +1942,11 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
   final String? userId;
   final String syncStatus;
   final DateTime? lastSyncedAt;
+  final double? costSnapshotClp;
+  final double? costPer100SnapshotClp;
+  final double? costPerServingSnapshotClp;
+  final double? packagePriceSnapshotClp;
+  final double? packageQuantitySnapshot;
   const LogItemRow({
     required this.id,
     required this.productId,
@@ -1660,6 +1963,11 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     this.userId,
     required this.syncStatus,
     this.lastSyncedAt,
+    this.costSnapshotClp,
+    this.costPer100SnapshotClp,
+    this.costPerServingSnapshotClp,
+    this.packagePriceSnapshotClp,
+    this.packageQuantitySnapshot,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1684,6 +1992,27 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     map['sync_status'] = Variable<String>(syncStatus);
     if (!nullToAbsent || lastSyncedAt != null) {
       map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    if (!nullToAbsent || costSnapshotClp != null) {
+      map['cost_snapshot_clp'] = Variable<double>(costSnapshotClp);
+    }
+    if (!nullToAbsent || costPer100SnapshotClp != null) {
+      map['cost_per100_snapshot_clp'] = Variable<double>(costPer100SnapshotClp);
+    }
+    if (!nullToAbsent || costPerServingSnapshotClp != null) {
+      map['cost_per_serving_snapshot_clp'] = Variable<double>(
+        costPerServingSnapshotClp,
+      );
+    }
+    if (!nullToAbsent || packagePriceSnapshotClp != null) {
+      map['package_price_snapshot_clp'] = Variable<double>(
+        packagePriceSnapshotClp,
+      );
+    }
+    if (!nullToAbsent || packageQuantitySnapshot != null) {
+      map['package_quantity_snapshot'] = Variable<double>(
+        packageQuantitySnapshot,
+      );
     }
     return map;
   }
@@ -1711,6 +2040,22 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       lastSyncedAt: lastSyncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastSyncedAt),
+      costSnapshotClp: costSnapshotClp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(costSnapshotClp),
+      costPer100SnapshotClp: costPer100SnapshotClp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(costPer100SnapshotClp),
+      costPerServingSnapshotClp:
+          costPerServingSnapshotClp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(costPerServingSnapshotClp),
+      packagePriceSnapshotClp: packagePriceSnapshotClp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packagePriceSnapshotClp),
+      packageQuantitySnapshot: packageQuantitySnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packageQuantitySnapshot),
     );
   }
 
@@ -1735,6 +2080,19 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       userId: serializer.fromJson<String?>(json['userId']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+      costSnapshotClp: serializer.fromJson<double?>(json['costSnapshotClp']),
+      costPer100SnapshotClp: serializer.fromJson<double?>(
+        json['costPer100SnapshotClp'],
+      ),
+      costPerServingSnapshotClp: serializer.fromJson<double?>(
+        json['costPerServingSnapshotClp'],
+      ),
+      packagePriceSnapshotClp: serializer.fromJson<double?>(
+        json['packagePriceSnapshotClp'],
+      ),
+      packageQuantitySnapshot: serializer.fromJson<double?>(
+        json['packageQuantitySnapshot'],
+      ),
     );
   }
   @override
@@ -1756,6 +2114,19 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       'userId': serializer.toJson<String?>(userId),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+      'costSnapshotClp': serializer.toJson<double?>(costSnapshotClp),
+      'costPer100SnapshotClp': serializer.toJson<double?>(
+        costPer100SnapshotClp,
+      ),
+      'costPerServingSnapshotClp': serializer.toJson<double?>(
+        costPerServingSnapshotClp,
+      ),
+      'packagePriceSnapshotClp': serializer.toJson<double?>(
+        packagePriceSnapshotClp,
+      ),
+      'packageQuantitySnapshot': serializer.toJson<double?>(
+        packageQuantitySnapshot,
+      ),
     };
   }
 
@@ -1775,6 +2146,11 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     Value<String?> userId = const Value.absent(),
     String? syncStatus,
     Value<DateTime?> lastSyncedAt = const Value.absent(),
+    Value<double?> costSnapshotClp = const Value.absent(),
+    Value<double?> costPer100SnapshotClp = const Value.absent(),
+    Value<double?> costPerServingSnapshotClp = const Value.absent(),
+    Value<double?> packagePriceSnapshotClp = const Value.absent(),
+    Value<double?> packageQuantitySnapshot = const Value.absent(),
   }) => LogItemRow(
     id: id ?? this.id,
     productId: productId ?? this.productId,
@@ -1791,6 +2167,21 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     userId: userId.present ? userId.value : this.userId,
     syncStatus: syncStatus ?? this.syncStatus,
     lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+    costSnapshotClp: costSnapshotClp.present
+        ? costSnapshotClp.value
+        : this.costSnapshotClp,
+    costPer100SnapshotClp: costPer100SnapshotClp.present
+        ? costPer100SnapshotClp.value
+        : this.costPer100SnapshotClp,
+    costPerServingSnapshotClp: costPerServingSnapshotClp.present
+        ? costPerServingSnapshotClp.value
+        : this.costPerServingSnapshotClp,
+    packagePriceSnapshotClp: packagePriceSnapshotClp.present
+        ? packagePriceSnapshotClp.value
+        : this.packagePriceSnapshotClp,
+    packageQuantitySnapshot: packageQuantitySnapshot.present
+        ? packageQuantitySnapshot.value
+        : this.packageQuantitySnapshot,
   );
   LogItemRow copyWithCompanion(LogItemRowsCompanion data) {
     return LogItemRow(
@@ -1813,6 +2204,21 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       lastSyncedAt: data.lastSyncedAt.present
           ? data.lastSyncedAt.value
           : this.lastSyncedAt,
+      costSnapshotClp: data.costSnapshotClp.present
+          ? data.costSnapshotClp.value
+          : this.costSnapshotClp,
+      costPer100SnapshotClp: data.costPer100SnapshotClp.present
+          ? data.costPer100SnapshotClp.value
+          : this.costPer100SnapshotClp,
+      costPerServingSnapshotClp: data.costPerServingSnapshotClp.present
+          ? data.costPerServingSnapshotClp.value
+          : this.costPerServingSnapshotClp,
+      packagePriceSnapshotClp: data.packagePriceSnapshotClp.present
+          ? data.packagePriceSnapshotClp.value
+          : this.packagePriceSnapshotClp,
+      packageQuantitySnapshot: data.packageQuantitySnapshot.present
+          ? data.packageQuantitySnapshot.value
+          : this.packageQuantitySnapshot,
     );
   }
 
@@ -1833,7 +2239,12 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
           ..write('deletedAt: $deletedAt, ')
           ..write('userId: $userId, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('costSnapshotClp: $costSnapshotClp, ')
+          ..write('costPer100SnapshotClp: $costPer100SnapshotClp, ')
+          ..write('costPerServingSnapshotClp: $costPerServingSnapshotClp, ')
+          ..write('packagePriceSnapshotClp: $packagePriceSnapshotClp, ')
+          ..write('packageQuantitySnapshot: $packageQuantitySnapshot')
           ..write(')'))
         .toString();
   }
@@ -1855,6 +2266,11 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     userId,
     syncStatus,
     lastSyncedAt,
+    costSnapshotClp,
+    costPer100SnapshotClp,
+    costPerServingSnapshotClp,
+    packagePriceSnapshotClp,
+    packageQuantitySnapshot,
   );
   @override
   bool operator ==(Object other) =>
@@ -1874,7 +2290,12 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
           other.deletedAt == this.deletedAt &&
           other.userId == this.userId &&
           other.syncStatus == this.syncStatus &&
-          other.lastSyncedAt == this.lastSyncedAt);
+          other.lastSyncedAt == this.lastSyncedAt &&
+          other.costSnapshotClp == this.costSnapshotClp &&
+          other.costPer100SnapshotClp == this.costPer100SnapshotClp &&
+          other.costPerServingSnapshotClp == this.costPerServingSnapshotClp &&
+          other.packagePriceSnapshotClp == this.packagePriceSnapshotClp &&
+          other.packageQuantitySnapshot == this.packageQuantitySnapshot);
 }
 
 class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
@@ -1893,6 +2314,11 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
   final Value<String?> userId;
   final Value<String> syncStatus;
   final Value<DateTime?> lastSyncedAt;
+  final Value<double?> costSnapshotClp;
+  final Value<double?> costPer100SnapshotClp;
+  final Value<double?> costPerServingSnapshotClp;
+  final Value<double?> packagePriceSnapshotClp;
+  final Value<double?> packageQuantitySnapshot;
   final Value<int> rowid;
   const LogItemRowsCompanion({
     this.id = const Value.absent(),
@@ -1910,6 +2336,11 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     this.userId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
+    this.costSnapshotClp = const Value.absent(),
+    this.costPer100SnapshotClp = const Value.absent(),
+    this.costPerServingSnapshotClp = const Value.absent(),
+    this.packagePriceSnapshotClp = const Value.absent(),
+    this.packageQuantitySnapshot = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LogItemRowsCompanion.insert({
@@ -1928,6 +2359,11 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     this.userId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
+    this.costSnapshotClp = const Value.absent(),
+    this.costPer100SnapshotClp = const Value.absent(),
+    this.costPerServingSnapshotClp = const Value.absent(),
+    this.packagePriceSnapshotClp = const Value.absent(),
+    this.packageQuantitySnapshot = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        productId = Value(productId),
@@ -1956,6 +2392,11 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     Expression<String>? userId,
     Expression<String>? syncStatus,
     Expression<DateTime>? lastSyncedAt,
+    Expression<double>? costSnapshotClp,
+    Expression<double>? costPer100SnapshotClp,
+    Expression<double>? costPerServingSnapshotClp,
+    Expression<double>? packagePriceSnapshotClp,
+    Expression<double>? packageQuantitySnapshot,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1974,6 +2415,15 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
       if (userId != null) 'user_id': userId,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (costSnapshotClp != null) 'cost_snapshot_clp': costSnapshotClp,
+      if (costPer100SnapshotClp != null)
+        'cost_per100_snapshot_clp': costPer100SnapshotClp,
+      if (costPerServingSnapshotClp != null)
+        'cost_per_serving_snapshot_clp': costPerServingSnapshotClp,
+      if (packagePriceSnapshotClp != null)
+        'package_price_snapshot_clp': packagePriceSnapshotClp,
+      if (packageQuantitySnapshot != null)
+        'package_quantity_snapshot': packageQuantitySnapshot,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1994,6 +2444,11 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     Value<String?>? userId,
     Value<String>? syncStatus,
     Value<DateTime?>? lastSyncedAt,
+    Value<double?>? costSnapshotClp,
+    Value<double?>? costPer100SnapshotClp,
+    Value<double?>? costPerServingSnapshotClp,
+    Value<double?>? packagePriceSnapshotClp,
+    Value<double?>? packageQuantitySnapshot,
     Value<int>? rowid,
   }) {
     return LogItemRowsCompanion(
@@ -2012,6 +2467,15 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
       userId: userId ?? this.userId,
       syncStatus: syncStatus ?? this.syncStatus,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      costSnapshotClp: costSnapshotClp ?? this.costSnapshotClp,
+      costPer100SnapshotClp:
+          costPer100SnapshotClp ?? this.costPer100SnapshotClp,
+      costPerServingSnapshotClp:
+          costPerServingSnapshotClp ?? this.costPerServingSnapshotClp,
+      packagePriceSnapshotClp:
+          packagePriceSnapshotClp ?? this.packagePriceSnapshotClp,
+      packageQuantitySnapshot:
+          packageQuantitySnapshot ?? this.packageQuantitySnapshot,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2064,6 +2528,29 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     if (lastSyncedAt.present) {
       map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
     }
+    if (costSnapshotClp.present) {
+      map['cost_snapshot_clp'] = Variable<double>(costSnapshotClp.value);
+    }
+    if (costPer100SnapshotClp.present) {
+      map['cost_per100_snapshot_clp'] = Variable<double>(
+        costPer100SnapshotClp.value,
+      );
+    }
+    if (costPerServingSnapshotClp.present) {
+      map['cost_per_serving_snapshot_clp'] = Variable<double>(
+        costPerServingSnapshotClp.value,
+      );
+    }
+    if (packagePriceSnapshotClp.present) {
+      map['package_price_snapshot_clp'] = Variable<double>(
+        packagePriceSnapshotClp.value,
+      );
+    }
+    if (packageQuantitySnapshot.present) {
+      map['package_quantity_snapshot'] = Variable<double>(
+        packageQuantitySnapshot.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2088,6 +2575,11 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
           ..write('userId: $userId, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('costSnapshotClp: $costSnapshotClp, ')
+          ..write('costPer100SnapshotClp: $costPer100SnapshotClp, ')
+          ..write('costPerServingSnapshotClp: $costPerServingSnapshotClp, ')
+          ..write('packagePriceSnapshotClp: $packagePriceSnapshotClp, ')
+          ..write('packageQuantitySnapshot: $packageQuantitySnapshot, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3830,6 +4322,9 @@ typedef $$ProductRowsTableCreateCompanionBuilder =
       Value<double?> saturatedFatPer100,
       Value<double?> sodiumPer100,
       Value<double?> fiberPer100,
+      Value<double?> packagePriceClp,
+      Value<double?> packageQuantity,
+      Value<String?> packageQuantityUnit,
       Value<int> rowid,
     });
 typedef $$ProductRowsTableUpdateCompanionBuilder =
@@ -3856,6 +4351,9 @@ typedef $$ProductRowsTableUpdateCompanionBuilder =
       Value<double?> saturatedFatPer100,
       Value<double?> sodiumPer100,
       Value<double?> fiberPer100,
+      Value<double?> packagePriceClp,
+      Value<double?> packageQuantity,
+      Value<String?> packageQuantityUnit,
       Value<int> rowid,
     });
 
@@ -3975,6 +4473,21 @@ class $$ProductRowsTableFilterComposer
 
   ColumnFilters<double> get fiberPer100 => $composableBuilder(
     column: $table.fiberPer100,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get packagePriceClp => $composableBuilder(
+    column: $table.packagePriceClp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get packageQuantity => $composableBuilder(
+    column: $table.packageQuantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get packageQuantityUnit => $composableBuilder(
+    column: $table.packageQuantityUnit,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4097,6 +4610,21 @@ class $$ProductRowsTableOrderingComposer
     column: $table.fiberPer100,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get packagePriceClp => $composableBuilder(
+    column: $table.packagePriceClp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get packageQuantity => $composableBuilder(
+    column: $table.packageQuantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get packageQuantityUnit => $composableBuilder(
+    column: $table.packageQuantityUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ProductRowsTableAnnotationComposer
@@ -4195,6 +4723,21 @@ class $$ProductRowsTableAnnotationComposer
     column: $table.fiberPer100,
     builder: (column) => column,
   );
+
+  GeneratedColumn<double> get packagePriceClp => $composableBuilder(
+    column: $table.packagePriceClp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get packageQuantity => $composableBuilder(
+    column: $table.packageQuantity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get packageQuantityUnit => $composableBuilder(
+    column: $table.packageQuantityUnit,
+    builder: (column) => column,
+  );
 }
 
 class $$ProductRowsTableTableManager
@@ -4250,6 +4793,9 @@ class $$ProductRowsTableTableManager
                 Value<double?> saturatedFatPer100 = const Value.absent(),
                 Value<double?> sodiumPer100 = const Value.absent(),
                 Value<double?> fiberPer100 = const Value.absent(),
+                Value<double?> packagePriceClp = const Value.absent(),
+                Value<double?> packageQuantity = const Value.absent(),
+                Value<String?> packageQuantityUnit = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductRowsCompanion(
                 id: id,
@@ -4274,6 +4820,9 @@ class $$ProductRowsTableTableManager
                 saturatedFatPer100: saturatedFatPer100,
                 sodiumPer100: sodiumPer100,
                 fiberPer100: fiberPer100,
+                packagePriceClp: packagePriceClp,
+                packageQuantity: packageQuantity,
+                packageQuantityUnit: packageQuantityUnit,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4300,6 +4849,9 @@ class $$ProductRowsTableTableManager
                 Value<double?> saturatedFatPer100 = const Value.absent(),
                 Value<double?> sodiumPer100 = const Value.absent(),
                 Value<double?> fiberPer100 = const Value.absent(),
+                Value<double?> packagePriceClp = const Value.absent(),
+                Value<double?> packageQuantity = const Value.absent(),
+                Value<String?> packageQuantityUnit = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductRowsCompanion.insert(
                 id: id,
@@ -4324,6 +4876,9 @@ class $$ProductRowsTableTableManager
                 saturatedFatPer100: saturatedFatPer100,
                 sodiumPer100: sodiumPer100,
                 fiberPer100: fiberPer100,
+                packagePriceClp: packagePriceClp,
+                packageQuantity: packageQuantity,
+                packageQuantityUnit: packageQuantityUnit,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -4368,6 +4923,11 @@ typedef $$LogItemRowsTableCreateCompanionBuilder =
       Value<String?> userId,
       Value<String> syncStatus,
       Value<DateTime?> lastSyncedAt,
+      Value<double?> costSnapshotClp,
+      Value<double?> costPer100SnapshotClp,
+      Value<double?> costPerServingSnapshotClp,
+      Value<double?> packagePriceSnapshotClp,
+      Value<double?> packageQuantitySnapshot,
       Value<int> rowid,
     });
 typedef $$LogItemRowsTableUpdateCompanionBuilder =
@@ -4387,6 +4947,11 @@ typedef $$LogItemRowsTableUpdateCompanionBuilder =
       Value<String?> userId,
       Value<String> syncStatus,
       Value<DateTime?> lastSyncedAt,
+      Value<double?> costSnapshotClp,
+      Value<double?> costPer100SnapshotClp,
+      Value<double?> costPerServingSnapshotClp,
+      Value<double?> packagePriceSnapshotClp,
+      Value<double?> packageQuantitySnapshot,
       Value<int> rowid,
     });
 
@@ -4471,6 +5036,31 @@ class $$LogItemRowsTableFilterComposer
 
   ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
     column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get costSnapshotClp => $composableBuilder(
+    column: $table.costSnapshotClp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get costPer100SnapshotClp => $composableBuilder(
+    column: $table.costPer100SnapshotClp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get costPerServingSnapshotClp => $composableBuilder(
+    column: $table.costPerServingSnapshotClp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get packagePriceSnapshotClp => $composableBuilder(
+    column: $table.packagePriceSnapshotClp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get packageQuantitySnapshot => $composableBuilder(
+    column: $table.packageQuantitySnapshot,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4558,6 +5148,31 @@ class $$LogItemRowsTableOrderingComposer
     column: $table.lastSyncedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get costSnapshotClp => $composableBuilder(
+    column: $table.costSnapshotClp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get costPer100SnapshotClp => $composableBuilder(
+    column: $table.costPer100SnapshotClp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get costPerServingSnapshotClp => $composableBuilder(
+    column: $table.costPerServingSnapshotClp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get packagePriceSnapshotClp => $composableBuilder(
+    column: $table.packagePriceSnapshotClp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get packageQuantitySnapshot => $composableBuilder(
+    column: $table.packageQuantitySnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LogItemRowsTableAnnotationComposer
@@ -4617,6 +5232,31 @@ class $$LogItemRowsTableAnnotationComposer
     column: $table.lastSyncedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<double> get costSnapshotClp => $composableBuilder(
+    column: $table.costSnapshotClp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get costPer100SnapshotClp => $composableBuilder(
+    column: $table.costPer100SnapshotClp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get costPerServingSnapshotClp => $composableBuilder(
+    column: $table.costPerServingSnapshotClp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get packagePriceSnapshotClp => $composableBuilder(
+    column: $table.packagePriceSnapshotClp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get packageQuantitySnapshot => $composableBuilder(
+    column: $table.packageQuantitySnapshot,
+    builder: (column) => column,
+  );
 }
 
 class $$LogItemRowsTableTableManager
@@ -4665,6 +5305,11 @@ class $$LogItemRowsTableTableManager
                 Value<String?> userId = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<double?> costSnapshotClp = const Value.absent(),
+                Value<double?> costPer100SnapshotClp = const Value.absent(),
+                Value<double?> costPerServingSnapshotClp = const Value.absent(),
+                Value<double?> packagePriceSnapshotClp = const Value.absent(),
+                Value<double?> packageQuantitySnapshot = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogItemRowsCompanion(
                 id: id,
@@ -4682,6 +5327,11 @@ class $$LogItemRowsTableTableManager
                 userId: userId,
                 syncStatus: syncStatus,
                 lastSyncedAt: lastSyncedAt,
+                costSnapshotClp: costSnapshotClp,
+                costPer100SnapshotClp: costPer100SnapshotClp,
+                costPerServingSnapshotClp: costPerServingSnapshotClp,
+                packagePriceSnapshotClp: packagePriceSnapshotClp,
+                packageQuantitySnapshot: packageQuantitySnapshot,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4701,6 +5351,11 @@ class $$LogItemRowsTableTableManager
                 Value<String?> userId = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<double?> costSnapshotClp = const Value.absent(),
+                Value<double?> costPer100SnapshotClp = const Value.absent(),
+                Value<double?> costPerServingSnapshotClp = const Value.absent(),
+                Value<double?> packagePriceSnapshotClp = const Value.absent(),
+                Value<double?> packageQuantitySnapshot = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogItemRowsCompanion.insert(
                 id: id,
@@ -4718,6 +5373,11 @@ class $$LogItemRowsTableTableManager
                 userId: userId,
                 syncStatus: syncStatus,
                 lastSyncedAt: lastSyncedAt,
+                costSnapshotClp: costSnapshotClp,
+                costPer100SnapshotClp: costPer100SnapshotClp,
+                costPerServingSnapshotClp: costPerServingSnapshotClp,
+                packagePriceSnapshotClp: packagePriceSnapshotClp,
+                packageQuantitySnapshot: packageQuantitySnapshot,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -18,18 +18,18 @@ void main() {
   );
 
   test('formats quantity unit labels clearly', () {
-    expect(quantityUnitLabel('g'), 'grams (g)');
-    expect(quantityUnitLabel('ml'), 'milliliters (ml)');
-    expect(quantityUnitLabel('serving'), 'serving(s)');
+    expect(quantityUnitLabel('g'), 'gramos (g)');
+    expect(quantityUnitLabel('ml'), 'mililitros (ml)');
+    expect(quantityUnitLabel('serving'), 'porción(es)');
   });
 
   test('formats quantity helper text by selected unit', () {
-    expect(quantityHelperText('g'), 'Enter the grams you ate.');
-    expect(quantityHelperText('ml'), 'Enter the milliliters you consumed.');
-    expect(quantityHelperText('serving'), 'Enter how many servings you ate.');
+    expect(quantityHelperText('g'), 'Ingresa los gramos que comiste.');
+    expect(quantityHelperText('ml'), 'Ingresa los mililitros que consumiste.');
+    expect(quantityHelperText('serving'), 'Ingresa cuántas porciones comiste.');
   });
 
   test('formats serving size display without ambiguous text', () {
-    expect(servingSizeDisplay(product), '1 serving = 125 g');
+    expect(servingSizeDisplay(product), '1 porción = 125 g');
   });
 }

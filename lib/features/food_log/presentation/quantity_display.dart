@@ -3,19 +3,19 @@ import '../../products/domain/product.dart';
 
 String quantityUnitLabel(String unit) {
   return switch (unit) {
-    'g' => 'grams (g)',
-    'ml' => 'milliliters (ml)',
-    'serving' => 'serving(s)',
+    'g' => 'gramos (g)',
+    'ml' => 'mililitros (ml)',
+    'serving' => 'porción(es)',
     _ => unit,
   };
 }
 
 String quantityHelperText(String unit) {
   return switch (unit) {
-    'g' => 'Enter the grams you ate.',
-    'ml' => 'Enter the milliliters you consumed.',
-    'serving' => 'Enter how many servings you ate.',
-    _ => 'Enter the amount you ate.',
+    'g' => 'Ingresa los gramos que comiste.',
+    'ml' => 'Ingresa los mililitros que consumiste.',
+    'serving' => 'Ingresa cuántas porciones comiste.',
+    _ => 'Ingresa la cantidad consumida.',
   };
 }
 
@@ -25,5 +25,5 @@ String? servingSizeDisplay(Product product) {
   if (size == null || unit == null || unit.trim().isEmpty) {
     return null;
   }
-  return '1 serving = ${formatQuantity(size)} $unit';
+  return '1 porción = ${formatQuantity(size)} $unit';
 }

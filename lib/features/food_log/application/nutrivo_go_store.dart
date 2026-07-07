@@ -9,6 +9,7 @@ import '../../../core/sync/record_sync_status.dart';
 import '../../ocr_reports/domain/ocr_image_saving_mode.dart';
 import '../../ocr_reports/domain/ocr_scan_report.dart';
 import '../../products/domain/product.dart';
+import '../domain/food_cost_calculator.dart';
 import '../domain/log_item.dart';
 import '../domain/macro_calculator.dart';
 import '../domain/macro_snapshot.dart';
@@ -18,10 +19,12 @@ class NutrivoGoStore extends ChangeNotifier {
   NutrivoGoStore({
     AppDatabase? database,
     MacroCalculator? calculator,
+    FoodCostCalculator? costCalculator,
     DateTime Function()? clock,
   }) : _database = database ?? AppDatabase(),
        _ownsDatabase = database == null,
        _calculator = calculator ?? const MacroCalculator(),
+       _costCalculator = costCalculator ?? const FoodCostCalculator(),
        _clock = clock ?? DateTime.now {
     ready = load();
   }
@@ -29,6 +32,7 @@ class NutrivoGoStore extends ChangeNotifier {
   final AppDatabase _database;
   final bool _ownsDatabase;
   final MacroCalculator _calculator;
+  final FoodCostCalculator _costCalculator;
   final DateTime Function() _clock;
   final List<Product> _products = <Product>[];
   final List<LogItem> _logItems = <LogItem>[];
@@ -91,6 +95,14 @@ class NutrivoGoStore extends ChangeNotifier {
     );
   }
 
+  double? get dailyCostClp {
+    return _sumKnownCosts(todaysLogItems);
+  }
+
+  bool get hasUnknownDailyCosts {
+    return todaysLogItems.any((item) => item.costSnapshotClp == null);
+  }
+
   Product? findProductByBarcode(String barcode) {
     final normalized = _normalizeBarcode(barcode);
     if (normalized == null) {
@@ -108,6 +120,68 @@ class NutrivoGoStore extends ChangeNotifier {
     return todaysLogItems
         .where((item) => item.mealType == mealType)
         .toList(growable: false);
+  }
+
+  double? costForMeal(MealType mealType) {
+    return _sumKnownCosts(itemsForMeal(mealType));
+  }
+
+  bool hasUnknownCostsForMeal(MealType mealType) {
+    return itemsForMeal(mealType).any((item) => item.costSnapshotClp == null);
+  }
+
+  List<Product> frequentProductsForMeal(MealType mealType, {int limit = 5}) {
+    final ranked = rankedProductsForMeal(mealType: mealType, query: '');
+    return ranked
+        .where((product) => _mealUsageStats(mealType)[product.id] != null)
+        .take(limit)
+        .toList(growable: false);
+  }
+
+  List<Product> rankedProductsForMeal({MealType? mealType, String query = ''}) {
+    final normalizedQuery = query.trim().toLowerCase();
+    final mealStats = mealType == null
+        ? <String, _UsageStats>{}
+        : _mealUsageStats(mealType);
+    final generalStats = _generalUsageStats();
+
+    final ranked = _products.where((product) {
+      if (normalizedQuery.isEmpty) {
+        return true;
+      }
+      return _productSearchText(product).contains(normalizedQuery);
+    }).toList();
+
+    ranked.sort((left, right) {
+      if (normalizedQuery.isNotEmpty) {
+        final searchComparison = _searchRank(
+          left,
+          normalizedQuery,
+        ).compareTo(_searchRank(right, normalizedQuery));
+        if (searchComparison != 0) {
+          return searchComparison;
+        }
+      }
+
+      final leftMeal = mealStats[left.id];
+      final rightMeal = mealStats[right.id];
+      final mealComparison = _compareUsageStats(leftMeal, rightMeal);
+      if (mealComparison != 0) {
+        return mealComparison;
+      }
+
+      final generalComparison = _compareUsageStats(
+        generalStats[left.id],
+        generalStats[right.id],
+      );
+      if (generalComparison != 0) {
+        return generalComparison;
+      }
+
+      return _compareProducts(left, right);
+    });
+
+    return List.unmodifiable(ranked);
   }
 
   Future<void> load() async {
@@ -199,6 +273,9 @@ class NutrivoGoStore extends ChangeNotifier {
     double? saturatedFatPer100,
     double? sodiumPer100,
     double? fiberPer100,
+    double? packagePriceClp,
+    double? packageQuantity,
+    String? packageQuantityUnit,
   }) async {
     final now = _clock();
     final product = Product(
@@ -221,6 +298,11 @@ class NutrivoGoStore extends ChangeNotifier {
       saturatedFatPer100: saturatedFatPer100,
       sodiumPer100: sodiumPer100,
       fiberPer100: fiberPer100,
+      packagePriceClp: packagePriceClp,
+      packageQuantity: packageQuantity,
+      packageQuantityUnit: packageQuantity == null
+          ? null
+          : _emptyToNull(packageQuantityUnit) ?? baseUnit.label,
     );
 
     await _database
@@ -252,11 +334,16 @@ class NutrivoGoStore extends ChangeNotifier {
     double? saturatedFatPer100,
     double? sodiumPer100,
     double? fiberPer100,
+    double? packagePriceClp,
+    double? packageQuantity,
+    String? packageQuantityUnit,
     bool clearExtraNutrients = false,
     bool clearSugar = false,
     bool clearSaturatedFat = false,
     bool clearSodium = false,
     bool clearFiber = false,
+    bool clearPackagePrice = false,
+    bool clearPackageQuantity = false,
   }) async {
     final updated = Product(
       id: product.id,
@@ -297,6 +384,17 @@ class NutrivoGoStore extends ChangeNotifier {
       fiberPer100: clearExtraNutrients || clearFiber
           ? null
           : fiberPer100 ?? product.fiberPer100,
+      packagePriceClp: clearPackagePrice
+          ? null
+          : packagePriceClp ?? product.packagePriceClp,
+      packageQuantity: clearPackageQuantity
+          ? null
+          : packageQuantity ?? product.packageQuantity,
+      packageQuantityUnit: clearPackageQuantity
+          ? null
+          : packageQuantityUnit == null
+          ? product.packageQuantityUnit
+          : _emptyToNull(packageQuantityUnit),
     );
 
     await (_database.update(_database.productRows)
@@ -342,6 +440,11 @@ class NutrivoGoStore extends ChangeNotifier {
       quantity: quantity,
       unit: unit,
     );
+    final costSnapshot = _costCalculator.calculateLogCost(
+      product: product,
+      quantity: quantity,
+      unit: unit,
+    );
     final item = LogItem(
       id: _makeId('log'),
       product: product,
@@ -352,6 +455,11 @@ class NutrivoGoStore extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
       userId: _activeUserId,
+      costSnapshotClp: costSnapshot,
+      costPer100SnapshotClp: _costCalculator.costPer100(product),
+      costPerServingSnapshotClp: _costCalculator.costPerServing(product),
+      packagePriceSnapshotClp: product.packagePriceClp,
+      packageQuantitySnapshot: product.packageQuantity,
     );
 
     await _database
@@ -478,6 +586,9 @@ class NutrivoGoStore extends ChangeNotifier {
       saturatedFatPer100: row.saturatedFatPer100,
       sodiumPer100: row.sodiumPer100,
       fiberPer100: row.fiberPer100,
+      packagePriceClp: row.packagePriceClp,
+      packageQuantity: row.packageQuantity,
+      packageQuantityUnit: row.packageQuantityUnit,
     );
   }
 
@@ -505,6 +616,9 @@ class NutrivoGoStore extends ChangeNotifier {
       saturatedFatPer100: Value(product.saturatedFatPer100),
       sodiumPer100: Value(product.sodiumPer100),
       fiberPer100: Value(product.fiberPer100),
+      packagePriceClp: Value(product.packagePriceClp),
+      packageQuantity: Value(product.packageQuantity),
+      packageQuantityUnit: Value(product.packageQuantityUnit),
     );
   }
 
@@ -527,6 +641,11 @@ class NutrivoGoStore extends ChangeNotifier {
       userId: row.userId,
       syncStatus: RecordSyncStatus.fromStorage(row.syncStatus),
       lastSyncedAt: row.lastSyncedAt,
+      costSnapshotClp: row.costSnapshotClp,
+      costPer100SnapshotClp: row.costPer100SnapshotClp,
+      costPerServingSnapshotClp: row.costPerServingSnapshotClp,
+      packagePriceSnapshotClp: row.packagePriceSnapshotClp,
+      packageQuantitySnapshot: row.packageQuantitySnapshot,
     );
   }
 
@@ -547,6 +666,11 @@ class NutrivoGoStore extends ChangeNotifier {
       userId: Value(item.userId),
       syncStatus: Value(item.syncStatus.storageValue),
       lastSyncedAt: Value(item.lastSyncedAt),
+      costSnapshotClp: Value(item.costSnapshotClp),
+      costPer100SnapshotClp: Value(item.costPer100SnapshotClp),
+      costPerServingSnapshotClp: Value(item.costPerServingSnapshotClp),
+      packagePriceSnapshotClp: Value(item.packagePriceSnapshotClp),
+      packageQuantitySnapshot: Value(item.packageQuantitySnapshot),
     );
   }
 
@@ -643,6 +767,90 @@ class NutrivoGoStore extends ChangeNotifier {
     );
   }
 
+  double? _sumKnownCosts(Iterable<LogItem> items) {
+    var hasKnownCost = false;
+    var total = 0.0;
+    for (final item in items) {
+      final cost = item.costSnapshotClp;
+      if (cost == null) {
+        continue;
+      }
+      hasKnownCost = true;
+      total += cost;
+    }
+    return hasKnownCost ? total : null;
+  }
+
+  Map<String, _UsageStats> _mealUsageStats(MealType mealType) {
+    final stats = <String, _UsageStats>{};
+    for (final item in _logItems) {
+      if (item.mealType != mealType) {
+        continue;
+      }
+      stats.update(
+        item.product.id,
+        (current) => current.add(item.createdAt),
+        ifAbsent: () => _UsageStats.first(item.createdAt),
+      );
+    }
+    return stats;
+  }
+
+  Map<String, _UsageStats> _generalUsageStats() {
+    final stats = <String, _UsageStats>{};
+    for (final item in _logItems) {
+      stats.update(
+        item.product.id,
+        (current) => current.add(item.createdAt),
+        ifAbsent: () => _UsageStats.first(item.createdAt),
+      );
+    }
+    return stats;
+  }
+
+  String _productSearchText(Product product) {
+    return '${product.name} ${product.brand ?? ''} ${product.barcode ?? ''}'
+        .toLowerCase();
+  }
+
+  int _searchRank(Product product, String query) {
+    final name = product.name.toLowerCase();
+    final brand = product.brand?.toLowerCase() ?? '';
+    final barcode = product.barcode?.toLowerCase() ?? '';
+    if (name == query || barcode == query) {
+      return 0;
+    }
+    if (name.startsWith(query)) {
+      return 1;
+    }
+    if (brand.startsWith(query)) {
+      return 2;
+    }
+    return 3;
+  }
+
+  int _compareUsageStats(_UsageStats? left, _UsageStats? right) {
+    final leftCount = left?.count ?? 0;
+    final rightCount = right?.count ?? 0;
+    final countComparison = rightCount.compareTo(leftCount);
+    if (countComparison != 0) {
+      return countComparison;
+    }
+
+    final leftLastUsed = left?.lastUsedAt;
+    final rightLastUsed = right?.lastUsedAt;
+    if (leftLastUsed == null && rightLastUsed == null) {
+      return 0;
+    }
+    if (leftLastUsed == null) {
+      return 1;
+    }
+    if (rightLastUsed == null) {
+      return -1;
+    }
+    return rightLastUsed.compareTo(leftLastUsed);
+  }
+
   int _compareProducts(Product left, Product right) {
     return left.displayName.toLowerCase().compareTo(
       right.displayName.toLowerCase(),
@@ -693,5 +901,23 @@ class NutrivoGoStore extends ChangeNotifier {
       return null;
     }
     return trimmed.replaceAll(RegExp(r'\s+'), '');
+  }
+}
+
+class _UsageStats {
+  const _UsageStats({required this.count, required this.lastUsedAt});
+
+  factory _UsageStats.first(DateTime usedAt) {
+    return _UsageStats(count: 1, lastUsedAt: usedAt);
+  }
+
+  final int count;
+  final DateTime lastUsedAt;
+
+  _UsageStats add(DateTime usedAt) {
+    return _UsageStats(
+      count: count + 1,
+      lastUsedAt: usedAt.isAfter(lastUsedAt) ? usedAt : lastUsedAt,
+    );
   }
 }

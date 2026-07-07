@@ -35,6 +35,9 @@ class ProductRows extends Table {
   RealColumn get saturatedFatPer100 => real().nullable()();
   RealColumn get sodiumPer100 => real().nullable()();
   RealColumn get fiberPer100 => real().nullable()();
+  RealColumn get packagePriceClp => real().nullable()();
+  RealColumn get packageQuantity => real().nullable()();
+  TextColumn get packageQuantityUnit => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -60,6 +63,11 @@ class LogItemRows extends Table {
   TextColumn get userId => text().nullable()();
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
   DateTimeColumn get lastSyncedAt => dateTime().nullable()();
+  RealColumn get costSnapshotClp => real().nullable()();
+  RealColumn get costPer100SnapshotClp => real().nullable()();
+  RealColumn get costPerServingSnapshotClp => real().nullable()();
+  RealColumn get packagePriceSnapshotClp => real().nullable()();
+  RealColumn get packageQuantitySnapshot => real().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -122,7 +130,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.connect(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -147,6 +155,28 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         await migrator.createTable(ocrScanReportRows);
         await migrator.createTable(appSettingRows);
+      }
+      if (from < 5) {
+        await migrator.addColumn(productRows, productRows.packagePriceClp);
+        await migrator.addColumn(productRows, productRows.packageQuantity);
+        await migrator.addColumn(productRows, productRows.packageQuantityUnit);
+        await migrator.addColumn(logItemRows, logItemRows.costSnapshotClp);
+        await migrator.addColumn(
+          logItemRows,
+          logItemRows.costPer100SnapshotClp,
+        );
+        await migrator.addColumn(
+          logItemRows,
+          logItemRows.costPerServingSnapshotClp,
+        );
+        await migrator.addColumn(
+          logItemRows,
+          logItemRows.packagePriceSnapshotClp,
+        );
+        await migrator.addColumn(
+          logItemRows,
+          logItemRows.packageQuantitySnapshot,
+        );
       }
     },
   );

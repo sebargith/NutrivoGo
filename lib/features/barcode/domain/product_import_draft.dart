@@ -18,6 +18,9 @@ class ProductImportDraft {
     this.saturatedFatPer100,
     this.sodiumPer100,
     this.fiberPer100,
+    this.packagePriceClp,
+    this.packageQuantity,
+    this.packageQuantityUnit,
     this.source = 'barcode',
   });
 
@@ -35,6 +38,9 @@ class ProductImportDraft {
   final double? saturatedFatPer100;
   final double? sodiumPer100;
   final double? fiberPer100;
+  final double? packagePriceClp;
+  final double? packageQuantity;
+  final String? packageQuantityUnit;
   final String source;
 
   bool get hasRequiredNutrition {
@@ -60,6 +66,9 @@ class ProductImportDraft {
     double? saturatedFatPer100,
     double? sodiumPer100,
     double? fiberPer100,
+    double? packagePriceClp,
+    double? packageQuantity,
+    String? packageQuantityUnit,
     String? source,
   }) {
     return ProductImportDraft(
@@ -77,6 +86,9 @@ class ProductImportDraft {
       saturatedFatPer100: saturatedFatPer100 ?? this.saturatedFatPer100,
       sodiumPer100: sodiumPer100 ?? this.sodiumPer100,
       fiberPer100: fiberPer100 ?? this.fiberPer100,
+      packagePriceClp: packagePriceClp ?? this.packagePriceClp,
+      packageQuantity: packageQuantity ?? this.packageQuantity,
+      packageQuantityUnit: packageQuantityUnit ?? this.packageQuantityUnit,
       source: source ?? this.source,
     );
   }

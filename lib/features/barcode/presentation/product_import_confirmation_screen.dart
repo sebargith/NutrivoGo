@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../food_log/application/nutrivo_go_store.dart';
 import '../../products/domain/product.dart';
+import '../../products/presentation/product_cost_fields.dart';
 import '../application/product_import_saver.dart';
 import '../domain/product_import_draft.dart';
 
@@ -36,6 +37,8 @@ class _ProductImportConfirmationScreenState
   final _brandController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _servingSizeController = TextEditingController();
+  final _packagePriceController = TextEditingController();
+  final _packageQuantityController = TextEditingController();
   final _caloriesController = TextEditingController();
   final _proteinController = TextEditingController();
   final _carbsController = TextEditingController();
@@ -55,6 +58,12 @@ class _ProductImportConfirmationScreenState
     _brandController.text = draft.brand ?? '';
     _barcodeController.text = draft.barcode;
     _servingSizeController.text = _formatInputNumberOrEmpty(draft.servingSize);
+    _packagePriceController.text = _formatInputNumberOrEmpty(
+      draft.packagePriceClp,
+    );
+    _packageQuantityController.text = _formatInputNumberOrEmpty(
+      draft.packageQuantity,
+    );
     _caloriesController.text = _formatInputNumberOrEmpty(draft.caloriesPer100);
     _proteinController.text = _formatInputNumberOrEmpty(draft.proteinPer100);
     _carbsController.text = _formatInputNumberOrEmpty(draft.carbsPer100);
@@ -74,6 +83,8 @@ class _ProductImportConfirmationScreenState
     _brandController.dispose();
     _barcodeController.dispose();
     _servingSizeController.dispose();
+    _packagePriceController.dispose();
+    _packageQuantityController.dispose();
     _caloriesController.dispose();
     _proteinController.dispose();
     _carbsController.dispose();
@@ -167,6 +178,14 @@ class _ProductImportConfirmationScreenState
                         'El tamaño de la porción debe ser mayor que cero',
                   ),
                   const SizedBox(height: 20),
+                  ProductCostFields(
+                    packagePriceController: _packagePriceController,
+                    packageQuantityController: _packageQuantityController,
+                    servingSizeController: _servingSizeController,
+                    baseUnit: _baseUnit,
+                    numberInputFormatter: _numberInputFormatter,
+                  ),
+                  const SizedBox(height: 20),
                   Text(
                     per100Label,
                     style: Theme.of(context).textTheme.titleSmall,
@@ -256,6 +275,11 @@ class _ProductImportConfirmationScreenState
       saturatedFatPer100: _parseOptionalNumber(_saturatedFatController.text),
       sodiumPer100: _parseOptionalNumber(_sodiumController.text),
       fiberPer100: _parseOptionalNumber(_fiberController.text),
+      packagePriceClp: _parseOptionalNumber(_packagePriceController.text),
+      packageQuantity: _parseOptionalNumber(_packageQuantityController.text),
+      packageQuantityUnit: _packageQuantityController.text.trim().isEmpty
+          ? null
+          : _baseUnit.label,
     );
     final product = await widget.saver.save(widget.store, draft);
     if (!mounted) {

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/utils/cost_formatters.dart';
 import '../../../shared/utils/macro_formatters.dart';
 import '../../barcode/application/open_food_facts_client.dart';
 import '../../barcode/domain/product_import_draft.dart';
 import '../../barcode/presentation/barcode_scan_screen.dart';
 import '../../barcode/presentation/product_import_confirmation_screen.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
+import '../../food_log/domain/food_cost_calculator.dart';
 import '../../food_log/domain/log_item.dart';
+import '../../food_log/domain/meal_type.dart';
 import '../../food_log/presentation/add_food_quantity_screen.dart';
 import '../../ocr/domain/nutrition_label_ocr_draft.dart';
 import '../../ocr/presentation/ocr_product_confirmation_screen.dart';
@@ -17,9 +20,14 @@ import 'create_product_screen.dart';
 enum _ProductAction { edit, delete }
 
 class ProductSearchScreen extends StatefulWidget {
-  const ProductSearchScreen({required this.store, super.key});
+  const ProductSearchScreen({
+    required this.store,
+    super.key,
+    this.initialMealType,
+  });
 
   final NutrivoGoStore store;
+  final MealType? initialMealType;
 
   @override
   State<ProductSearchScreen> createState() => _ProductSearchScreenState();
@@ -50,7 +58,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Agregar alimento'),
+        title: Text(
+          widget.initialMealType == null
+              ? 'Agregar alimento'
+              : 'Agregar a ${widget.initialMealType!.label}',
+        ),
         actions: [
           IconButton(
             tooltip: 'Escanear código de barras',
@@ -78,8 +90,13 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
         child: AnimatedBuilder(
           animation: widget.store,
           builder: (context, _) {
-            final products = _filteredProducts(widget.store.products);
-            final recentProducts = _query.isEmpty
+            final products = _filteredProducts();
+            final frequentProducts =
+                _query.isEmpty && widget.initialMealType != null
+                ? widget.store.frequentProductsForMeal(widget.initialMealType!)
+                : <Product>[];
+            final recentProducts =
+                _query.isEmpty && widget.initialMealType == null
                 ? widget.store.recentProducts
                 : <Product>[];
             return Center(
@@ -109,6 +126,22 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                     else if (products.isEmpty)
                       _NoResults(onCreate: _createProduct)
                     else ...[
+                      if (frequentProducts.isNotEmpty) ...[
+                        _SectionHeader(
+                          title:
+                              'Frecuentes en ${widget.initialMealType!.label}',
+                          subtitle: 'Usados en esta comida',
+                        ),
+                        const SizedBox(height: 8),
+                        for (final product in frequentProducts)
+                          _ProductTile(
+                            product: product,
+                            onTap: _selectProduct,
+                            onEdit: _editProduct,
+                            onDelete: _confirmDeleteProduct,
+                          ),
+                        const SizedBox(height: 12),
+                      ],
                       if (recentProducts.isNotEmpty) ...[
                         _SectionHeader(
                           title: 'Recientes',
@@ -147,19 +180,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     );
   }
 
-  List<Product> _filteredProducts(List<Product> products) {
-    if (_query.isEmpty) {
-      return products;
-    }
-    return products
-        .where((product) {
-          final haystack =
-              '${product.name} ${product.brand ?? ''}'
-                      ' ${product.barcode ?? ''}'
-                  .toLowerCase();
-          return haystack.contains(_query);
-        })
-        .toList(growable: false);
+  List<Product> _filteredProducts() {
+    return widget.store.rankedProductsForMeal(
+      mealType: widget.initialMealType,
+      query: _query,
+    );
   }
 
   Future<void> _createProduct() async {
@@ -329,8 +354,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   Future<void> _selectProduct(Product product) async {
     final loggedItem = await Navigator.of(context).push<LogItem>(
       MaterialPageRoute<LogItem>(
-        builder: (_) =>
-            AddFoodQuantityScreen(store: widget.store, product: product),
+        builder: (_) => AddFoodQuantityScreen(
+          store: widget.store,
+          product: product,
+          initialMealType: widget.initialMealType,
+        ),
       ),
     );
     if (!mounted || loggedItem == null) {
@@ -427,6 +455,8 @@ class _ProductTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final costPerServing = const FoodCostCalculator().costPerServing(product);
+    final costPer100 = const FoodCostCalculator().costPer100(product);
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
@@ -437,7 +467,11 @@ class _ProductTile extends StatelessWidget {
           [
             if (product.brand?.isNotEmpty == true) product.brand!,
             '${formatMacro(product.caloriesPer100)} kcal / 100${product.baseUnitLabel}',
-            if (product.servingLabel != null) 'Serving ${product.servingLabel}',
+            if (product.servingLabel != null) 'Porción ${product.servingLabel}',
+            if (costPerServing != null)
+              'Costo por porción ${formatClp(costPerServing)}'
+            else if (costPer100 != null)
+              'Costo por 100${product.baseUnitLabel} ${formatClp(costPer100)}',
           ].join(' - '),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

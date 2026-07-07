@@ -121,6 +121,40 @@ void main() {
     expect(fixture.remote.logItems.values.single['meal_type'], 'afternoon');
   });
 
+  test('sync pushes product cost fields and log cost snapshots', () async {
+    final fixture = await createFixture();
+    final product = await fixture.store.addProduct(
+      name: 'Avena',
+      baseUnit: BaseUnit.grams,
+      caloriesPer100: 380,
+      proteinPer100: 13,
+      carbsPer100: 62,
+      fatPer100: 7,
+      packagePriceClp: 3000,
+      packageQuantity: 1000,
+      packageQuantityUnit: 'g',
+    );
+    await fixture.store.addLogItem(
+      product: product,
+      quantity: 120,
+      unit: 'g',
+      mealType: MealType.breakfast,
+    );
+
+    await fixture.syncService.sync();
+
+    final remoteProduct = fixture.remote.products.values.single;
+    expect(remoteProduct['package_price_clp'], 3000);
+    expect(remoteProduct['package_quantity'], 1000);
+    expect(remoteProduct['package_quantity_unit'], 'g');
+    final remoteLog = fixture.remote.logItems.values.single;
+    expect(remoteLog['cost_snapshot_clp'], closeTo(360, 0.001));
+    expect(remoteLog['cost_per_100_snapshot_clp'], closeTo(300, 0.001));
+    expect(remoteLog['cost_per_serving_snapshot_clp'], isNull);
+    expect(remoteLog['package_price_snapshot_clp'], 3000);
+    expect(remoteLog['package_quantity_snapshot'], 1000);
+  });
+
   test('prevents duplicate OCR report rows when syncing repeatedly', () async {
     final fixture = await createFixture();
     await addOcrReport(fixture.store);
@@ -383,6 +417,37 @@ void main() {
     expect(afternoonItems.single.mealType.label, 'Tarde');
   });
 
+  test('pulls remote product and log cost fields', () async {
+    final fixture = await createFixture();
+    fixture.remote.products['remote-cost-product'] = _remoteProductRow(
+      id: 'remote-cost-product',
+      userId: 'user-1',
+      name: 'Remote oats',
+      updatedAt: fixedNow,
+      packagePriceClp: 3000,
+      packageQuantity: 1000,
+      packageQuantityUnit: 'g',
+    );
+    fixture.remote.logItems['remote-cost-log'] = _remoteLogItemRow(
+      id: 'remote-cost-log',
+      userId: 'user-1',
+      productId: 'remote-cost-product',
+      mealType: 'breakfast',
+      updatedAt: fixedNow,
+      costSnapshotClp: 360,
+      costPer100SnapshotClp: 300,
+      packagePriceSnapshotClp: 3000,
+      packageQuantitySnapshot: 1000,
+    );
+
+    await fixture.syncService.sync();
+
+    expect(fixture.store.products.single.packagePriceClp, 3000);
+    expect(fixture.store.products.single.packageQuantity, 1000);
+    expect(fixture.store.logItems.single.costSnapshotClp, 360);
+    expect(fixture.store.dailyCostClp, 360);
+  });
+
   test('image upload failure does not block OCR report sync', () async {
     final fixture = await createFixture();
     await fixture.store.setOcrImageSavingMode(OcrImageSavingMode.always);
@@ -473,6 +538,19 @@ void main() {
       ),
     );
   });
+
+  test('Supabase migration adds food cost fields', () {
+    final migration = File(
+      'supabase/migrations/006_add_food_cost_fields.sql',
+    ).readAsStringSync();
+
+    expect(migration, contains('package_price_clp'));
+    expect(migration, contains('package_quantity'));
+    expect(migration, contains('cost_snapshot_clp'));
+    expect(migration, contains('cost_per_100_snapshot_clp'));
+    expect(migration, contains('grant select, insert, update, delete'));
+    expect(migration, contains('public.products, public.log_items'));
+  });
 }
 
 Map<String, dynamic> _remoteProductRow({
@@ -480,6 +558,9 @@ Map<String, dynamic> _remoteProductRow({
   required String userId,
   required String name,
   required DateTime updatedAt,
+  double? packagePriceClp,
+  double? packageQuantity,
+  String? packageQuantityUnit,
 }) {
   return {
     'id': id,
@@ -502,6 +583,9 @@ Map<String, dynamic> _remoteProductRow({
     'saturated_fat_per_100': null,
     'sodium_per_100': null,
     'fiber_per_100': null,
+    'package_price_clp': packagePriceClp,
+    'package_quantity': packageQuantity,
+    'package_quantity_unit': packageQuantityUnit,
   };
 }
 
@@ -511,6 +595,11 @@ Map<String, dynamic> _remoteLogItemRow({
   required String productId,
   required String mealType,
   required DateTime updatedAt,
+  double? costSnapshotClp,
+  double? costPer100SnapshotClp,
+  double? costPerServingSnapshotClp,
+  double? packagePriceSnapshotClp,
+  double? packageQuantitySnapshot,
 }) {
   return {
     'id': id,
@@ -526,6 +615,11 @@ Map<String, dynamic> _remoteLogItemRow({
     'created_at': updatedAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
     'deleted_at': null,
+    'cost_snapshot_clp': costSnapshotClp,
+    'cost_per_100_snapshot_clp': costPer100SnapshotClp,
+    'cost_per_serving_snapshot_clp': costPerServingSnapshotClp,
+    'package_price_snapshot_clp': packagePriceSnapshotClp,
+    'package_quantity_snapshot': packageQuantitySnapshot,
   };
 }
 

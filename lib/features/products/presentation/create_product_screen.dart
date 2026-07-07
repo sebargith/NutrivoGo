@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../food_log/application/nutrivo_go_store.dart';
 import '../domain/product.dart';
+import 'product_cost_fields.dart';
 
 class CreateProductScreen extends StatefulWidget {
   const CreateProductScreen({
@@ -30,6 +31,8 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   final _brandController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _servingSizeController = TextEditingController();
+  final _packagePriceController = TextEditingController();
+  final _packageQuantityController = TextEditingController();
   final _caloriesController = TextEditingController();
   final _proteinController = TextEditingController();
   final _carbsController = TextEditingController();
@@ -56,6 +59,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     _servingSizeController.text = _formatOptionalInputNumber(
       product.servingSize,
     );
+    _packagePriceController.text = _formatOptionalInputNumber(
+      product.packagePriceClp,
+    );
+    _packageQuantityController.text = _formatOptionalInputNumber(
+      product.packageQuantity,
+    );
     _caloriesController.text = _formatInputNumber(product.caloriesPer100);
     _proteinController.text = _formatInputNumber(product.proteinPer100);
     _carbsController.text = _formatInputNumber(product.carbsPer100);
@@ -75,6 +84,8 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     _brandController.dispose();
     _barcodeController.dispose();
     _servingSizeController.dispose();
+    _packagePriceController.dispose();
+    _packageQuantityController.dispose();
     _caloriesController.dispose();
     _proteinController.dispose();
     _carbsController.dispose();
@@ -162,6 +173,14 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     allowZero: false,
                     zeroErrorText:
                         'El tamaño de la porción debe ser mayor que cero',
+                  ),
+                  const SizedBox(height: 20),
+                  ProductCostFields(
+                    packagePriceController: _packagePriceController,
+                    packageQuantityController: _packageQuantityController,
+                    servingSizeController: _servingSizeController,
+                    baseUnit: _baseUnit,
+                    numberInputFormatter: _numberInputFormatter,
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -270,6 +289,13 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             ),
             sodiumPer100: _parseOptionalNumber(_sodiumController.text),
             fiberPer100: _parseOptionalNumber(_fiberController.text),
+            packagePriceClp: _parseOptionalNumber(_packagePriceController.text),
+            packageQuantity: _parseOptionalNumber(
+              _packageQuantityController.text,
+            ),
+            packageQuantityUnit: _packageQuantityController.text.trim().isEmpty
+                ? null
+                : _baseUnit.label,
           )
         : await widget.store.updateProduct(
             editingProduct,
@@ -297,6 +323,17 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             clearSaturatedFat: _saturatedFatController.text.trim().isEmpty,
             clearSodium: _sodiumController.text.trim().isEmpty,
             clearFiber: _fiberController.text.trim().isEmpty,
+            packagePriceClp: _parseOptionalNumber(_packagePriceController.text),
+            packageQuantity: _parseOptionalNumber(
+              _packageQuantityController.text,
+            ),
+            packageQuantityUnit: _packageQuantityController.text.trim().isEmpty
+                ? null
+                : _baseUnit.label,
+            clearPackagePrice: _packagePriceController.text.trim().isEmpty,
+            clearPackageQuantity: _packageQuantityController.text
+                .trim()
+                .isEmpty,
           );
     if (!mounted) {
       return;

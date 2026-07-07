@@ -47,6 +47,8 @@ void main() {
     expect(find.text('Código de barras'), findsOneWidget);
     expect(find.text('Unidad base'), findsOneWidget);
     expect(find.text('Tamaño de la porción (g)'), findsOneWidget);
+    expect(find.text('Precio total del producto (CLP)'), findsOneWidget);
+    expect(find.text('Cantidad total del producto/envase (g)'), findsOneWidget);
     expect(find.text('Serving unit'), findsNothing);
 
     await tester.scrollUntilVisible(
@@ -81,6 +83,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Tamaño de la porción (ml)'), findsOneWidget);
+    expect(
+      find.text('Cantidad total del producto/envase (ml)'),
+      findsOneWidget,
+    );
     expect(find.text('Serving unit'), findsNothing);
   });
 
@@ -95,6 +101,12 @@ void main() {
     await tester.tap(find.text('ml'));
     await tester.pumpAndSettle();
     await enterTextInField(tester, 'Tamaño de la porción (ml)', '200');
+    await enterTextInField(tester, 'Precio total del producto (CLP)', '1200');
+    await enterTextInField(
+      tester,
+      'Cantidad total del producto/envase (ml)',
+      '1000',
+    );
 
     await tester.scrollUntilVisible(
       find.text('Energía / Calorías (kcal)'),
@@ -119,6 +131,34 @@ void main() {
             .single;
     expect(row.servingSize, 200);
     expect(row.servingUnit, 'ml');
+    expect(row.packagePriceClp, 1200);
+    expect(row.packageQuantity, 1000);
+    expect(row.packageQuantityUnit, 'ml');
+  });
+
+  testWidgets('product form validates invalid cost values', (tester) async {
+    final fixture = await createMemoryStore();
+
+    await tester.pumpWidget(
+      MaterialApp(home: CreateProductScreen(store: fixture.store)),
+    );
+
+    await enterTextInField(tester, 'Precio total del producto (CLP)', '0');
+    await enterTextInField(
+      tester,
+      'Cantidad total del producto/envase (g)',
+      '0',
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Guardar producto'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Guardar producto'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Debe ser mayor que cero'), findsWidgets);
   });
 
   testWidgets('barcode confirmation screen uses Spanish product labels', (
@@ -147,6 +187,7 @@ void main() {
     expect(find.text('Confirmar producto'), findsOneWidget);
     expect(find.text('Nombre del producto'), findsOneWidget);
     expect(find.text('Tamaño de la porción (g)'), findsOneWidget);
+    expect(find.text('Precio total del producto (CLP)'), findsOneWidget);
     expect(find.text('Serving unit'), findsNothing);
   });
 
@@ -176,6 +217,7 @@ void main() {
     expect(find.text('Confirmar producto OCR'), findsOneWidget);
     expect(find.text('Nombre del producto'), findsOneWidget);
     expect(find.text('Tamaño de la porción (g)'), findsOneWidget);
+    expect(find.text('Precio total del producto (CLP)'), findsOneWidget);
     expect(find.text('Serving unit'), findsNothing);
   });
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../shared/utils/cost_formatters.dart';
 import '../../../shared/utils/macro_formatters.dart';
 import '../../products/domain/product.dart';
 import '../application/nutrivo_go_store.dart';
+import '../domain/food_cost_calculator.dart';
 import '../domain/log_item.dart';
 import '../domain/macro_calculator.dart';
 import '../domain/macro_snapshot.dart';
@@ -15,10 +17,12 @@ class AddFoodQuantityScreen extends StatefulWidget {
     required this.store,
     required this.product,
     super.key,
+    this.initialMealType,
   });
 
   final NutrivoGoStore store;
   final Product product;
+  final MealType? initialMealType;
 
   @override
   State<AddFoodQuantityScreen> createState() => _AddFoodQuantityScreenState();
@@ -31,14 +35,16 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
 
   final _formKey = GlobalKey<FormState>();
   final _calculator = const MacroCalculator();
+  final _costCalculator = const FoodCostCalculator();
   late final TextEditingController _quantityController;
   late String _unit;
-  MealType _mealType = MealType.lunch;
+  late MealType _mealType;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    _mealType = widget.initialMealType ?? MealType.lunch;
     final hasServing = widget.product.servingSize != null;
     _unit = hasServing ? 'serving' : widget.product.baseUnitLabel;
     final initialQuantity = hasServing ? 1.0 : 100.0;
@@ -62,7 +68,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Amount eaten')),
+      appBar: AppBar(title: Text('Agregar a ${_mealType.label}')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -82,7 +88,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                         keyboardType: TextInputType.number,
                         inputFormatters: [_numberInputFormatter],
                         decoration: InputDecoration(
-                          labelText: 'Amount eaten',
+                          labelText: 'Cantidad consumida',
                           prefixIcon: const Icon(Icons.straighten),
                           helperText: quantityHelperText(_unit),
                         ),
@@ -92,7 +98,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                       final unitField = DropdownButtonFormField<String>(
                         initialValue: _unit,
                         decoration: const InputDecoration(
-                          labelText: 'Measured in',
+                          labelText: 'Medido en',
                           prefixIcon: Icon(Icons.category_outlined),
                         ),
                         items: [
@@ -148,7 +154,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  _MacroPreview(snapshot: preview),
+                  _MacroPreview(snapshot: preview, cost: _previewCost()),
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     onPressed: _isSaving ? null : _save,
@@ -200,16 +206,32 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
   String? _positiveNumberValidator(String? value) {
     final text = value?.trim();
     if (text == null || text.isEmpty) {
-      return 'Enter the amount eaten';
+      return 'Ingresa la cantidad consumida';
     }
     final parsed = _parseOptionalNumber(text);
     if (parsed == null) {
-      return 'Amount eaten must be a number';
+      return 'Ingresa un número válido';
     }
     if (parsed <= 0) {
-      return 'Amount eaten must be greater than 0';
+      return 'La cantidad debe ser mayor que cero';
     }
     return null;
+  }
+
+  double? _previewCost() {
+    final quantity = _parseOptionalNumber(_quantityController.text);
+    if (quantity == null || quantity <= 0) {
+      return null;
+    }
+    try {
+      return _costCalculator.calculateLogCost(
+        product: widget.product,
+        quantity: quantity,
+        unit: _unit,
+      );
+    } on ArgumentError {
+      return null;
+    }
   }
 
   double _parseRequiredNumber(String value) {
@@ -262,7 +284,7 @@ class _ProductSummary extends StatelessWidget {
                 _InfoChip(
                   icon: Icons.fitness_center,
                   text:
-                      '${formatMacro(product.proteinPer100, decimals: 1)}g protein',
+                      '${formatMacro(product.proteinPer100, decimals: 1)} g proteínas',
                 ),
                 if (servingSizeDisplay(product) != null)
                   _InfoChip(
@@ -295,9 +317,10 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _MacroPreview extends StatelessWidget {
-  const _MacroPreview({required this.snapshot});
+  const _MacroPreview({required this.snapshot, required this.cost});
 
   final MacroSnapshot snapshot;
+  final double? cost;
 
   @override
   Widget build(BuildContext context) {
@@ -334,6 +357,7 @@ class _MacroPreview extends StatelessWidget {
                   value: formatMacro(snapshot.fat, decimals: 1),
                   unit: 'g',
                 ),
+                _MacroPill(label: 'Gasto', value: formatClp(cost), unit: ''),
               ],
             ),
           ],
@@ -378,7 +402,7 @@ class _MacroPill extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              '$value $unit',
+              unit.isEmpty ? value : '$value $unit',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),

@@ -77,6 +77,67 @@ void main() {
     expect(result.draft!.fiberPer100, 0.3);
   });
 
+  test('Open Food Facts serving text stores grams for one portion', () async {
+    final result = OpenFoodFactsParser.parse({
+      'status': 1,
+      'code': '7804444444444',
+      'product': {
+        'code': '7804444444444',
+        'product_name_es': 'Postre porcion',
+        'serving_size': '1 porcion (140 g)',
+        'nutriments': {
+          'energy-kcal_100g': 200,
+          'proteins_100g': 8,
+          'carbohydrates_100g': 20,
+          'fat_100g': 6,
+        },
+      },
+    }, fallbackBarcode: '7804444444444');
+
+    expect(result.status, ProductLookupStatus.found);
+    expect(result.draft!.servingSize, 140);
+    expect(result.draft!.servingUnit, 'g');
+
+    final fixture = await createMemoryStore();
+    final product = await const ProductImportSaver().save(
+      fixture.store,
+      result.draft!,
+    );
+
+    final macros = const MacroCalculator().calculateFromProduct(
+      product: product,
+      quantity: 1,
+      unit: 'serving',
+    );
+
+    expect(macros.calories, closeTo(280, 0.001));
+    expect(macros.protein, closeTo(11.2, 0.001));
+    expect(macros.carbs, closeTo(28, 0.001));
+    expect(macros.fat, closeTo(8.4, 0.001));
+  });
+
+  test('Open Food Facts serving text without g or ml is not saved as 1g', () {
+    final result = OpenFoodFactsParser.parse({
+      'status': 1,
+      'code': '7805555555555',
+      'product': {
+        'code': '7805555555555',
+        'product_name_es': 'Producto sin gramos',
+        'serving_size': '1 porcion',
+        'nutriments': {
+          'energy-kcal_100g': 200,
+          'proteins_100g': 8,
+          'carbohydrates_100g': 20,
+          'fat_100g': 6,
+        },
+      },
+    }, fallbackBarcode: '7805555555555');
+
+    expect(result.status, ProductLookupStatus.found);
+    expect(result.draft!.servingSize, isNull);
+    expect(result.draft!.servingUnit, isNull);
+  });
+
   test('Open Food Facts missing product fallback', () {
     final result = OpenFoodFactsParser.parse({
       'status': 0,

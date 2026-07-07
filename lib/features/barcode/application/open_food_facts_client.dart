@@ -146,15 +146,21 @@ class OpenFoodFactsParser {
     if (text == null || text.isEmpty) {
       return const _Serving();
     }
-    final match = RegExp(
-      r'([0-9]+(?:[\.,][0-9]+)?)\s*([a-zA-Z]+)?',
-    ).firstMatch(text);
-    if (match == null) {
-      return const _Serving();
+
+    final baseUnitMatches = RegExp(
+      r'([0-9]+(?:[\.,][0-9]+)?)\s*(g|gr|gramos?|ml|mililitros?)\b',
+      caseSensitive: false,
+    ).allMatches(text);
+    if (baseUnitMatches.isNotEmpty) {
+      final baseUnitMatch = baseUnitMatches.last;
+      final amount = double.tryParse(
+        baseUnitMatch.group(1)!.replaceAll(',', '.'),
+      );
+      final unit = _normalizeServingUnit(baseUnitMatch.group(2));
+      return _Serving(amount: amount, unit: unit);
     }
-    final amount = double.tryParse(match.group(1)!.replaceAll(',', '.'));
-    final unit = match.group(2)?.toLowerCase();
-    return _Serving(amount: amount, unit: unit);
+
+    return const _Serving();
   }
 
   static BaseUnit _inferBaseUnit(
@@ -195,6 +201,17 @@ class OpenFoodFactsParser {
       return double.tryParse(value.trim().replaceAll(',', '.'));
     }
     return null;
+  }
+
+  static String? _normalizeServingUnit(String? value) {
+    final unit = value?.trim().toLowerCase();
+    if (unit == null || unit.isEmpty) {
+      return null;
+    }
+    if (unit == 'ml' || unit.startsWith('mililitro')) {
+      return 'ml';
+    }
+    return 'g';
   }
 }
 

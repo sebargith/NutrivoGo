@@ -36,12 +36,12 @@ class TodayDashboardScreen extends StatelessWidget {
               onPressed: () => _openSettings(context),
             ),
           IconButton(
-            tooltip: 'Products',
+            tooltip: 'Productos',
             icon: const Icon(Icons.inventory_2_outlined),
             onPressed: () => _openAddFood(context),
           ),
           IconButton(
-            tooltip: 'Settings',
+            tooltip: 'Configuración',
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => _openSettings(context),
           ),
@@ -50,7 +50,7 @@ class TodayDashboardScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddFood(context),
         icon: const Icon(Icons.add),
-        label: const Text('Add Food'),
+        label: const Text('Agregar alimento'),
       ),
       body: SafeArea(
         child: AnimatedBuilder(
@@ -188,7 +188,7 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Today', style: theme.textTheme.headlineMedium),
+              Text('Hoy', style: theme.textTheme.headlineMedium),
               const SizedBox(height: 4),
               Text(
                 MaterialLocalizations.of(context).formatFullDate(date),
@@ -224,28 +224,28 @@ class _MacroGrid extends StatelessWidget {
           childAspectRatio: columns == 4 ? 1.75 : 1.55,
           children: [
             _MacroCard(
-              label: 'Calories',
+              label: 'Calorías',
               value: formatMacro(totals.calories),
               unit: 'kcal',
               icon: Icons.local_fire_department_outlined,
               color: Theme.of(context).colorScheme.secondary,
             ),
             _MacroCard(
-              label: 'Protein',
+              label: 'Proteínas',
               value: formatMacro(totals.protein, decimals: 1),
               unit: 'g',
               icon: Icons.fitness_center,
               color: Theme.of(context).colorScheme.primary,
             ),
             _MacroCard(
-              label: 'Carbs',
+              label: 'Carbohidratos',
               value: formatMacro(totals.carbs, decimals: 1),
               unit: 'g',
               icon: Icons.grain,
               color: Theme.of(context).colorScheme.tertiary,
             ),
             _MacroCard(
-              label: 'Fat',
+              label: 'Grasas',
               value: formatMacro(totals.fat, decimals: 1),
               unit: 'g',
               icon: Icons.water_drop_outlined,
@@ -370,7 +370,7 @@ class _MealSection extends StatelessWidget {
             if (items.isEmpty) ...[
               const SizedBox(height: 12),
               Text(
-                'No food logged',
+                'No hay registros',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -435,7 +435,7 @@ class _LogItemTile extends StatelessWidget {
               style: theme.textTheme.labelLarge,
             ),
             IconButton(
-              tooltip: 'Remove',
+              tooltip: 'Eliminar',
               icon: const Icon(Icons.close),
               onPressed: () => onRemove(item.id),
             ),
@@ -471,12 +471,12 @@ class _TodayEmptyState extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'No food logged today',
+                      'No hay alimentos registrados hoy',
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Add a saved product or create one to start tracking.',
+                      'Agrega un producto guardado o crea uno para empezar.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -498,7 +498,7 @@ class _TodayEmptyState extends StatelessWidget {
                       FilledButton.icon(
                         onPressed: onAddFood,
                         icon: const Icon(Icons.add),
-                        label: const Text('Add Food'),
+                        label: const Text('Agregar alimento'),
                       ),
                     ],
                   )
@@ -509,7 +509,7 @@ class _TodayEmptyState extends StatelessWidget {
                       FilledButton.icon(
                         onPressed: onAddFood,
                         icon: const Icon(Icons.add),
-                        label: const Text('Add'),
+                        label: const Text('Agregar'),
                       ),
                     ],
                   ),

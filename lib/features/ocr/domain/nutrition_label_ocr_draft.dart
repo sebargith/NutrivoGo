@@ -130,15 +130,15 @@ class NutritionLabelOcrDraft {
 
   String get reviewMessage {
     if (normalizedFromServing) {
-      return 'OCR found per-serving values and normalized them using the serving size. Review the per-100 values before saving.';
+      return 'OCR encontró valores por porción y los normalizo usando el tamaño de porción. Revisa los valores por 100 antes de guardar.';
     }
     if (detectedBasis == OcrNutritionBasis.perServing) {
-      return 'OCR found per-serving values only. Fill or normalize the per-100 values before saving.';
+      return 'OCR encontró solo valores por porción. Completa o normaliza los valores por 100 antes de guardar.';
     }
     if (!hasRequiredNutrition) {
-      return 'OCR found incomplete nutrition data. Fill the missing values before saving.';
+      return 'OCR encontró datos nutricionales incompletos. Completa los valores faltantes antes de guardar.';
     }
-    return 'Review OCR results before saving. Nothing is saved until you confirm.';
+    return 'Revisa los resultados OCR antes de guardar. Nada se guarda hasta que confirmes.';
   }
 
   NutritionLabelOcrDraft copyWith({

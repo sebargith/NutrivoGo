@@ -36,7 +36,6 @@ class _ProductImportConfirmationScreenState
   final _brandController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _servingSizeController = TextEditingController();
-  final _servingUnitController = TextEditingController();
   final _caloriesController = TextEditingController();
   final _proteinController = TextEditingController();
   final _carbsController = TextEditingController();
@@ -56,7 +55,6 @@ class _ProductImportConfirmationScreenState
     _brandController.text = draft.brand ?? '';
     _barcodeController.text = draft.barcode;
     _servingSizeController.text = _formatInputNumberOrEmpty(draft.servingSize);
-    _servingUnitController.text = draft.servingUnit ?? '';
     _caloriesController.text = _formatInputNumberOrEmpty(draft.caloriesPer100);
     _proteinController.text = _formatInputNumberOrEmpty(draft.proteinPer100);
     _carbsController.text = _formatInputNumberOrEmpty(draft.carbsPer100);
@@ -76,7 +74,6 @@ class _ProductImportConfirmationScreenState
     _brandController.dispose();
     _barcodeController.dispose();
     _servingSizeController.dispose();
-    _servingUnitController.dispose();
     _caloriesController.dispose();
     _proteinController.dispose();
     _carbsController.dispose();
@@ -94,7 +91,7 @@ class _ProductImportConfirmationScreenState
         ? 'Por 100 ml'
         : 'Por 100 g';
     return Scaffold(
-      appBar: AppBar(title: const Text('Confirm Product')),
+      appBar: AppBar(title: const Text('Confirmar producto')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -112,7 +109,7 @@ class _ProductImportConfirmationScreenState
                     controller: _nameController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
-                      labelText: 'Product name',
+                      labelText: 'Nombre del producto',
                       prefixIcon: Icon(Icons.fastfood_outlined),
                     ),
                     validator: _requiredText,
@@ -122,7 +119,7 @@ class _ProductImportConfirmationScreenState
                     controller: _brandController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
-                      labelText: 'Brand',
+                      labelText: 'Marca',
                       prefixIcon: Icon(Icons.sell_outlined),
                     ),
                   ),
@@ -131,14 +128,14 @@ class _ProductImportConfirmationScreenState
                     controller: _barcodeController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
-                      labelText: 'Barcode',
+                      labelText: 'Código de barras',
                       prefixIcon: Icon(Icons.qr_code_2_outlined),
                     ),
                     validator: _requiredText,
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Base unit',
+                    'Unidad base',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 8),
@@ -161,21 +158,13 @@ class _ProductImportConfirmationScreenState
                     },
                   ),
                   const SizedBox(height: 20),
-                  _ResponsiveFields(
-                    children: [
-                      _OptionalNumberField(
-                        controller: _servingSizeController,
-                        label: 'Porción',
-                        icon: Icons.straighten,
-                      ),
-                      TextFormField(
-                        controller: _servingUnitController,
-                        decoration: const InputDecoration(
-                          labelText: 'Serving unit',
-                          prefixIcon: Icon(Icons.category_outlined),
-                        ),
-                      ),
-                    ],
+                  _OptionalNumberField(
+                    controller: _servingSizeController,
+                    label: 'Tamaño de la porción (${_baseUnit.label})',
+                    icon: Icons.straighten,
+                    allowZero: false,
+                    zeroErrorText:
+                        'El tamaño de la porción debe ser mayor que cero',
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -187,46 +176,46 @@ class _ProductImportConfirmationScreenState
                     children: [
                       _RequiredNumberField(
                         controller: _caloriesController,
-                        label: 'Energía / Calorías',
-                        errorLabel: 'calorías',
+                        label: 'Energía / Calorías (kcal)',
+                        errorLabel: 'calorias',
                         icon: Icons.local_fire_department_outlined,
                       ),
                       _RequiredNumberField(
                         controller: _proteinController,
-                        label: 'Proteínas',
-                        errorLabel: 'proteínas',
+                        label: 'Proteínas (g)',
+                        errorLabel: 'proteinas',
                         icon: Icons.fitness_center,
                       ),
                       _RequiredNumberField(
                         controller: _carbsController,
-                        label: 'Carbohidratos',
+                        label: 'Carbohidratos (g)',
                         errorLabel: 'carbohidratos',
                         icon: Icons.grain,
                       ),
                       _RequiredNumberField(
                         controller: _fatController,
-                        label: 'Grasas',
+                        label: 'Grasas (g)',
                         errorLabel: 'grasas',
                         icon: Icons.water_drop_outlined,
                       ),
                       _OptionalNumberField(
                         controller: _sugarController,
-                        label: 'Azúcares',
+                        label: 'Azúcares (g)',
                         icon: Icons.cookie_outlined,
                       ),
                       _OptionalNumberField(
                         controller: _saturatedFatController,
-                        label: 'Grasas saturadas',
+                        label: 'Grasas saturadas (g)',
                         icon: Icons.opacity,
                       ),
                       _OptionalNumberField(
                         controller: _sodiumController,
-                        label: 'Sodio',
+                        label: 'Sodio (mg)',
                         icon: Icons.science_outlined,
                       ),
                       _OptionalNumberField(
                         controller: _fiberController,
-                        label: 'Fibra',
+                        label: 'Fibra (g)',
                         icon: Icons.spa_outlined,
                       ),
                     ],
@@ -235,7 +224,7 @@ class _ProductImportConfirmationScreenState
                   FilledButton.icon(
                     onPressed: _isSaving ? null : _save,
                     icon: const Icon(Icons.check),
-                    label: Text(_isSaving ? 'Saving' : 'Save Product'),
+                    label: Text(_isSaving ? 'Guardando' : 'Guardar producto'),
                   ),
                 ],
               ),
@@ -251,12 +240,13 @@ class _ProductImportConfirmationScreenState
       return;
     }
     setState(() => _isSaving = true);
+    final servingSize = _parseOptionalNumber(_servingSizeController.text);
     final draft = ProductImportDraft(
       barcode: _barcodeController.text.trim(),
       name: _nameController.text.trim(),
       brand: _emptyToNull(_brandController.text),
-      servingSize: _parseOptionalNumber(_servingSizeController.text),
-      servingUnit: _emptyToNull(_servingUnitController.text),
+      servingSize: servingSize,
+      servingUnit: servingSize == null ? null : _baseUnit.label,
       baseUnit: _baseUnit,
       caloriesPer100: _parseRequiredNumber(_caloriesController.text),
       proteinPer100: _parseRequiredNumber(_proteinController.text),
@@ -276,7 +266,7 @@ class _ProductImportConfirmationScreenState
 
   String? _requiredText(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Required field';
+      return 'Campo obligatorio';
     }
     return null;
   }
@@ -416,11 +406,15 @@ class _OptionalNumberField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.icon,
+    this.allowZero = true,
+    this.zeroErrorText = 'Debe ser 0 o mas',
   });
 
   final TextEditingController controller;
   final String label;
   final IconData icon;
+  final bool allowZero;
+  final String zeroErrorText;
 
   @override
   Widget build(BuildContext context) {
@@ -439,10 +433,10 @@ class _OptionalNumberField extends StatelessWidget {
         final parsed =
             _ProductImportConfirmationScreenState._parseOptionalNumber(text);
         if (parsed == null) {
-          return 'Debe ser un número';
+          return 'Ingresa un numero valido';
         }
-        if (parsed < 0) {
-          return 'Debe ser 0 o más';
+        if (parsed < 0 || (!allowZero && parsed == 0)) {
+          return zeroErrorText;
         }
         return null;
       },

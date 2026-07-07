@@ -30,7 +30,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   final _brandController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _servingSizeController = TextEditingController();
-  final _servingUnitController = TextEditingController();
   final _caloriesController = TextEditingController();
   final _proteinController = TextEditingController();
   final _carbsController = TextEditingController();
@@ -57,7 +56,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     _servingSizeController.text = _formatOptionalInputNumber(
       product.servingSize,
     );
-    _servingUnitController.text = product.servingUnit ?? '';
     _caloriesController.text = _formatInputNumber(product.caloriesPer100);
     _proteinController.text = _formatInputNumber(product.proteinPer100);
     _carbsController.text = _formatInputNumber(product.carbsPer100);
@@ -77,7 +75,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     _brandController.dispose();
     _barcodeController.dispose();
     _servingSizeController.dispose();
-    _servingUnitController.dispose();
     _caloriesController.dispose();
     _proteinController.dispose();
     _carbsController.dispose();
@@ -93,7 +90,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Product' : 'Create Product'),
+        title: Text(_isEditing ? 'Editar producto' : 'Crear producto'),
       ),
       body: SafeArea(
         child: Center(
@@ -108,7 +105,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     controller: _nameController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
-                      labelText: 'Product name',
+                      labelText: 'Nombre del producto',
                       prefixIcon: Icon(Icons.fastfood_outlined),
                     ),
                     validator: _requiredText,
@@ -118,7 +115,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     controller: _brandController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
-                      labelText: 'Brand',
+                      labelText: 'Marca',
                       prefixIcon: Icon(Icons.sell_outlined),
                     ),
                   ),
@@ -128,13 +125,13 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     textInputAction: TextInputAction.next,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'Barcode',
+                      labelText: 'Código de barras',
                       prefixIcon: Icon(Icons.qr_code_2_outlined),
                     ),
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Base unit',
+                    'Unidad base',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 8),
@@ -157,24 +154,14 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  _ResponsiveFields(
-                    children: [
-                      _OptionalNumberField(
-                        controller: _servingSizeController,
-                        label: 'Porción',
-                        icon: Icons.straighten,
-                        numberInputFormatter: _numberInputFormatter,
-                      ),
-                      TextFormField(
-                        controller: _servingUnitController,
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Serving unit',
-                          prefixIcon: Icon(Icons.category_outlined),
-                        ),
-                        validator: _servingUnitValidator,
-                      ),
-                    ],
+                  _OptionalNumberField(
+                    controller: _servingSizeController,
+                    label: 'Tamaño de la porción (${_baseUnit.label})',
+                    icon: Icons.straighten,
+                    numberInputFormatter: _numberInputFormatter,
+                    allowZero: false,
+                    zeroErrorText:
+                        'El tamaño de la porción debe ser mayor que cero',
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -188,53 +175,53 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     children: [
                       _RequiredNumberField(
                         controller: _caloriesController,
-                        label: 'Energía / Calorías',
-                        errorLabel: 'calorías',
+                        label: 'Energía / Calorías (kcal)',
+                        errorLabel: 'calorias',
                         icon: Icons.local_fire_department_outlined,
                         numberInputFormatter: _numberInputFormatter,
                       ),
                       _RequiredNumberField(
                         controller: _proteinController,
-                        label: 'Proteínas',
-                        errorLabel: 'proteínas',
+                        label: 'Proteínas (g)',
+                        errorLabel: 'proteinas',
                         icon: Icons.fitness_center,
                         numberInputFormatter: _numberInputFormatter,
                       ),
                       _RequiredNumberField(
                         controller: _carbsController,
-                        label: 'Carbohidratos',
+                        label: 'Carbohidratos (g)',
                         errorLabel: 'carbohidratos',
                         icon: Icons.grain,
                         numberInputFormatter: _numberInputFormatter,
                       ),
                       _RequiredNumberField(
                         controller: _fatController,
-                        label: 'Grasas',
+                        label: 'Grasas (g)',
                         errorLabel: 'grasas',
                         icon: Icons.water_drop_outlined,
                         numberInputFormatter: _numberInputFormatter,
                       ),
                       _OptionalNumberField(
                         controller: _sugarController,
-                        label: 'Azúcares',
+                        label: 'Azúcares (g)',
                         icon: Icons.cookie_outlined,
                         numberInputFormatter: _numberInputFormatter,
                       ),
                       _OptionalNumberField(
                         controller: _saturatedFatController,
-                        label: 'Grasas saturadas',
+                        label: 'Grasas saturadas (g)',
                         icon: Icons.opacity,
                         numberInputFormatter: _numberInputFormatter,
                       ),
                       _OptionalNumberField(
                         controller: _sodiumController,
-                        label: 'Sodio',
+                        label: 'Sodio (mg)',
                         icon: Icons.science_outlined,
                         numberInputFormatter: _numberInputFormatter,
                       ),
                       _OptionalNumberField(
                         controller: _fiberController,
-                        label: 'Fibra',
+                        label: 'Fibra (g)',
                         icon: Icons.spa_outlined,
                         numberInputFormatter: _numberInputFormatter,
                       ),
@@ -244,7 +231,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   FilledButton.icon(
                     onPressed: _isSaving ? null : _save,
                     icon: const Icon(Icons.check),
-                    label: Text(_isSaving ? 'Saving' : 'Save Product'),
+                    label: Text(_isSaving ? 'Guardando' : 'Guardar producto'),
                   ),
                 ],
               ),
@@ -262,13 +249,14 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     setState(() => _isSaving = true);
     final editingProduct = widget.product;
     final servingSize = _parseOptionalNumber(_servingSizeController.text);
+    final servingUnit = servingSize == null ? null : _baseUnit.label;
     final barcode = _barcodeController.text.trim();
     final product = editingProduct == null
         ? await widget.store.addProduct(
             name: _nameController.text,
             brand: _brandController.text,
             servingSize: servingSize,
-            servingUnit: _servingUnitController.text,
+            servingUnit: servingUnit,
             baseUnit: _baseUnit,
             caloriesPer100: _parseRequiredNumber(_caloriesController.text),
             proteinPer100: _parseRequiredNumber(_proteinController.text),
@@ -288,7 +276,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             name: _nameController.text,
             brand: _brandController.text,
             servingSize: servingSize,
-            servingUnit: _servingUnitController.text,
+            servingUnit: servingUnit,
             clearServingSize: _servingSizeController.text.trim().isEmpty,
             baseUnit: _baseUnit,
             caloriesPer100: _parseRequiredNumber(_caloriesController.text),
@@ -318,18 +306,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
   String? _requiredText(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Enter a product name';
-    }
-    return null;
-  }
-
-  String? _servingUnitValidator(String? value) {
-    final unit = value?.trim();
-    if (unit == null || unit.isEmpty) {
-      return null;
-    }
-    if (_servingSizeController.text.trim().isEmpty) {
-      return 'Add a serving size for this unit';
+      return 'El nombre del producto es obligatorio';
     }
     return null;
   }
@@ -436,12 +413,16 @@ class _OptionalNumberField extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.numberInputFormatter,
+    this.allowZero = true,
+    this.zeroErrorText = 'Debe ser 0 o mas',
   });
 
   final TextEditingController controller;
   final String label;
   final IconData icon;
   final TextInputFormatter numberInputFormatter;
+  final bool allowZero;
+  final String zeroErrorText;
 
   @override
   Widget build(BuildContext context) {
@@ -457,10 +438,10 @@ class _OptionalNumberField extends StatelessWidget {
         }
         final parsed = _parseOptionalNumber(text);
         if (parsed == null) {
-          return 'Debe ser un número';
+          return 'Ingresa un numero valido';
         }
-        if (parsed < 0) {
-          return 'Debe ser 0 o más';
+        if (parsed < 0 || (!allowZero && parsed == 0)) {
+          return zeroErrorText;
         }
         return null;
       },

@@ -205,7 +205,7 @@ Proteínas 5 g
     expect(draft.hasRequiredNutrition, isFalse);
     expect(draft.missingRequiredFields, contains('Carbohidratos'));
     expect(draft.missingRequiredFields, contains('Grasas'));
-    expect(draft.reviewMessage, contains('incomplete'));
+    expect(draft.reviewMessage, contains('incompletos'));
   });
 
   test('confirmed OCR product saved locally', () async {

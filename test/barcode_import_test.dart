@@ -223,8 +223,11 @@ void main() {
       ),
     );
 
-    expect(find.text('Scanner not supported on this platform'), findsOneWidget);
-    expect(find.text('Search Barcode'), findsOneWidget);
+    expect(
+      find.text('Escáner no soportado en esta plataforma'),
+      findsOneWidget,
+    );
+    expect(find.text('Buscar código'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
   });
 }

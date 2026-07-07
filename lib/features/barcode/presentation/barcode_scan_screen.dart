@@ -29,7 +29,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan Barcode')),
+      appBar: AppBar(title: const Text('Escanear código de barras')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -141,12 +141,12 @@ class _UnsupportedScannerPane extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Scanner not supported on this platform',
+                    'Escáner no soportado en esta plataforma',
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Barcode camera scanning is available on Android. On Windows, enter the barcode manually.',
+                    'La cámara para código de barras esta disponible en Android. En Windows, ingresa el código manualmente.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -180,7 +180,7 @@ class _ManualBarcodeEntry extends StatelessWidget {
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.done,
               decoration: const InputDecoration(
-                labelText: 'Barcode',
+                labelText: 'Código de barras',
                 prefixIcon: Icon(Icons.qr_code_2_outlined),
               ),
               onSubmitted: (_) => onSubmit(),
@@ -189,7 +189,7 @@ class _ManualBarcodeEntry extends StatelessWidget {
             FilledButton.icon(
               onPressed: onSubmit,
               icon: const Icon(Icons.search),
-              label: const Text('Search Barcode'),
+              label: const Text('Buscar código'),
             ),
           ],
         ),

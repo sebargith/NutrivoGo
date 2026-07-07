@@ -153,7 +153,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                   FilledButton.icon(
                     onPressed: _isSaving ? null : _save,
                     icon: const Icon(Icons.check),
-                    label: Text(_isSaving ? 'Saving' : 'Add to Today'),
+                    label: Text(_isSaving ? 'Guardando' : 'Agregar a hoy'),
                   ),
                 ],
               ),
@@ -308,29 +308,29 @@ class _MacroPreview extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Macro Snapshot', style: theme.textTheme.titleMedium),
+            Text('Macros calculados', style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 _MacroPill(
-                  label: 'Calories',
+                  label: 'Calorías',
                   value: formatMacro(snapshot.calories),
                   unit: 'kcal',
                 ),
                 _MacroPill(
-                  label: 'Protein',
+                  label: 'Proteínas',
                   value: formatMacro(snapshot.protein, decimals: 1),
                   unit: 'g',
                 ),
                 _MacroPill(
-                  label: 'Carbs',
+                  label: 'Carbohidratos',
                   value: formatMacro(snapshot.carbs, decimals: 1),
                   unit: 'g',
                 ),
                 _MacroPill(
-                  label: 'Fat',
+                  label: 'Grasas',
                   value: formatMacro(snapshot.fat, decimals: 1),
                   unit: 'g',
                 ),

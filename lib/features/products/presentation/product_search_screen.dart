@@ -50,20 +50,20 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Food'),
+        title: const Text('Agregar alimento'),
         actions: [
           IconButton(
-            tooltip: 'Scan barcode',
+            tooltip: 'Escanear código de barras',
             icon: const Icon(Icons.qr_code_scanner),
             onPressed: _isLookingUpBarcode ? null : _scanBarcode,
           ),
           IconButton(
-            tooltip: 'Scan nutrition label',
+            tooltip: 'Escanear etiqueta nutricional',
             icon: const Icon(Icons.document_scanner_outlined),
             onPressed: _scanNutritionLabel,
           ),
           IconButton(
-            tooltip: 'Create product',
+            tooltip: 'Crear producto',
             icon: const Icon(Icons.add_box_outlined),
             onPressed: _createProduct,
           ),
@@ -72,7 +72,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createProduct,
         icon: const Icon(Icons.add),
-        label: const Text('Product'),
+        label: const Text('Producto'),
       ),
       body: SafeArea(
         child: AnimatedBuilder(
@@ -92,7 +92,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                       controller: _searchController,
                       textInputAction: TextInputAction.search,
                       decoration: const InputDecoration(
-                        hintText: 'Search products',
+                        hintText: 'Buscar productos',
                         prefixIcon: Icon(Icons.search),
                       ),
                     ),
@@ -111,8 +111,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                     else ...[
                       if (recentProducts.isNotEmpty) ...[
                         _SectionHeader(
-                          title: 'Recent',
-                          subtitle: 'Quick add from foods logged before',
+                          title: 'Recientes',
+                          subtitle: 'Agrega rápido alimentos usados antes',
                         ),
                         const SizedBox(height: 8),
                         for (final product in recentProducts)
@@ -125,8 +125,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                         const SizedBox(height: 12),
                       ],
                       _SectionHeader(
-                        title: 'Products',
-                        subtitle: '${products.length} saved',
+                        title: 'Productos',
+                        subtitle: '${products.length} guardados',
                       ),
                       const SizedBox(height: 8),
                       for (final product in products)
@@ -226,7 +226,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Could not reach Open Food Facts. Create the product manually. $error',
+            'No se pudo contactar Open Food Facts. Crea el producto manualmente. $error',
           ),
         ),
       );
@@ -243,7 +243,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Barcode not found in Open Food Facts. Create it manually.',
+            'Código no encontrado en Open Food Facts. Créalo manualmente.',
           ),
         ),
       );
@@ -297,17 +297,17 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
           title: const Text('Delete product?'),
           content: Text(
             hasHistory
-                ? 'This removes ${product.name} from saved products. Existing food logs keep their macro snapshots.'
-                : 'This removes ${product.name} from saved products.',
+                ? 'Esto elimina ${product.name} de productos guardados. Los registros existentes mantienen sus macros.'
+                : 'Esto elimina ${product.name} de productos guardados.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: const Text('Cancelar'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
+              child: const Text('Eliminar'),
             ),
           ],
         );
@@ -323,7 +323,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     }
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('${product.name} deleted')));
+    ).showSnackBar(SnackBar(content: Text('${product.name} eliminado')));
   }
 
   Future<void> _selectProduct(Product product) async {
@@ -356,7 +356,7 @@ class _OcrActionBar extends StatelessWidget {
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
-                'Scan a nutrition label',
+                'Escanear etiqueta nutricional',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -365,7 +365,7 @@ class _OcrActionBar extends StatelessWidget {
             FilledButton.icon(
               onPressed: onScan,
               icon: const Icon(Icons.camera_alt_outlined),
-              label: const Text('Scan'),
+              label: const Text('Escanear'),
             ),
           ],
         ),
@@ -391,7 +391,9 @@ class _BarcodeActionBar extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                isLoading ? 'Searching barcode...' : 'Scan or enter a barcode',
+                isLoading
+                    ? 'Buscando código de barras...'
+                    : 'Escanea o ingresa un código',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -400,7 +402,7 @@ class _BarcodeActionBar extends StatelessWidget {
             FilledButton.icon(
               onPressed: isLoading ? null : onScan,
               icon: Icon(isLoading ? Icons.hourglass_top : Icons.camera_alt),
-              label: Text(isLoading ? 'Searching' : 'Scan'),
+              label: Text(isLoading ? 'Buscando' : 'Escanear'),
             ),
           ],
         ),
@@ -444,7 +446,7 @@ class _ProductTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             PopupMenuButton<_ProductAction>(
-              tooltip: 'Product actions',
+              tooltip: 'Acciones del producto',
               icon: Icon(
                 Icons.more_vert,
                 color: theme.colorScheme.onSurfaceVariant,
@@ -464,14 +466,14 @@ class _ProductTile extends StatelessWidget {
                   value: _ProductAction.edit,
                   child: ListTile(
                     leading: Icon(Icons.edit_outlined),
-                    title: Text('Edit'),
+                    title: Text('Editar'),
                   ),
                 ),
                 PopupMenuItem(
                   value: _ProductAction.delete,
                   child: ListTile(
                     leading: Icon(Icons.delete_outline),
-                    title: Text('Delete'),
+                    title: Text('Eliminar'),
                   ),
                 ),
               ],
@@ -528,10 +530,10 @@ class _EmptyProducts extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
-          Text('No products yet', style: theme.textTheme.titleMedium),
+          Text('No hay productos todavía', style: theme.textTheme.titleMedium),
           const SizedBox(height: 6),
           Text(
-            'Create reusable foods with macros per 100g or 100ml.',
+            'Crea alimentos reutilizables con macros por 100 g o 100 ml.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
@@ -541,7 +543,7 @@ class _EmptyProducts extends StatelessWidget {
           FilledButton.icon(
             onPressed: onCreate,
             icon: const Icon(Icons.add),
-            label: const Text('Create Product'),
+            label: const Text('Crear producto'),
           ),
         ],
       ),
@@ -567,12 +569,15 @@ class _NoResults extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
-          Text('No matching products', style: theme.textTheme.titleMedium),
+          Text(
+            'No hay productos coincidentes',
+            style: theme.textTheme.titleMedium,
+          ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: onCreate,
             icon: const Icon(Icons.add),
-            label: const Text('Create Product'),
+            label: const Text('Crear producto'),
           ),
         ],
       ),

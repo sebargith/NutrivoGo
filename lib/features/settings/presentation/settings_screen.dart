@@ -37,7 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Configuración')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -135,7 +135,7 @@ class _AuthCard extends StatelessWidget {
       return const Card(
         child: ListTile(
           leading: Icon(Icons.lock_outline),
-          title: Text('Personal sync login'),
+          title: Text('Inicio de sesión para sync personal'),
           subtitle: Text('Authentication is not available in this run.'),
         ),
       );
@@ -195,10 +195,10 @@ class _SignedOutAuthForm extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Logged out', style: theme.textTheme.titleMedium),
+                  Text('Sesion cerrada', style: theme.textTheme.titleMedium),
                   const SizedBox(height: 2),
                   Text(
-                    'Local tracking still works. Log in only to sync your personal Supabase account.',
+                    'El registro local sigue funcionando. Inicia sesión solo para sincronizar tu cuenta personal de Supabase.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -215,7 +215,7 @@ class _SignedOutAuthForm extends StatelessWidget {
           textInputAction: TextInputAction.next,
           enabled: !isBusy,
           decoration: const InputDecoration(
-            labelText: 'Personal sync email',
+            labelText: 'Email de sincronización personal',
             prefixIcon: Icon(Icons.mail_outline),
           ),
         ),
@@ -225,7 +225,7 @@ class _SignedOutAuthForm extends StatelessWidget {
           obscureText: true,
           enabled: !isBusy,
           decoration: const InputDecoration(
-            labelText: 'Personal sync password',
+            labelText: 'Clave de sincronización personal',
             prefixIcon: Icon(Icons.password),
           ),
         ),
@@ -250,7 +250,7 @@ class _SignedOutAuthForm extends StatelessWidget {
             FilledButton.icon(
               onPressed: isBusy ? null : () => _submit(context),
               icon: const Icon(Icons.login),
-              label: Text(isBusy ? 'Working' : 'Login for Sync'),
+              label: Text(isBusy ? 'Trabajando' : 'Iniciar sesión para sync'),
             ),
           ],
         ),
@@ -295,7 +295,7 @@ class _SignedInAccount extends StatelessWidget {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.account_circle_outlined),
-          title: const Text('Personal sync account'),
+          title: const Text('Cuenta de sincronización personal'),
           subtitle: Text(email),
         ),
         if (authController.errorMessage != null)
@@ -319,7 +319,7 @@ class _SignedInAccount extends StatelessWidget {
                   onChanged();
                 },
           icon: const Icon(Icons.logout),
-          label: const Text('Logout'),
+          label: const Text('Cerrar sesión'),
         ),
       ],
     );
@@ -358,20 +358,20 @@ class _SyncCard extends StatelessWidget {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(_syncIcon(service)),
-                  title: const Text('Personal sync'),
+                  title: const Text('Sincronizacion personal'),
                   subtitle: Text(_syncSubtitle(context, service, isSignedIn)),
                 ),
                 const SizedBox(height: 8),
                 _SyncSummaryRow(
-                  label: 'Signed in account',
+                  label: 'Cuenta conectada',
                   value: _signedInAccountLabel(authController),
                 ),
                 _SyncSummaryRow(
-                  label: 'Sync state',
+                  label: 'Estado de sincronización',
                   value: _syncStateLabel(service.status),
                 ),
                 _SyncSummaryRow(
-                  label: 'Last sync',
+                  label: 'Última sincronización',
                   value: service.lastSuccessfulSyncAt == null
                       ? 'Never'
                       : _formatTimestamp(
@@ -380,13 +380,13 @@ class _SyncCard extends StatelessWidget {
                         ),
                 ),
                 _SyncSummaryRow(
-                  label: 'Pending',
+                  label: 'Pendiente',
                   value:
                       '${service.pendingProductCount} products, ${service.pendingLogItemCount} logs, ${service.pendingOcrReportCount} OCR reports',
                 ),
                 _SyncSummaryRow(
-                  label: 'Last error',
-                  value: service.lastError ?? 'None',
+                  label: 'Ultimo error',
+                  value: service.lastError ?? 'Ninguno',
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -421,10 +421,10 @@ class _SyncCard extends StatelessWidget {
                   icon: Icon(service.isSyncing ? Icons.sync : Icons.cloud_sync),
                   label: Text(
                     service.isSyncing
-                        ? 'Syncing'
+                        ? 'Sincronizando'
                         : isSignedIn
-                        ? 'Sync Now'
-                        : 'Login required for sync',
+                        ? 'Sincronizar ahora'
+                        : 'Inicia sesión para sincronizar',
                   ),
                 ),
               ],
@@ -457,7 +457,7 @@ class _SyncCard extends StatelessWidget {
     bool isSignedIn,
   ) {
     if (!isSignedIn) {
-      return 'Login required for sync. Local tracking still works offline.';
+      return 'Inicia sesión para sincronizar. El registro local sigue funcionando sin conexion.';
     }
     final message = service.message;
     if (message != null && message.isNotEmpty) {
@@ -472,19 +472,19 @@ class _SyncCard extends StatelessWidget {
 
   String _syncStateLabel(SyncRunStatus status) {
     return switch (status) {
-      SyncRunStatus.notLoggedIn => 'Not logged in',
-      SyncRunStatus.idle => 'Idle',
-      SyncRunStatus.syncing => 'Syncing',
-      SyncRunStatus.synced => 'Synced',
-      SyncRunStatus.failed => 'Failed',
-      SyncRunStatus.offlinePending => 'Offline pending',
+      SyncRunStatus.notLoggedIn => 'Sesion cerrada',
+      SyncRunStatus.idle => 'En espera',
+      SyncRunStatus.syncing => 'Sincronizando',
+      SyncRunStatus.synced => 'Sincronizado',
+      SyncRunStatus.failed => 'Fallo',
+      SyncRunStatus.offlinePending => 'Pendiente sin conexion',
     };
   }
 
   String _signedInAccountLabel(AuthController? controller) {
     final user = controller?.currentUser;
     if (user == null) {
-      return 'Not logged in';
+      return 'Sesion cerrada';
     }
     return user.email ?? user.id;
   }
@@ -570,7 +570,7 @@ class _DiagnosticsCard extends StatelessWidget {
                   value: user?.id ?? 'Not logged in',
                 ),
                 _DiagnosticRow(
-                  label: 'Last sync',
+                  label: 'Última sincronización',
                   value: service.lastSuccessfulSyncAt == null
                       ? 'Never'
                       : _formatTimestamp(
@@ -579,20 +579,20 @@ class _DiagnosticsCard extends StatelessWidget {
                         ),
                 ),
                 _DiagnosticRow(
-                  label: 'Pending products',
+                  label: 'Productos pendientes',
                   value: service.pendingProductCount.toString(),
                 ),
                 _DiagnosticRow(
-                  label: 'Pending log items',
+                  label: 'Registros pendientes',
                   value: service.pendingLogItemCount.toString(),
                 ),
                 _DiagnosticRow(
-                  label: 'Pending OCR reports',
+                  label: 'Reportes OCR pendientes',
                   value: service.pendingOcrReportCount.toString(),
                 ),
                 _DiagnosticRow(
-                  label: 'Last error',
-                  value: service.lastError ?? 'None',
+                  label: 'Ultimo error',
+                  value: service.lastError ?? 'Ninguno',
                 ),
               ],
             ),
@@ -645,7 +645,7 @@ class _OcrReportsCard extends StatelessWidget {
       return const Card(
         child: ListTile(
           leading: Icon(Icons.document_scanner_outlined),
-          title: Text('OCR Reports'),
+          title: Text('Reportes OCR'),
           subtitle: Text('OCR reports are not available in this run.'),
         ),
       );
@@ -659,7 +659,7 @@ class _OcrReportsCard extends StatelessWidget {
             children: [
               ListTile(
                 leading: const Icon(Icons.document_scanner_outlined),
-                title: const Text('OCR Reports'),
+                title: const Text('Reportes OCR'),
                 subtitle: Text(
                   '${store.ocrScanReports.length} saved cases for parser debugging',
                 ),

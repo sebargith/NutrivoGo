@@ -36,7 +36,6 @@ class _OcrProductConfirmationScreenState
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
   final _servingSizeController = TextEditingController();
-  final _servingUnitController = TextEditingController();
   final _caloriesController = TextEditingController();
   final _proteinController = TextEditingController();
   final _carbsController = TextEditingController();
@@ -57,7 +56,6 @@ class _OcrProductConfirmationScreenState
     _nameController.text = draft.name;
     _brandController.text = draft.brand ?? '';
     _servingSizeController.text = _formatInputNumberOrEmpty(draft.servingSize);
-    _servingUnitController.text = draft.servingUnit ?? '';
     _caloriesController.text = _formatInputNumberOrEmpty(draft.caloriesPer100);
     _proteinController.text = _formatInputNumberOrEmpty(draft.proteinPer100);
     _carbsController.text = _formatInputNumberOrEmpty(draft.carbsPer100);
@@ -76,7 +74,6 @@ class _OcrProductConfirmationScreenState
     _nameController.dispose();
     _brandController.dispose();
     _servingSizeController.dispose();
-    _servingUnitController.dispose();
     _caloriesController.dispose();
     _proteinController.dispose();
     _carbsController.dispose();
@@ -95,7 +92,7 @@ class _OcrProductConfirmationScreenState
         ? 'Por 100 ml'
         : 'Por 100 g';
     return Scaffold(
-      appBar: AppBar(title: const Text('Confirm OCR Product')),
+      appBar: AppBar(title: const Text('Confirmar producto OCR')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -117,7 +114,7 @@ class _OcrProductConfirmationScreenState
                     controller: _nameController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
-                      labelText: 'Product name',
+                      labelText: 'Nombre del producto',
                       prefixIcon: Icon(Icons.fastfood_outlined),
                     ),
                     validator: _requiredText,
@@ -127,13 +124,13 @@ class _OcrProductConfirmationScreenState
                     controller: _brandController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
-                      labelText: 'Brand',
+                      labelText: 'Marca',
                       prefixIcon: Icon(Icons.sell_outlined),
                     ),
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Detected basis: ${widget.draft.basisLabel}',
+                    'Base detectada: ${widget.draft.basisLabel}',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 8),
@@ -156,21 +153,13 @@ class _OcrProductConfirmationScreenState
                     },
                   ),
                   const SizedBox(height: 20),
-                  _ResponsiveFields(
-                    children: [
-                      _OptionalNumberField(
-                        controller: _servingSizeController,
-                        label: 'Porción',
-                        icon: Icons.straighten,
-                      ),
-                      TextFormField(
-                        controller: _servingUnitController,
-                        decoration: const InputDecoration(
-                          labelText: 'Serving unit',
-                          prefixIcon: Icon(Icons.category_outlined),
-                        ),
-                      ),
-                    ],
+                  _OptionalNumberField(
+                    controller: _servingSizeController,
+                    label: 'Tamaño de la porción (${_baseUnit.label})',
+                    icon: Icons.straighten,
+                    allowZero: false,
+                    zeroErrorText:
+                        'El tamaño de la porción debe ser mayor que cero',
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -182,46 +171,46 @@ class _OcrProductConfirmationScreenState
                     children: [
                       _RequiredNumberField(
                         controller: _caloriesController,
-                        label: 'Energía / Calorías',
-                        errorLabel: 'calorías',
+                        label: 'Energía / Calorías (kcal)',
+                        errorLabel: 'calorias',
                         icon: Icons.local_fire_department_outlined,
                       ),
                       _RequiredNumberField(
                         controller: _proteinController,
-                        label: 'Proteínas',
-                        errorLabel: 'proteínas',
+                        label: 'Proteínas (g)',
+                        errorLabel: 'proteinas',
                         icon: Icons.fitness_center,
                       ),
                       _RequiredNumberField(
                         controller: _carbsController,
-                        label: 'Carbohidratos',
+                        label: 'Carbohidratos (g)',
                         errorLabel: 'carbohidratos',
                         icon: Icons.grain,
                       ),
                       _RequiredNumberField(
                         controller: _fatController,
-                        label: 'Grasas',
+                        label: 'Grasas (g)',
                         errorLabel: 'grasas',
                         icon: Icons.water_drop_outlined,
                       ),
                       _OptionalNumberField(
                         controller: _sugarController,
-                        label: 'Azúcares',
+                        label: 'Azúcares (g)',
                         icon: Icons.cookie_outlined,
                       ),
                       _OptionalNumberField(
                         controller: _saturatedFatController,
-                        label: 'Grasas saturadas',
+                        label: 'Grasas saturadas (g)',
                         icon: Icons.opacity,
                       ),
                       _OptionalNumberField(
                         controller: _sodiumController,
-                        label: 'Sodio',
+                        label: 'Sodio (mg)',
                         icon: Icons.science_outlined,
                       ),
                       _OptionalNumberField(
                         controller: _fiberController,
-                        label: 'Fibra',
+                        label: 'Fibra (g)',
                         icon: Icons.spa_outlined,
                       ),
                     ],
@@ -238,7 +227,7 @@ class _OcrProductConfirmationScreenState
                   FilledButton.icon(
                     onPressed: _isSaving ? null : _save,
                     icon: const Icon(Icons.check),
-                    label: Text(_isSaving ? 'Saving' : 'Save Product'),
+                    label: Text(_isSaving ? 'Guardando' : 'Guardar producto'),
                   ),
                 ],
               ),
@@ -254,12 +243,13 @@ class _OcrProductConfirmationScreenState
       return;
     }
     setState(() => _isSaving = true);
+    final servingSize = _parseOptionalNumber(_servingSizeController.text);
     final draft = NutritionLabelOcrDraft(
       rawText: widget.draft.rawText,
       name: _nameController.text.trim(),
       brand: _emptyToNull(_brandController.text),
-      servingSize: _parseOptionalNumber(_servingSizeController.text),
-      servingUnit: _emptyToNull(_servingUnitController.text),
+      servingSize: servingSize,
+      servingUnit: servingSize == null ? null : _baseUnit.label,
       baseUnit: _baseUnit,
       caloriesPer100: _parseRequiredNumber(_caloriesController.text),
       proteinPer100: _parseRequiredNumber(_proteinController.text),
@@ -291,7 +281,7 @@ class _OcrProductConfirmationScreenState
 
   String? _requiredText(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Required field';
+      return 'Campo obligatorio';
     }
     return null;
   }
@@ -481,7 +471,7 @@ class _PerServingCard extends StatelessWidget {
     return Card(
       child: ExpansionTile(
         leading: const Icon(Icons.restaurant_menu),
-        title: const Text('Detected per-serving values'),
+        title: const Text('Valores detectados por porción'),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         children: [
           _ValueRow(
@@ -516,7 +506,7 @@ class _RawTextCard extends StatelessWidget {
     return Card(
       child: ExpansionTile(
         leading: const Icon(Icons.notes_outlined),
-        title: const Text('Raw OCR text'),
+        title: const Text('Texto OCR crudo'),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         children: [SelectableText(rawText)],
       ),
@@ -628,11 +618,15 @@ class _OptionalNumberField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.icon,
+    this.allowZero = true,
+    this.zeroErrorText = 'Debe ser 0 o mas',
   });
 
   final TextEditingController controller;
   final String label;
   final IconData icon;
+  final bool allowZero;
+  final String zeroErrorText;
 
   @override
   Widget build(BuildContext context) {
@@ -652,10 +646,10 @@ class _OptionalNumberField extends StatelessWidget {
           text,
         );
         if (parsed == null) {
-          return 'Debe ser un número';
+          return 'Ingresa un numero valido';
         }
-        if (parsed < 0) {
-          return 'Debe ser 0 o más';
+        if (parsed < 0 || (!allowZero && parsed == 0)) {
+          return zeroErrorText;
         }
         return null;
       },

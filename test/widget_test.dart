@@ -15,9 +15,9 @@ void main() {
     await tester.pumpWidget(NutrivoGoApp(store: store));
 
     expect(find.text('NutrivoGo'), findsOneWidget);
-    expect(find.text('Today'), findsOneWidget);
-    expect(find.text('Calories'), findsOneWidget);
-    expect(find.text('Add Food'), findsOneWidget);
+    expect(find.text('Hoy'), findsOneWidget);
+    expect(find.text('Calorías'), findsOneWidget);
+    expect(find.text('Agregar alimento'), findsOneWidget);
     expect(find.text('Desayuno'), findsOneWidget);
     expect(find.text('Almuerzo'), findsOneWidget);
     expect(find.text('Tarde'), findsOneWidget);

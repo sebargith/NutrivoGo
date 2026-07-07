@@ -26,10 +26,10 @@ class _OcrReportsScreenState extends State<OcrReportsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('OCR Reports'),
+        title: const Text('Reportes OCR'),
         actions: [
           IconButton(
-            tooltip: 'Export OCR cases',
+            tooltip: 'Exportar casos OCR',
             onPressed: _exportReports,
             icon: const Icon(Icons.ios_share_outlined),
           ),
@@ -109,9 +109,9 @@ class _OcrReportsScreenState extends State<OcrReportsScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('OCR cases copied as JSON')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Casos OCR copiados como JSON')),
+    );
   }
 
   void _openReport(OcrScanReport report) {
@@ -134,7 +134,7 @@ class OcrReportDetailScreen extends StatelessWidget {
     final localImage = imagePath == null ? null : File(imagePath);
     final hasLocalImage = localImage?.existsSync() == true;
     return Scaffold(
-      appBar: AppBar(title: const Text('OCR Report')),
+      appBar: AppBar(title: const Text('Reporte OCR')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -151,32 +151,32 @@ class OcrReportDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                 ],
-                _TextCard(title: 'Raw OCR text', text: report.rawOcrText),
+                _TextCard(title: 'Texto OCR crudo', text: report.rawOcrText),
                 const SizedBox(height: 12),
                 _TextCard(
-                  title: 'Parsed values',
+                  title: 'Valores interpretados',
                   text: _prettyJson(report.parsedMap),
                 ),
                 const SizedBox(height: 12),
                 _TextCard(
-                  title: 'Corrected values',
+                  title: 'Valores corregidos',
                   text: report.correctedMap == null
-                      ? 'No corrected values saved.'
+                      ? 'No hay valores corregidos guardados.'
                       : _prettyJson(report.correctedMap!),
                 ),
                 const SizedBox(height: 12),
                 _TextCard(
-                  title: 'Parser warnings',
+                  title: 'Advertencias del parser',
                   text: report.warningList == null
-                      ? 'None'
+                      ? 'Ninguna'
                       : _prettyJson(report.warningList!),
                 ),
                 const SizedBox(height: 12),
                 _TextCard(
-                  title: 'User feedback',
+                  title: 'Comentario del usuario',
                   text: report.userFeedback?.trim().isNotEmpty == true
                       ? report.userFeedback!
-                      : 'No comment.',
+                      : 'Sin comentario.',
                 ),
               ],
             ),
@@ -214,7 +214,7 @@ class _ReportTile extends StatelessWidget {
             _formatTimestamp(context, report.createdAt),
             report.statusLabel,
             if (report.parserConfidence != null)
-              'confidence ${report.parserConfidence!.toStringAsFixed(2)}',
+              'confianza ${report.parserConfidence!.toStringAsFixed(2)}',
             warningSummary,
             report.syncStatus.storageValue,
           ].join(' - '),
@@ -246,32 +246,32 @@ class _SummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _SummaryRow(
-              label: 'Date',
+              label: 'Fecha',
               value: _formatTimestamp(context, report.createdAt),
             ),
-            _SummaryRow(label: 'Status', value: report.statusLabel),
+            _SummaryRow(label: 'Estado', value: report.statusLabel),
             _SummaryRow(
-              label: 'Detected basis',
+              label: 'Base detectada',
               value: report.detectedBasis ?? 'Unknown',
             ),
             _SummaryRow(
-              label: 'Confidence',
-              value: report.parserConfidence?.toStringAsFixed(2) ?? 'Not set',
-            ),
-            _SummaryRow(label: 'Product id', value: report.productId ?? 'None'),
-            _SummaryRow(label: 'Barcode', value: report.barcode ?? 'None'),
-            _SummaryRow(label: 'Platform', value: report.platform),
-            _SummaryRow(
-              label: 'Sync status',
-              value: report.syncStatus.storageValue,
+              label: 'Confianza',
+              value: report.parserConfidence?.toStringAsFixed(2) ?? 'Sin dato',
             ),
             _SummaryRow(
-              label: 'Image',
+              label: 'Producto id',
+              value: report.productId ?? 'Ninguno',
+            ),
+            _SummaryRow(label: 'Código', value: report.barcode ?? 'Ninguno'),
+            _SummaryRow(label: 'Plataforma', value: report.platform),
+            _SummaryRow(label: 'Sync', value: report.syncStatus.storageValue),
+            _SummaryRow(
+              label: 'Imagen',
               value: report.imageSaved
-                  ? report.imageStoragePath ?? 'Saved'
+                  ? report.imageStoragePath ?? 'Guardada'
                   : report.imagePathLocal == null
-                  ? 'Not saved'
-                  : 'Pending upload',
+                  ? 'No guardada'
+                  : 'Subida pendiente',
             ),
           ],
         ),
@@ -320,7 +320,7 @@ class _TextCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ExpansionTile(
-        initiallyExpanded: title == 'Raw OCR text',
+        initiallyExpanded: title == 'Texto OCR crudo',
         leading: const Icon(Icons.notes_outlined),
         title: Text(title),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -348,7 +348,10 @@ class _EmptyReports extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
-          Text('No OCR reports yet', style: theme.textTheme.titleMedium),
+          Text(
+            'No hay reportes OCR todavía',
+            style: theme.textTheme.titleMedium,
+          ),
           const SizedBox(height: 6),
           Text(
             'Scan and save an OCR product to collect parser debug cases.',

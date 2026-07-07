@@ -216,7 +216,17 @@ void main() {
 
     expect(find.text('Confirmar producto OCR'), findsOneWidget);
     expect(find.text('Nombre del producto'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Tamaño de la porción (g)'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Tamaño de la porción (g)'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Precio total del producto (CLP)'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Precio total del producto (CLP)'), findsOneWidget);
     expect(find.text('Serving unit'), findsNothing);
   });

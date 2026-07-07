@@ -13,12 +13,22 @@ class ProductImportConfirmationScreen extends StatefulWidget {
     required this.draft,
     super.key,
     this.message,
+    this.sourceLabel,
+    this.confidence,
+    this.warnings = const <String>[],
+    this.assumptions = const <String>[],
+    this.explanation,
     this.saver = const ProductImportSaver(),
   });
 
   final NutrivoGoStore store;
   final ProductImportDraft draft;
   final String? message;
+  final String? sourceLabel;
+  final String? confidence;
+  final List<String> warnings;
+  final List<String> assumptions;
+  final String? explanation;
   final ProductImportSaver saver;
 
   @override
@@ -116,6 +126,16 @@ class _ProductImportConfirmationScreenState
                     _ImportMessage(message: widget.message!),
                     const SizedBox(height: 12),
                   ],
+                  if (_hasReviewDetails) ...[
+                    _GeminiReviewCard(
+                      sourceLabel: widget.sourceLabel,
+                      confidence: widget.confidence,
+                      warnings: widget.warnings,
+                      assumptions: widget.assumptions,
+                      explanation: widget.explanation,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   TextFormField(
                     controller: _nameController,
                     textInputAction: TextInputAction.next,
@@ -142,7 +162,9 @@ class _ProductImportConfirmationScreenState
                       labelText: 'Código de barras',
                       prefixIcon: Icon(Icons.qr_code_2_outlined),
                     ),
-                    validator: _requiredText,
+                    validator: widget.draft.source == 'barcode'
+                        ? _requiredText
+                        : null,
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -280,6 +302,7 @@ class _ProductImportConfirmationScreenState
       packageQuantityUnit: _packageQuantityController.text.trim().isEmpty
           ? null
           : _baseUnit.label,
+      source: widget.draft.source,
     );
     final product = await widget.saver.save(widget.store, draft);
     if (!mounted) {
@@ -324,6 +347,14 @@ class _ProductImportConfirmationScreenState
     }
     return value.toString();
   }
+
+  bool get _hasReviewDetails {
+    return widget.sourceLabel != null ||
+        widget.confidence != null ||
+        widget.warnings.isNotEmpty ||
+        widget.assumptions.isNotEmpty ||
+        widget.explanation?.trim().isNotEmpty == true;
+  }
 }
 
 class _ImportMessage extends StatelessWidget {
@@ -352,6 +383,104 @@ class _ImportMessage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _GeminiReviewCard extends StatelessWidget {
+  const _GeminiReviewCard({
+    required this.sourceLabel,
+    required this.confidence,
+    required this.warnings,
+    required this.assumptions,
+    required this.explanation,
+  });
+
+  final String? sourceLabel;
+  final String? confidence;
+  final List<String> warnings;
+  final List<String> assumptions;
+  final String? explanation;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.auto_awesome_outlined,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    sourceLabel ?? 'Gemini',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Gemini puede equivocarse. Revisa antes de guardar.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (confidence?.trim().isNotEmpty == true) ...[
+              const SizedBox(height: 8),
+              Text('Confianza: $confidence'),
+            ],
+            if (explanation?.trim().isNotEmpty == true) ...[
+              const SizedBox(height: 8),
+              Text(explanation!),
+            ],
+            if (warnings.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _ReviewList(title: 'Advertencias', items: warnings),
+            ],
+            if (assumptions.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _ReviewList(title: 'Supuestos', items: assumptions),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReviewList extends StatelessWidget {
+  const _ReviewList({required this.title, required this.items});
+
+  final String title;
+  final List<String> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: theme.textTheme.labelLarge),
+        const SizedBox(height: 4),
+        for (final item in items)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: Text(
+              '• $item',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

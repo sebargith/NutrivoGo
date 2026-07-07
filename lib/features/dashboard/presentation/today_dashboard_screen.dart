@@ -10,6 +10,7 @@ import '../../food_log/domain/log_item.dart';
 import '../../food_log/domain/macro_snapshot.dart';
 import '../../food_log/domain/meal_type.dart';
 import '../../food_log/presentation/quantity_display.dart';
+import '../../gemini/application/gemini_product_client.dart';
 import '../../products/presentation/product_search_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../sync/application/sync_service.dart';
@@ -20,11 +21,13 @@ class TodayDashboardScreen extends StatelessWidget {
     super.key,
     this.authController,
     this.syncService,
+    this.geminiClient,
   });
 
   final NutrivoGoStore store;
   final AuthController? authController;
   final SyncService? syncService;
+  final GeminiProductClient? geminiClient;
 
   @override
   Widget build(BuildContext context) {
@@ -108,8 +111,11 @@ class TodayDashboardScreen extends StatelessWidget {
   Future<void> _openAddFood(BuildContext context, [MealType? mealType]) {
     return Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            ProductSearchScreen(store: store, initialMealType: mealType),
+        builder: (_) => ProductSearchScreen(
+          store: store,
+          initialMealType: mealType,
+          geminiClient: geminiClient,
+        ),
       ),
     );
   }

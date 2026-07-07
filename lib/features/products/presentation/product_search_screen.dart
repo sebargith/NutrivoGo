@@ -11,6 +11,9 @@ import '../../food_log/domain/food_cost_calculator.dart';
 import '../../food_log/domain/log_item.dart';
 import '../../food_log/domain/meal_type.dart';
 import '../../food_log/presentation/add_food_quantity_screen.dart';
+import '../../gemini/application/gemini_product_client.dart';
+import '../../gemini/domain/gemini_product_analysis.dart';
+import '../../gemini/presentation/gemini_generic_product_screen.dart';
 import '../../ocr/domain/nutrition_label_ocr_draft.dart';
 import '../../ocr/presentation/ocr_product_confirmation_screen.dart';
 import '../../ocr/presentation/ocr_scan_screen.dart';
@@ -24,10 +27,12 @@ class ProductSearchScreen extends StatefulWidget {
     required this.store,
     super.key,
     this.initialMealType,
+    this.geminiClient,
   });
 
   final NutrivoGoStore store;
   final MealType? initialMealType;
+  final GeminiProductClient? geminiClient;
 
   @override
   State<ProductSearchScreen> createState() => _ProductSearchScreenState();
@@ -120,6 +125,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                     ),
                     const SizedBox(height: 12),
                     _OcrActionBar(onScan: _scanNutritionLabel),
+                    const SizedBox(height: 12),
+                    _GeminiActionBar(onOpen: _openGeminiGeneric),
                     const SizedBox(height: 16),
                     if (widget.store.products.isEmpty)
                       _EmptyProducts(onCreate: _createProduct)
@@ -221,8 +228,49 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
     final product = await Navigator.of(context).push<Product>(
       MaterialPageRoute<Product>(
-        builder: (_) =>
-            OcrProductConfirmationScreen(store: widget.store, draft: draft),
+        builder: (_) => OcrProductConfirmationScreen(
+          store: widget.store,
+          draft: draft,
+          geminiClient: widget.geminiClient,
+        ),
+      ),
+    );
+    if (!mounted || product == null) {
+      return;
+    }
+    await _selectProduct(product);
+  }
+
+  Future<void> _openGeminiGeneric() async {
+    final geminiClient = widget.geminiClient;
+    if (geminiClient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Inicia sesión para usar Gemini.')),
+      );
+      return;
+    }
+
+    final analysis = await Navigator.of(context).push<GeminiProductAnalysis>(
+      MaterialPageRoute<GeminiProductAnalysis>(
+        builder: (_) => GeminiGenericProductScreen(client: geminiClient),
+      ),
+    );
+    if (!mounted || analysis == null || analysis.draft == null) {
+      return;
+    }
+
+    final product = await Navigator.of(context).push<Product>(
+      MaterialPageRoute<Product>(
+        builder: (_) => ProductImportConfirmationScreen(
+          store: widget.store,
+          draft: analysis.draft!,
+          message: 'Valores aproximados generados por Gemini.',
+          sourceLabel: analysis.sourceLabel,
+          confidence: analysis.confidence,
+          warnings: analysis.warnings,
+          assumptions: analysis.assumptions,
+          explanation: analysis.explanation,
+        ),
       ),
     );
     if (!mounted || product == null) {
@@ -365,6 +413,51 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       return;
     }
     Navigator.of(context).pop();
+  }
+}
+
+class _GeminiActionBar extends StatelessWidget {
+  const _GeminiActionBar({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            const Icon(Icons.auto_awesome_outlined),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Agregar con Gemini',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Buscar alimento genérico',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton.icon(
+              onPressed: onOpen,
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('Generar'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

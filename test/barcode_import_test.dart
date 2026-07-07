@@ -190,6 +190,28 @@ void main() {
     expect(rows.single.source, 'barcode');
   });
 
+  test('confirmed Gemini product saved locally without barcode', () async {
+    final (:store, :database) = await createMemoryStore();
+    final product = await const ProductImportSaver().save(
+      store,
+      const ProductImportDraft(
+        barcode: '',
+        name: 'Plátano Gemini',
+        caloriesPer100: 89,
+        proteinPer100: 1.1,
+        carbsPer100: 22.8,
+        fatPer100: 0.3,
+        source: 'gemini_generic',
+      ),
+    );
+
+    expect(product.barcode, isNull);
+    expect(product.source, 'gemini_generic');
+    final rows = await database.select(database.productRows).get();
+    expect(rows.single.barcode, isNull);
+    expect(rows.single.source, 'gemini_generic');
+  });
+
   test('imported product macro calculation uses core macros', () async {
     final fixture = await createMemoryStore();
     final product = await const ProductImportSaver().save(

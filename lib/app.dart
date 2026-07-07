@@ -7,6 +7,7 @@ import 'core/database/app_database.dart';
 import 'core/supabase/supabase_client_provider.dart';
 import 'features/dashboard/presentation/today_dashboard_screen.dart';
 import 'features/food_log/application/nutrivo_go_store.dart';
+import 'features/gemini/application/gemini_product_client.dart';
 import 'features/sync/application/sync_service.dart';
 import 'shared/theme/app_theme.dart';
 
@@ -33,6 +34,7 @@ class _NutrivoGoAppState extends State<NutrivoGoApp>
   late final bool _ownsStore;
   AuthController? _authController;
   SyncService? _syncService;
+  GeminiProductClient? _geminiClient;
   late final bool _ownsAuthController;
   late final bool _ownsSyncService;
   late final bool _ownsDatabase;
@@ -59,6 +61,9 @@ class _NutrivoGoAppState extends State<NutrivoGoApp>
             database: _database!,
             store: _store,
           );
+      _geminiClient = SupabaseGeminiProductClient(
+        client: _authController?.client ?? supabaseClient,
+      );
       _authController?.addListener(_handleAuthChanged);
       unawaited(
         _authController?.ready.then((_) => _syncService?.handleAuthChanged()),
@@ -69,6 +74,12 @@ class _NutrivoGoAppState extends State<NutrivoGoApp>
     _store = widget.store!;
     _authController = widget.authController;
     _syncService = widget.syncService;
+    final authController = _authController;
+    if (authController != null) {
+      _geminiClient = SupabaseGeminiProductClient(
+        client: authController.client,
+      );
+    }
     _authController?.addListener(_handleAuthChanged);
     unawaited(
       _authController?.ready.then((_) => _syncService?.handleAuthChanged()),
@@ -114,6 +125,7 @@ class _NutrivoGoAppState extends State<NutrivoGoApp>
         store: _store,
         authController: _authController,
         syncService: _syncService,
+        geminiClient: _geminiClient,
       ),
     );
   }

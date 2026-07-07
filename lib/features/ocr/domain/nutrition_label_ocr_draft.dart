@@ -49,6 +49,7 @@ class NutritionLabelOcrDraft {
     this.packagePriceClp,
     this.packageQuantity,
     this.packageQuantityUnit,
+    this.source = 'ocr',
   });
 
   final String rawText;
@@ -74,6 +75,7 @@ class NutritionLabelOcrDraft {
   final double? packagePriceClp;
   final double? packageQuantity;
   final String? packageQuantityUnit;
+  final String source;
 
   bool get hasRequiredNutrition {
     return name.trim().isNotEmpty &&
@@ -110,7 +112,7 @@ class NutritionLabelOcrDraft {
     };
   }
 
-  Map<String, Object?> toReportJson({String source = 'ocr'}) {
+  Map<String, Object?> toReportJson({String? source}) {
     return {
       'name': name,
       'brand': brand,
@@ -130,7 +132,7 @@ class NutritionLabelOcrDraft {
       'normalized_from_serving': normalizedFromServing,
       'warnings': warnings,
       'confidence': parserConfidence,
-      'source': source,
+      'source': source ?? this.source,
       'package_price_clp': packagePriceClp,
       'package_quantity': packageQuantity,
       'package_quantity_unit': packageQuantityUnit,
@@ -174,6 +176,7 @@ class NutritionLabelOcrDraft {
     double? packagePriceClp,
     double? packageQuantity,
     String? packageQuantityUnit,
+    String? source,
   }) {
     return NutritionLabelOcrDraft(
       rawText: rawText ?? this.rawText,
@@ -200,6 +203,7 @@ class NutritionLabelOcrDraft {
       packagePriceClp: packagePriceClp ?? this.packagePriceClp,
       packageQuantity: packageQuantity ?? this.packageQuantity,
       packageQuantityUnit: packageQuantityUnit ?? this.packageQuantityUnit,
+      source: source ?? this.source,
     );
   }
 }

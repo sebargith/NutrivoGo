@@ -233,6 +233,27 @@ Proteínas 5 g
     expect(rows.single.syncStatus, 'pending');
   });
 
+  test('confirmed Gemini label product saves gemini_label source', () async {
+    final (:store, :database) = await createMemoryStore();
+    const draft = NutritionLabelOcrDraft(
+      rawText: 'Por 100 g',
+      name: 'Yogur Gemini',
+      caloriesPer100: 65,
+      proteinPer100: 8.8,
+      carbsPer100: 5.9,
+      fatPer100: 0.7,
+      source: 'gemini_label',
+    );
+
+    final product = await const OcrProductImportSaver().save(store, draft);
+
+    expect(product.source, 'gemini_label');
+    final productRows = await database.select(database.productRows).get();
+    expect(productRows.single.source, 'gemini_label');
+    final reportRows = await database.select(database.ocrScanReportRows).get();
+    expect(reportRows.single.source, 'gemini_label');
+  });
+
   test('OCR product macro calculation uses saved per-100 values', () async {
     final fixture = await createMemoryStore();
     final product = await const OcrProductImportSaver().save(

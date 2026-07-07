@@ -155,6 +155,38 @@ void main() {
     expect(remoteLog['package_quantity_snapshot'], 1000);
   });
 
+  test('sync pushes Gemini generic product source', () async {
+    final fixture = await createFixture();
+    await fixture.store.addProduct(
+      name: 'Plátano Gemini',
+      baseUnit: BaseUnit.grams,
+      caloriesPer100: 89,
+      proteinPer100: 1.1,
+      carbsPer100: 22.8,
+      fatPer100: 0.3,
+      source: 'gemini_generic',
+    );
+
+    await fixture.syncService.sync();
+
+    expect(fixture.remote.products.values.single['source'], 'gemini_generic');
+  });
+
+  test('sync pulls Gemini label product source', () async {
+    final fixture = await createFixture();
+    fixture.remote.products['remote-gemini-label'] = _remoteProductRow(
+      id: 'remote-gemini-label',
+      userId: 'user-1',
+      name: 'Yogur Gemini',
+      updatedAt: fixedNow,
+      source: 'gemini_label',
+    );
+
+    await fixture.syncService.sync();
+
+    expect(fixture.store.products.single.source, 'gemini_label');
+  });
+
   test('prevents duplicate OCR report rows when syncing repeatedly', () async {
     final fixture = await createFixture();
     await addOcrReport(fixture.store);
@@ -561,6 +593,7 @@ Map<String, dynamic> _remoteProductRow({
   double? packagePriceClp,
   double? packageQuantity,
   String? packageQuantityUnit,
+  String? source,
 }) {
   return {
     'id': id,
@@ -578,7 +611,7 @@ Map<String, dynamic> _remoteProductRow({
     'updated_at': updatedAt.toIso8601String(),
     'deleted_at': null,
     'barcode': null,
-    'source': null,
+    'source': source,
     'sugar_per_100': null,
     'saturated_fat_per_100': null,
     'sodium_per_100': null,

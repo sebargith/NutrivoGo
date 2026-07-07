@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/widgets.dart';
 import 'package:drift/native.dart';
 import 'package:nutrivogo/app.dart';
 import 'package:nutrivogo/core/database/app_database.dart';
@@ -17,6 +18,25 @@ void main() {
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('Calories'), findsOneWidget);
     expect(find.text('Add Food'), findsOneWidget);
+    expect(find.text('Desayuno'), findsOneWidget);
+    expect(find.text('Almuerzo'), findsOneWidget);
+    expect(find.text('Tarde'), findsOneWidget);
+    final dashboardScroll = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Cena'),
+      300,
+      scrollable: dashboardScroll,
+    );
+    expect(find.text('Cena'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Snack'),
+      300,
+      scrollable: dashboardScroll,
+    );
+    expect(find.text('Snack'), findsOneWidget);
+    expect(find.text('Breakfast'), findsNothing);
+    expect(find.text('Lunch'), findsNothing);
+    expect(find.text('Dinner'), findsNothing);
     expect(
       find.text('You have pushed the button this many times:'),
       findsNothing,

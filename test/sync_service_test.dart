@@ -99,6 +99,28 @@ void main() {
     expect(fixture.syncService.status, SyncRunStatus.synced);
   });
 
+  test('sync pushes Tarde meal type as afternoon', () async {
+    final fixture = await createFixture();
+    final product = await fixture.store.addProduct(
+      name: 'Yogurt',
+      baseUnit: BaseUnit.grams,
+      caloriesPer100: 100,
+      proteinPer100: 10,
+      carbsPer100: 5,
+      fatPer100: 1,
+    );
+    await fixture.store.addLogItem(
+      product: product,
+      quantity: 150,
+      unit: 'g',
+      mealType: MealType.afternoon,
+    );
+
+    await fixture.syncService.sync();
+
+    expect(fixture.remote.logItems.values.single['meal_type'], 'afternoon');
+  });
+
   test('prevents duplicate OCR report rows when syncing repeatedly', () async {
     final fixture = await createFixture();
     await addOcrReport(fixture.store);
@@ -338,6 +360,29 @@ void main() {
     expect(fixture.syncService.pendingOcrReportCount, 0);
   });
 
+  test('pulls remote Tarde log item as afternoon meal type', () async {
+    final fixture = await createFixture();
+    fixture.remote.products['remote-product-afternoon'] = _remoteProductRow(
+      id: 'remote-product-afternoon',
+      userId: 'user-1',
+      name: 'Remote yogurt',
+      updatedAt: fixedNow,
+    );
+    fixture.remote.logItems['remote-log-afternoon'] = _remoteLogItemRow(
+      id: 'remote-log-afternoon',
+      userId: 'user-1',
+      productId: 'remote-product-afternoon',
+      mealType: 'afternoon',
+      updatedAt: fixedNow,
+    );
+
+    await fixture.syncService.sync();
+
+    final afternoonItems = fixture.store.itemsForMeal(MealType.afternoon);
+    expect(afternoonItems, hasLength(1));
+    expect(afternoonItems.single.mealType.label, 'Tarde');
+  });
+
   test('image upload failure does not block OCR report sync', () async {
     final fixture = await createFixture();
     await fixture.store.setOcrImageSavingMode(OcrImageSavingMode.always);
@@ -410,6 +455,24 @@ void main() {
     expect(migration, contains('Users can read their OCR debug images'));
     expect(migration, contains('Users can upload their OCR debug images'));
   });
+
+  test('Supabase migration allows afternoon meal type', () {
+    final migration = File(
+      'supabase/migrations/005_allow_afternoon_meal_type.sql',
+    ).readAsStringSync();
+
+    expect(
+      migration,
+      contains('drop constraint if exists log_items_meal_type_check'),
+    );
+    expect(migration, contains("'afternoon'"));
+    expect(
+      migration,
+      contains(
+        "meal_type in ('breakfast', 'lunch', 'afternoon', 'dinner', 'snack')",
+      ),
+    );
+  });
 }
 
 Map<String, dynamic> _remoteProductRow({
@@ -439,6 +502,30 @@ Map<String, dynamic> _remoteProductRow({
     'saturated_fat_per_100': null,
     'sodium_per_100': null,
     'fiber_per_100': null,
+  };
+}
+
+Map<String, dynamic> _remoteLogItemRow({
+  required String id,
+  required String userId,
+  required String productId,
+  required String mealType,
+  required DateTime updatedAt,
+}) {
+  return {
+    'id': id,
+    'user_id': userId,
+    'product_id': productId,
+    'meal_type': mealType,
+    'quantity': 100,
+    'unit': 'g',
+    'calories': 52,
+    'protein': 0.3,
+    'carbs': 14,
+    'fat': 0.2,
+    'created_at': updatedAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+    'deleted_at': null,
   };
 }
 

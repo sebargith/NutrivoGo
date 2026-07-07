@@ -133,7 +133,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                   DropdownButtonFormField<MealType>(
                     initialValue: _mealType,
                     decoration: const InputDecoration(
-                      labelText: 'Meal',
+                      labelText: 'Comida',
                       prefixIcon: Icon(Icons.restaurant_menu),
                     ),
                     items: [

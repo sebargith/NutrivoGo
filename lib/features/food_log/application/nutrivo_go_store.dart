@@ -514,7 +514,7 @@ class NutrivoGoStore extends ChangeNotifier {
       product: product,
       quantity: row.quantity,
       unit: row.unit,
-      mealType: MealType.values.byName(row.mealType),
+      mealType: MealType.fromStorage(row.mealType),
       macros: MacroSnapshot(
         calories: row.calories,
         protein: row.protein,
@@ -534,7 +534,7 @@ class NutrivoGoStore extends ChangeNotifier {
     return LogItemRowsCompanion(
       id: Value(item.id),
       productId: Value(item.product.id),
-      mealType: Value(item.mealType.name),
+      mealType: Value(item.mealType.storageValue),
       quantity: Value(item.quantity),
       unit: Value(item.unit),
       calories: Value(item.macros.calories),

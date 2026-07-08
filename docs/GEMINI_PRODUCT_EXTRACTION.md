@@ -37,6 +37,12 @@ Deploy the function:
 supabase functions deploy analyze-product-gemini
 ```
 
+Or with `npx`:
+
+```bash
+npx supabase functions deploy analyze-product-gemini
+```
+
 The Flutter app uses the normal Supabase publishable key and the active user session. Do not put the Gemini key in Flutter, Android, Windows, GitHub, or any client-side file.
 
 ## Manual testing
@@ -76,17 +82,40 @@ Product fields include:
 - `serving_unit`
 - `base_unit`
 - `basis`
-- `calories_kcal`
-- `protein_g`
-- `carbs_g`
-- `fat_g`
-- `sugar_g`
-- `saturated_fat_g`
-- `sodium_mg`
-- `fiber_g`
+- `calories_per_100`
+- `protein_per_100`
+- `carbs_per_100`
+- `fat_per_100`
+- `saturated_fat_per_100`
+- `sugar_per_100`
+- `sodium_per_100`
+- `fiber_per_100`
 - optional `per_serving`
 
 If the label only has per-serving values, the function should return `basis: per_serving` and warnings. Flutter will not silently normalize those values to per 100 g/ml.
+
+## Debugging generic foods
+
+In Flutter debug builds, the client sends `debug: true` to the Edge Function. The function response includes:
+
+- `debug.mode`
+- `debug.query`
+- `debug.gemini_raw_json`
+- `debug.normalized_response`
+
+Flutter also prints a sanitized debug log with:
+
+- request mode/query
+- Flutter received JSON
+- final Flutter product draft
+
+The debug log does not include auth tokens, `GEMINI_API_KEY`, or image base64. For image mode, Flutter removes `image_base64` before logging.
+
+For generic foods with empty macro fields, inspect the JSON path in this order:
+
+1. `gemini_raw_json`: whether Gemini returned calories/protein/carbs/fat and where.
+2. `normalized_response.product`: whether the Edge Function preserved them as `*_per_100`.
+3. `flutter_draft`: whether Flutter mapped them into `caloriesPer100`, `proteinPer100`, `carbsPer100`, and `fatPer100`.
 
 ## Troubleshooting
 
@@ -94,6 +123,8 @@ If the label only has per-serving values, the function should return `basis: per
 - `Límite de Gemini alcanzado`: wait for quota/rate limits to reset or use a different configured model.
 - `Inicia sesión para usar Gemini`: log in to personal sync first.
 - Incomplete values: fill the missing fields manually before saving.
+- Generic foods show name but empty calories/protein/carbs/fat: deploy the latest Edge Function, then retest in a debug build and inspect the debug JSON path above.
+- Flutter changes alone are not enough when the bug is in `supabase/functions/analyze-product-gemini/index.ts`; redeploy the function after backend changes.
 
 References:
 

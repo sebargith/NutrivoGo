@@ -67,6 +67,8 @@ void main() {
             proteinPer100: 1.1,
             carbsPer100: 22.8,
             fatPer100: 0.3,
+            sugarPer100: 0.6599999999999999,
+            sodiumPer100: 12.230000000000002,
             source: 'gemini_generic',
           ),
           sourceLabel: 'Gemini alimento genérico',
@@ -83,9 +85,23 @@ void main() {
       find.text('Gemini puede equivocarse. Revisa antes de guardar.'),
       findsOneWidget,
     );
-    expect(find.text('Confianza: medium'), findsOneWidget);
+    expect(find.text('Confianza: media'), findsOneWidget);
     expect(find.text('Advertencias'), findsOneWidget);
     expect(find.text('Supuestos'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Energía / Calorías (kcal)'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(_textFieldValue(tester, 'Energía / Calorías (kcal)'), '89');
+
+    await tester.scrollUntilVisible(
+      find.text('Azúcares (g)'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(_textFieldValue(tester, 'Azúcares (g)'), '0.66');
+    expect(_textFieldValue(tester, 'Sodio (mg)'), '12.23');
   });
 
   testWidgets('failed label Gemini analysis keeps existing OCR fields', (

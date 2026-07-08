@@ -163,50 +163,87 @@ class GeminiProductAnalysis {
           : (json['serving_unit'] as String? ?? baseUnit.label),
       caloriesPer100: _per100Number(
         json,
-        explicitKey: 'calories_per_100',
-        basisKey: 'calories_kcal',
+        explicitKeys: const [
+          'calories_per_100',
+          'calories_kcal_per_100',
+          'energy_kcal_per_100',
+          'kcal_per_100',
+        ],
+        basisKeys: const ['calories_kcal', 'calories', 'energy_kcal', 'kcal'],
         valuesArePer100: valuesArePer100,
       ),
       proteinPer100: _per100Number(
         json,
-        explicitKey: 'protein_per_100',
-        basisKey: 'protein_g',
+        explicitKeys: const ['protein_per_100', 'protein_g_per_100'],
+        basisKeys: const ['protein_g', 'proteins', 'protein', 'proteinas'],
         valuesArePer100: valuesArePer100,
       ),
       carbsPer100: _per100Number(
         json,
-        explicitKey: 'carbs_per_100',
-        basisKey: 'carbs_g',
+        explicitKeys: const [
+          'carbs_per_100',
+          'carbohydrate_per_100',
+          'carbohydrates_per_100',
+          'carbs_g_per_100',
+        ],
+        basisKeys: const [
+          'carbs_g',
+          'carbohydrates_g',
+          'carbs',
+          'carbohydrates',
+          'carbohidratos',
+          'hidratos_de_carbono',
+        ],
         valuesArePer100: valuesArePer100,
       ),
       fatPer100: _per100Number(
         json,
-        explicitKey: 'fat_per_100',
-        basisKey: 'fat_g',
+        explicitKeys: const [
+          'fat_per_100',
+          'fat_g_per_100',
+          'total_fat_per_100',
+        ],
+        basisKeys: const ['fat_g', 'fat', 'total_fat', 'grasa_total', 'grasas'],
         valuesArePer100: valuesArePer100,
       ),
       saturatedFatPer100: _per100Number(
         json,
-        explicitKey: 'saturated_fat_per_100',
-        basisKey: 'saturated_fat_g',
+        explicitKeys: const [
+          'saturated_fat_per_100',
+          'saturated_fat_g_per_100',
+        ],
+        basisKeys: const [
+          'saturated_fat_g',
+          'saturated_fat',
+          'grasa_saturada',
+          'grasas_saturadas',
+        ],
         valuesArePer100: valuesArePer100,
       ),
       sugarPer100: _per100Number(
         json,
-        explicitKey: 'sugar_per_100',
-        basisKey: 'sugar_g',
+        explicitKeys: const [
+          'sugar_per_100',
+          'sugars_per_100',
+          'sugar_g_per_100',
+        ],
+        basisKeys: const ['sugar_g', 'sugars_g', 'sugar', 'sugars', 'azucares'],
         valuesArePer100: valuesArePer100,
       ),
       sodiumPer100: _per100Number(
         json,
-        explicitKey: 'sodium_per_100',
-        basisKey: 'sodium_mg',
+        explicitKeys: const ['sodium_per_100', 'sodium_mg_per_100'],
+        basisKeys: const ['sodium_mg', 'sodium', 'sodio'],
         valuesArePer100: valuesArePer100,
       ),
       fiberPer100: _per100Number(
         json,
-        explicitKey: 'fiber_per_100',
-        basisKey: 'fiber_g',
+        explicitKeys: const [
+          'fiber_per_100',
+          'fibre_per_100',
+          'fiber_g_per_100',
+        ],
+        basisKeys: const ['fiber_g', 'fibre_g', 'fiber', 'fibre', 'fibra'],
         valuesArePer100: valuesArePer100,
       ),
       source: source,
@@ -233,18 +270,71 @@ class GeminiProductAnalysis {
 
   static double? _per100Number(
     Map<String, dynamic> json, {
-    required String explicitKey,
-    required String basisKey,
+    required List<String> explicitKeys,
+    required List<String> basisKeys,
     required bool valuesArePer100,
   }) {
-    final explicitValue = _number(json[explicitKey]);
+    final sources = _nutritionSources(json);
+    final explicitValue = _firstNumber(sources, explicitKeys);
     if (explicitValue != null) {
       return explicitValue;
     }
     if (!valuesArePer100) {
       return null;
     }
-    return _number(json[basisKey]);
+    return _firstNumber(sources, basisKeys);
+  }
+
+  static double? _firstNumber(
+    List<Map<String, dynamic>> sources,
+    List<String> keys,
+  ) {
+    final normalizedKeys = keys.map(_normalizeKey).toSet();
+    for (final source in sources) {
+      for (final entry in source.entries) {
+        if (normalizedKeys.contains(_normalizeKey(entry.key))) {
+          final value = _number(entry.value);
+          if (value != null) {
+            return value;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  static List<Map<String, dynamic>> _nutritionSources(
+    Map<String, dynamic> json,
+  ) {
+    const nestedKeys = [
+      'nutrition',
+      'nutrients',
+      'nutrients_per_100g',
+      'nutrients_per_100ml',
+      'per_100g',
+      'per_100ml',
+      'per100',
+      'per100g',
+      'per100ml',
+    ];
+    return [
+      json,
+      for (final key in nestedKeys)
+        if (json[key] is Map<String, dynamic>)
+          json[key] as Map<String, dynamic>,
+    ];
+  }
+
+  static String _normalizeKey(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll(RegExp(r'[\s\-.]+'), '_');
   }
 
   static double? _number(Object? value) {

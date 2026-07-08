@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase/supabase.dart';
 
@@ -54,6 +55,7 @@ class SupabaseGeminiProductClient implements GeminiProductClient {
       'mode': GeminiProductMode.genericFood.storageValue,
       'query': query,
       'locale': locale,
+      if (kDebugMode) 'debug': true,
     };
     if (baseUnitPreference != null) {
       body['base_unit_preference'] = baseUnitPreference;
@@ -81,6 +83,7 @@ class SupabaseGeminiProductClient implements GeminiProductClient {
       'mode': GeminiProductMode.nutritionLabelImage.storageValue,
       'image_base64': base64Encode(bytes),
       'image_mime_type': _mimeTypeForPath(imagePath),
+      if (kDebugMode) 'debug': true,
       if (rawOcrText?.trim().isNotEmpty == true) 'raw_ocr_text': rawOcrText,
       if (hint?.trim().isNotEmpty == true) 'hint': hint,
     });
@@ -130,10 +133,49 @@ class SupabaseGeminiProductClient implements GeminiProductClient {
     }
 
     final analysis = GeminiProductAnalysis.fromJson(decoded);
+    _debugLogGeminiResponse(body, decoded, analysis);
     if (analysis.status == GeminiProductStatus.error) {
       throw GeminiProductException(_friendlyError(decoded['error'] as String?));
     }
     return analysis;
+  }
+
+  void _debugLogGeminiResponse(
+    Map<String, Object?> requestBody,
+    Map<String, dynamic> responseBody,
+    GeminiProductAnalysis analysis,
+  ) {
+    if (!kDebugMode || responseBody['debug'] == null) {
+      return;
+    }
+    final sanitizedRequest = Map<String, Object?>.from(requestBody)
+      ..remove('image_base64');
+    final draft = analysis.draft;
+    final draftJson = draft == null
+        ? null
+        : {
+            'name': draft.name,
+            'brand': draft.brand,
+            'barcode': draft.barcode,
+            'serving_size': draft.servingSize,
+            'serving_unit': draft.servingUnit,
+            'base_unit': draft.baseUnit.label,
+            'calories_per_100': draft.caloriesPer100,
+            'protein_per_100': draft.proteinPer100,
+            'carbs_per_100': draft.carbsPer100,
+            'fat_per_100': draft.fatPer100,
+            'saturated_fat_per_100': draft.saturatedFatPer100,
+            'sugar_per_100': draft.sugarPer100,
+            'sodium_per_100': draft.sodiumPer100,
+            'fiber_per_100': draft.fiberPer100,
+            'source': draft.source,
+          };
+    const encoder = JsonEncoder.withIndent('  ');
+    debugPrint(
+      'Gemini product debug:\n'
+      '${encoder.convert({'request': sanitizedRequest, 'flutter_received_json': responseBody, 'flutter_draft': draftJson})}',
+      wrapWidth: 1024,
+    );
   }
 
   String _friendlyError(String? value) {

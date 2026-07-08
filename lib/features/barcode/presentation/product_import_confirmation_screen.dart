@@ -345,7 +345,10 @@ class _ProductImportConfirmationScreenState
     if (value == value.roundToDouble()) {
       return value.toStringAsFixed(0);
     }
-    return value.toString();
+    return value
+        .toStringAsFixed(3)
+        .replaceAll(RegExp(r'0+$'), '')
+        .replaceAll(RegExp(r'\.$'), '');
   }
 
   bool get _hasReviewDetails {
@@ -435,7 +438,7 @@ class _GeminiReviewCard extends StatelessWidget {
             ),
             if (confidence?.trim().isNotEmpty == true) ...[
               const SizedBox(height: 8),
-              Text('Confianza: $confidence'),
+              Text('Confianza: ${_confidenceLabel(confidence)}'),
             ],
             if (explanation?.trim().isNotEmpty == true) ...[
               const SizedBox(height: 8),
@@ -454,6 +457,16 @@ class _GeminiReviewCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _confidenceLabel(String? value) {
+  return switch (value?.trim().toLowerCase()) {
+    'high' => 'alta',
+    'medium' => 'media',
+    'low' => 'baja',
+    final text? when text.isNotEmpty => text,
+    _ => 'no indicada',
+  };
 }
 
 class _ReviewList extends StatelessWidget {

@@ -661,7 +661,7 @@ class _GeminiReviewCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text('Confianza: ${analysis.confidence}'),
+            Text('Confianza: ${_confidenceLabel(analysis.confidence)}'),
             if (analysis.explanation.trim().isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(analysis.explanation),
@@ -685,6 +685,16 @@ class _GeminiReviewCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _confidenceLabel(String? value) {
+  return switch (value?.trim().toLowerCase()) {
+    'high' => 'alta',
+    'medium' => 'media',
+    'low' => 'baja',
+    final text? when text.isNotEmpty => text,
+    _ => 'no indicada',
+  };
 }
 
 class _GeminiReviewList extends StatelessWidget {

@@ -30,6 +30,14 @@ const responseSchema = {
           type: "string",
           enum: ["per_100g", "per_100ml", "per_serving", "unknown"],
         },
+        calories_per_100: { type: "number" },
+        protein_per_100: { type: "number" },
+        carbs_per_100: { type: "number" },
+        fat_per_100: { type: "number" },
+        saturated_fat_per_100: { type: "number" },
+        sugar_per_100: { type: "number" },
+        sodium_per_100: { type: "number" },
+        fiber_per_100: { type: "number" },
         calories_kcal: { type: "number" },
         protein_g: { type: "number" },
         carbs_g: { type: "number" },
@@ -156,7 +164,16 @@ Deno.serve(async (req) => {
 
   try {
     const parsed = JSON.parse(text) as Record<string, unknown>;
-    return json(normalizeAnalysis(parsed, mode, body), 200);
+    const normalized = normalizeAnalysis(parsed, mode, body);
+    if (body.debug === true) {
+      normalized.debug = {
+        mode,
+        query: mode === "generic_food" ? stringValue(body.query) : undefined,
+        gemini_raw_json: parsed,
+        normalized_response: { ...normalized },
+      };
+    }
+    return json(normalized, 200);
   } catch (_error) {
     return json({ error: "Gemini devolvió JSON inválido" }, 502);
   }
@@ -181,11 +198,21 @@ function buildPrompt(body: Record<string, unknown>, mode: string): string {
 Mode: generic_food.
 Locale: ${stringValue(body.locale) || "Chile"}.
 User query: ${stringValue(body.query)}.
-Return approximate common nutrition for the edible food, preferably per 100 g unless the food is normally measured as liquid.
+Return approximate common nutrition for the edible food normalized per 100 g or per 100 ml.
+For common solid foods, use per 100 g.
+Calories must be kcal per 100 g/ml.
+Protein, carbs, fat, sugar, saturated fat, and fiber must be grams per 100 g/ml.
+Sodium must be mg per 100 g/ml.
+Do not return only per-serving values.
+If giving a serving size, serving size is separate from per-100 nutrition.
+For common foods like plátano, huevo, arroz cocido, pollo cocido, manzana, pan, avena, and leche, include calories_per_100, protein_per_100, carbs_per_100, and fat_per_100 if possible.
+If a value is unknown, use null instead of omitting the key.
+Do not put nutrients only in explanation text.
 Set source_mode to generic_food.
 Set status to not_found when this is not a food.
 Use product.basis per_100g or per_100ml.
-Explain briefly in Spanish that values are approximate.
+Return explanation, warnings, and assumptions in Spanish.
+Preferred product fields: calories_per_100, protein_per_100, carbs_per_100, fat_per_100, saturated_fat_per_100, sugar_per_100, sodium_per_100, fiber_per_100.
 `;
   }
 
@@ -200,6 +227,7 @@ ${stringValue(body.hint) || "(none)"}
 Extract only visible nutrition label data.
 If both kJ and kcal are visible, use kcal.
 Return per-serving values in product.per_serving when visible, but product calories/protein/carbs/fat fields must follow product.basis.
+Return explanation, warnings, and assumptions in Spanish.
 `;
 }
 
@@ -255,6 +283,10 @@ function normalizeAnalysis(
     : normalizeProduct(product, mode, requestBody);
   const status = stringValue(value.status);
   const confidence = stringValue(value.confidence);
+  const warnings = stringArray(value.warnings);
+  if (mode === "generic_food" && product != null && usedGenericBasisFallback(product)) {
+    warnings.push("Se asumieron valores por 100 g/ml para este alimento genérico. Revisa antes de guardar.");
+  }
   return {
     status: ["ok", "not_found", "uncertain", "error"].includes(status || "")
       ? status
@@ -264,7 +296,7 @@ function normalizeAnalysis(
     source_mode: mode,
     product: normalizedProduct,
     confidence: validConfidence.has(confidence || "") ? confidence : "low",
-    warnings: stringArray(value.warnings),
+    warnings: uniqueStrings(warnings),
     assumptions: stringArray(value.assumptions),
     explanation: stringValue(value.explanation) || "",
   };
@@ -291,18 +323,105 @@ function normalizeProduct(
   assignString(product, "barcode", value.barcode);
   assignNumber(product, "serving_size", value.serving_size);
   assignString(product, "serving_unit", value.serving_unit);
-  assignNumber(product, "calories_kcal", firstNumber(value, "calories_kcal", "calories_per_100"));
-  assignNumber(product, "protein_g", firstNumber(value, "protein_g", "protein_per_100"));
-  assignNumber(product, "carbs_g", firstNumber(value, "carbs_g", "carbs_per_100"));
-  assignNumber(product, "fat_g", firstNumber(value, "fat_g", "fat_per_100"));
-  assignNumber(product, "sugar_g", firstNumber(value, "sugar_g", "sugar_per_100"));
+  const valuesArePer100 = basis === "per_100g" || basis === "per_100ml" ||
+    mode === "generic_food";
   assignNumber(
     product,
-    "saturated_fat_g",
-    firstNumber(value, "saturated_fat_g", "saturated_fat_per_100"),
+    "calories_per_100",
+    nutritionNumber(value, {
+      explicitKeys: [
+        "calories_per_100",
+        "calories_kcal_per_100",
+        "energy_kcal_per_100",
+        "kcal_per_100",
+      ],
+      basisKeys: ["calories_kcal", "calories", "energy_kcal", "kcal"],
+      valuesArePer100,
+    }),
   );
-  assignNumber(product, "sodium_mg", firstNumber(value, "sodium_mg", "sodium_per_100"));
-  assignNumber(product, "fiber_g", firstNumber(value, "fiber_g", "fiber_per_100"));
+  assignNumber(
+    product,
+    "protein_per_100",
+    nutritionNumber(value, {
+      explicitKeys: ["protein_per_100", "protein_g_per_100"],
+      basisKeys: ["protein_g", "protein", "proteins", "proteinas", "proteínas"],
+      valuesArePer100,
+    }),
+  );
+  assignNumber(
+    product,
+    "carbs_per_100",
+    nutritionNumber(value, {
+      explicitKeys: [
+        "carbs_per_100",
+        "carbohydrate_per_100",
+        "carbohydrates_per_100",
+        "carbs_g_per_100",
+      ],
+      basisKeys: [
+        "carbs_g",
+        "carbohydrates_g",
+        "carbs",
+        "carbohydrates",
+        "carbohidratos",
+        "hidratos_de_carbono",
+      ],
+      valuesArePer100,
+    }),
+  );
+  assignNumber(
+    product,
+    "fat_per_100",
+    nutritionNumber(value, {
+      explicitKeys: ["fat_per_100", "fat_g_per_100", "total_fat_per_100"],
+      basisKeys: ["fat_g", "fat", "total_fat", "grasa_total", "grasas"],
+      valuesArePer100,
+    }),
+  );
+  assignNumber(
+    product,
+    "saturated_fat_per_100",
+    nutritionNumber(value, {
+      explicitKeys: [
+        "saturated_fat_per_100",
+        "saturated_fat_g_per_100",
+      ],
+      basisKeys: [
+        "saturated_fat_g",
+        "saturated_fat",
+        "grasa_saturada",
+        "grasas_saturadas",
+      ],
+      valuesArePer100,
+    }),
+  );
+  assignNumber(
+    product,
+    "sugar_per_100",
+    nutritionNumber(value, {
+      explicitKeys: ["sugar_per_100", "sugars_per_100", "sugar_g_per_100"],
+      basisKeys: ["sugar_g", "sugars_g", "sugar", "sugars", "azucares", "azúcares"],
+      valuesArePer100,
+    }),
+  );
+  assignNumber(
+    product,
+    "sodium_per_100",
+    nutritionNumber(value, {
+      explicitKeys: ["sodium_per_100", "sodium_mg_per_100"],
+      basisKeys: ["sodium_mg", "sodium", "sodio"],
+      valuesArePer100,
+    }),
+  );
+  assignNumber(
+    product,
+    "fiber_per_100",
+    nutritionNumber(value, {
+      explicitKeys: ["fiber_per_100", "fibre_per_100", "fiber_g_per_100"],
+      basisKeys: ["fiber_g", "fibre_g", "fiber", "fibre", "fibra"],
+      valuesArePer100,
+    }),
+  );
 
   const perServing = objectValue(value.per_serving);
   if (perServing != null) {
@@ -336,6 +455,14 @@ function normalizeBasis(
     return baseUnitInput === "ml" ? "per_100ml" : "per_100g";
   }
   return "unknown";
+}
+
+function usedGenericBasisFallback(product: Record<string, unknown>): boolean {
+  const basis = stringValue(product.basis);
+  if (basis == null || basis.trim() === "") {
+    return true;
+  }
+  return normalizeBasis(basis, "nutrition_label_image", stringValue(product.base_unit)) === "unknown";
 }
 
 function normalizePerServing(value: Record<string, unknown>): Record<string, number> {
@@ -383,6 +510,77 @@ function json(value: Record<string, unknown>, status = 200): Response {
   });
 }
 
+function nutritionNumber(
+  source: Record<string, unknown>,
+  options: {
+    explicitKeys: string[];
+    basisKeys: string[];
+    valuesArePer100: boolean;
+  },
+): number | null {
+  const sources = nutritionSources(source);
+  const explicit = numberFromSources(sources, options.explicitKeys);
+  if (explicit != null) {
+    return explicit;
+  }
+  if (!options.valuesArePer100) {
+    return null;
+  }
+  return numberFromSources(sources, options.basisKeys);
+}
+
+function nutritionSources(
+  source: Record<string, unknown>,
+): Record<string, unknown>[] {
+  const nestedKeys = [
+    "nutrition",
+    "nutrients",
+    "nutrients_per_100g",
+    "nutrients_per_100ml",
+    "per_100g",
+    "per_100ml",
+    "per100",
+    "per100g",
+    "per100ml",
+  ];
+  const sources = [source];
+  for (const key of nestedKeys) {
+    const nested = objectValue(source[key]);
+    if (nested != null) {
+      sources.push(nested);
+    }
+  }
+  return sources;
+}
+
+function numberFromSources(
+  sources: Record<string, unknown>[],
+  keys: string[],
+): number | null {
+  const normalizedKeys = new Set(keys.map(normalizeKey));
+  for (const source of sources) {
+    for (const [key, value] of Object.entries(source)) {
+      if (!normalizedKeys.has(normalizeKey(key))) {
+        continue;
+      }
+      const parsed = numberValue(value);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+  }
+  return null;
+}
+
+function normalizeKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\s.-]+/g, "_");
+}
+
 function assignString(
   target: Record<string, unknown>,
   key: string,
@@ -403,19 +601,6 @@ function assignNumber(
   if (parsed != null && Number.isFinite(parsed) && parsed >= 0) {
     target[key] = parsed;
   }
-}
-
-function firstNumber(
-  source: Record<string, unknown>,
-  ...keys: string[]
-): number | null {
-  for (const key of keys) {
-    const parsed = numberValue(source[key]);
-    if (parsed != null) {
-      return parsed;
-    }
-  }
-  return null;
 }
 
 function objectValue(value: unknown): Record<string, unknown> | null {
@@ -447,4 +632,8 @@ function stringArray(value: unknown): string[] {
   return value
     .map((item) => String(item).trim())
     .filter((item) => item.length > 0);
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values)];
 }

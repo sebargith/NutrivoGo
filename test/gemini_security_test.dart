@@ -35,4 +35,21 @@ void main() {
     expect(functionText, contains('responseMimeType'));
     expect(functionText, contains('responseSchema'));
   });
+
+  test('Gemini debug path is explicit and sanitized', () {
+    final functionText = File(
+      'supabase/functions/analyze-product-gemini/index.ts',
+    ).readAsStringSync();
+    final clientText = File(
+      'lib/features/gemini/application/gemini_product_client.dart',
+    ).readAsStringSync();
+
+    expect(functionText, contains('body.debug === true'));
+    expect(functionText, contains('gemini_raw_json'));
+    expect(functionText, contains('normalized_response'));
+    expect(clientText, contains("if (kDebugMode) 'debug': true"));
+    expect(clientText, contains("remove('image_base64')"));
+    expect(clientText, contains('flutter_received_json'));
+    expect(clientText, contains('flutter_draft'));
+  });
 }

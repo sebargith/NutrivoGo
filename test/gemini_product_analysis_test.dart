@@ -69,6 +69,58 @@ void main() {
     expect(analysis.draft!.sodiumPer100, 65);
   });
 
+  test('generic Gemini output with unknown basis still maps as per 100g', () {
+    final analysis = GeminiProductAnalysis.fromJson({
+      'status': 'ok',
+      'source_mode': 'generic_food',
+      'product': {
+        'name': 'plátano',
+        'basis': 'unknown',
+        'calories_kcal': 89,
+        'protein_g': 1.1,
+        'carbs_g': 22.8,
+        'fat_g': 0.3,
+      },
+      'confidence': 'low',
+      'warnings': <String>[],
+      'assumptions': ['Values are approximate common nutrition.'],
+      'explanation': 'Valores nutricionales aproximados para un plátano crudo.',
+    });
+
+    expect(analysis.basis, GeminiNutritionBasis.per100g);
+    expect(analysis.hasUsableDraft, isTrue);
+    expect(analysis.draft!.caloriesPer100, 89);
+    expect(analysis.draft!.proteinPer100, 1.1);
+    expect(analysis.draft!.carbsPer100, 22.8);
+    expect(analysis.draft!.fatPer100, 0.3);
+  });
+
+  test('generic Gemini output without basis still maps as per 100g', () {
+    final analysis = GeminiProductAnalysis.fromJson({
+      'status': 'ok',
+      'source_mode': 'generic_food',
+      'product': {
+        'name': 'arroz cocido',
+        'base_unit': 'g',
+        'calories_kcal': 130,
+        'protein_g': 2.7,
+        'carbs_g': 28,
+        'fat_g': 0.3,
+      },
+      'confidence': 'low',
+      'warnings': <String>[],
+      'assumptions': <String>[],
+      'explanation': 'Valores aproximados por 100 g.',
+    });
+
+    expect(analysis.basis, GeminiNutritionBasis.per100g);
+    expect(analysis.hasUsableDraft, isTrue);
+    expect(analysis.draft!.caloriesPer100, 130);
+    expect(analysis.draft!.proteinPer100, 2.7);
+    expect(analysis.draft!.carbsPer100, 28);
+    expect(analysis.draft!.fatPer100, 0.3);
+  });
+
   test('per-serving-only Gemini output does not become per-100 values', () {
     final analysis = GeminiProductAnalysis.fromJson({
       'status': 'ok',

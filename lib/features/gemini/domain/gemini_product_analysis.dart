@@ -46,8 +46,21 @@ enum GeminiNutritionBasis {
   final String storageValue;
 
   static GeminiNutritionBasis fromStorage(String? value) {
+    final normalized = value?.trim().toLowerCase().replaceAll(
+      RegExp(r'[\s-]+'),
+      '_',
+    );
+    final alias = switch (normalized) {
+      'per100g' || 'per_100_g' || '100g' || '100_g' => 'per_100g',
+      'per100ml' || 'per_100_ml' || '100ml' || '100_ml' => 'per_100ml',
+      'serving' ||
+      'per_serving' ||
+      'por_serving' ||
+      'por_porcion' => 'per_serving',
+      _ => normalized,
+    };
     return GeminiNutritionBasis.values.firstWhere(
-      (basis) => basis.storageValue == value,
+      (basis) => basis.storageValue == alias,
       orElse: () => GeminiNutritionBasis.unknown,
     );
   }
@@ -71,19 +84,20 @@ class GeminiProductAnalysis {
     );
     final product = json['product'];
     final productJson = product is Map<String, dynamic> ? product : null;
+    final basis = _basisFromJson(productJson, json, mode);
     return GeminiProductAnalysis(
       status: GeminiProductStatus.fromStorage(
         json['status'] as String? ?? 'error',
       ),
       sourceMode: mode,
-      basis: GeminiNutritionBasis.fromStorage(
-        productJson?['basis'] as String? ?? json['basis'] as String?,
-      ),
+      basis: basis,
       confidence: json['confidence'] as String? ?? 'low',
       warnings: _stringList(json['warnings']),
       assumptions: _stringList(json['assumptions']),
       explanation: json['explanation'] as String? ?? '',
-      draft: productJson == null ? null : _draftFromJson(productJson, mode),
+      draft: productJson == null
+          ? null
+          : _draftFromJson(productJson, mode, basis),
     );
   }
 
@@ -120,8 +134,8 @@ class GeminiProductAnalysis {
   static ProductImportDraft _draftFromJson(
     Map<String, dynamic> json,
     GeminiProductMode mode,
+    GeminiNutritionBasis basis,
   ) {
-    final basis = GeminiNutritionBasis.fromStorage(json['basis'] as String?);
     final source = switch (mode) {
       GeminiProductMode.genericFood => 'gemini_generic',
       GeminiProductMode.nutritionLabelImage => 'gemini_label',
@@ -134,7 +148,9 @@ class GeminiProductAnalysis {
     final servingSize = _number(json['serving_size']);
     final valuesArePer100 =
         basis == GeminiNutritionBasis.per100g ||
-        basis == GeminiNutritionBasis.per100ml;
+        basis == GeminiNutritionBasis.per100ml ||
+        (mode == GeminiProductMode.genericFood &&
+            basis == GeminiNutritionBasis.unknown);
 
     return ProductImportDraft(
       barcode: json['barcode'] as String? ?? '',
@@ -195,6 +211,24 @@ class GeminiProductAnalysis {
       ),
       source: source,
     );
+  }
+
+  static GeminiNutritionBasis _basisFromJson(
+    Map<String, dynamic>? productJson,
+    Map<String, dynamic> rootJson,
+    GeminiProductMode mode,
+  ) {
+    final parsed = GeminiNutritionBasis.fromStorage(
+      productJson?['basis'] as String? ?? rootJson['basis'] as String?,
+    );
+    if (parsed != GeminiNutritionBasis.unknown ||
+        mode != GeminiProductMode.genericFood) {
+      return parsed;
+    }
+    final baseUnit = productJson?['base_unit'] as String?;
+    return baseUnit == 'ml'
+        ? GeminiNutritionBasis.per100ml
+        : GeminiNutritionBasis.per100g;
   }
 
   static double? _per100Number(

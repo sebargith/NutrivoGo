@@ -275,9 +275,8 @@ function normalizeProduct(
   mode: string,
   requestBody: Record<string, unknown>,
 ): Record<string, unknown> {
-  const basisInput = stringValue(value.basis);
-  const basis = validBasis.has(basisInput || "") ? basisInput! : "unknown";
   const baseUnitInput = stringValue(value.base_unit);
+  const basis = normalizeBasis(value.basis, mode, baseUnitInput);
   const baseUnit = baseUnitInput === "ml" || basis === "per_100ml" ? "ml" : "g";
   const fallbackName = mode === "generic_food"
     ? stringValue(requestBody.query) || "Producto Gemini"
@@ -292,20 +291,51 @@ function normalizeProduct(
   assignString(product, "barcode", value.barcode);
   assignNumber(product, "serving_size", value.serving_size);
   assignString(product, "serving_unit", value.serving_unit);
-  assignNumber(product, "calories_kcal", value.calories_kcal);
-  assignNumber(product, "protein_g", value.protein_g);
-  assignNumber(product, "carbs_g", value.carbs_g);
-  assignNumber(product, "fat_g", value.fat_g);
-  assignNumber(product, "sugar_g", value.sugar_g);
-  assignNumber(product, "saturated_fat_g", value.saturated_fat_g);
-  assignNumber(product, "sodium_mg", value.sodium_mg);
-  assignNumber(product, "fiber_g", value.fiber_g);
+  assignNumber(product, "calories_kcal", firstNumber(value, "calories_kcal", "calories_per_100"));
+  assignNumber(product, "protein_g", firstNumber(value, "protein_g", "protein_per_100"));
+  assignNumber(product, "carbs_g", firstNumber(value, "carbs_g", "carbs_per_100"));
+  assignNumber(product, "fat_g", firstNumber(value, "fat_g", "fat_per_100"));
+  assignNumber(product, "sugar_g", firstNumber(value, "sugar_g", "sugar_per_100"));
+  assignNumber(
+    product,
+    "saturated_fat_g",
+    firstNumber(value, "saturated_fat_g", "saturated_fat_per_100"),
+  );
+  assignNumber(product, "sodium_mg", firstNumber(value, "sodium_mg", "sodium_per_100"));
+  assignNumber(product, "fiber_g", firstNumber(value, "fiber_g", "fiber_per_100"));
 
   const perServing = objectValue(value.per_serving);
   if (perServing != null) {
     product.per_serving = normalizePerServing(perServing);
   }
   return product;
+}
+
+function normalizeBasis(
+  value: unknown,
+  mode: string,
+  baseUnitInput: string | null,
+): string {
+  const normalized = stringValue(value)
+    ?.trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  const alias = normalized === "per100g" || normalized === "per_100_g" ||
+      normalized === "100g" || normalized === "100_g"
+    ? "per_100g"
+    : normalized === "per100ml" || normalized === "per_100_ml" ||
+        normalized === "100ml" || normalized === "100_ml"
+    ? "per_100ml"
+    : normalized === "serving" || normalized === "por_porcion"
+    ? "per_serving"
+    : normalized;
+  if (alias != null && validBasis.has(alias)) {
+    return alias;
+  }
+  if (mode === "generic_food") {
+    return baseUnitInput === "ml" ? "per_100ml" : "per_100g";
+  }
+  return "unknown";
 }
 
 function normalizePerServing(value: Record<string, unknown>): Record<string, number> {
@@ -373,6 +403,19 @@ function assignNumber(
   if (parsed != null && Number.isFinite(parsed) && parsed >= 0) {
     target[key] = parsed;
   }
+}
+
+function firstNumber(
+  source: Record<string, unknown>,
+  ...keys: string[]
+): number | null {
+  for (const key of keys) {
+    const parsed = numberValue(source[key]);
+    if (parsed != null) {
+      return parsed;
+    }
+  }
+  return null;
 }
 
 function objectValue(value: unknown): Record<string, unknown> | null {

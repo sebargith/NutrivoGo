@@ -47,6 +47,8 @@ class _ProductImportConfirmationScreenState
   final _brandController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _servingSizeController = TextEditingController();
+  final _unitsPerServingController = TextEditingController();
+  final _servingsPerPackageController = TextEditingController();
   final _packagePriceController = TextEditingController();
   final _packageQuantityController = TextEditingController();
   final _caloriesController = TextEditingController();
@@ -68,6 +70,12 @@ class _ProductImportConfirmationScreenState
     _brandController.text = draft.brand ?? '';
     _barcodeController.text = draft.barcode;
     _servingSizeController.text = _formatInputNumberOrEmpty(draft.servingSize);
+    _unitsPerServingController.text = _formatInputNumberOrEmpty(
+      draft.unitsPerServing,
+    );
+    _servingsPerPackageController.text = _formatInputNumberOrEmpty(
+      draft.servingsPerPackage,
+    );
     _packagePriceController.text = _formatInputNumberOrEmpty(
       draft.packagePriceClp,
     );
@@ -93,6 +101,8 @@ class _ProductImportConfirmationScreenState
     _brandController.dispose();
     _barcodeController.dispose();
     _servingSizeController.dispose();
+    _unitsPerServingController.dispose();
+    _servingsPerPackageController.dispose();
     _packagePriceController.dispose();
     _packageQuantityController.dispose();
     _caloriesController.dispose();
@@ -191,19 +201,12 @@ class _ProductImportConfirmationScreenState
                     },
                   ),
                   const SizedBox(height: 20),
-                  _OptionalNumberField(
-                    controller: _servingSizeController,
-                    label: 'Tamaño de la porción (${_baseUnit.label})',
-                    icon: Icons.straighten,
-                    allowZero: false,
-                    zeroErrorText:
-                        'El tamaño de la porción debe ser mayor que cero',
-                  ),
-                  const SizedBox(height: 20),
                   ProductCostFields(
                     packagePriceController: _packagePriceController,
                     packageQuantityController: _packageQuantityController,
                     servingSizeController: _servingSizeController,
+                    unitsPerServingController: _unitsPerServingController,
+                    servingsPerPackageController: _servingsPerPackageController,
                     baseUnit: _baseUnit,
                     numberInputFormatter: _numberInputFormatter,
                   ),
@@ -302,6 +305,10 @@ class _ProductImportConfirmationScreenState
       packageQuantityUnit: _packageQuantityController.text.trim().isEmpty
           ? null
           : _baseUnit.label,
+      unitsPerServing: _parseOptionalNumber(_unitsPerServingController.text),
+      servingsPerPackage: _parseOptionalNumber(
+        _servingsPerPackageController.text,
+      ),
       source: widget.draft.source,
     );
     final product = await widget.saver.save(widget.store, draft);
@@ -572,15 +579,11 @@ class _OptionalNumberField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.icon,
-    this.allowZero = true,
-    this.zeroErrorText = 'Debe ser 0 o mas',
   });
 
   final TextEditingController controller;
   final String label;
   final IconData icon;
-  final bool allowZero;
-  final String zeroErrorText;
 
   @override
   Widget build(BuildContext context) {
@@ -601,8 +604,8 @@ class _OptionalNumberField extends StatelessWidget {
         if (parsed == null) {
           return 'Ingresa un numero valido';
         }
-        if (parsed < 0 || (!allowZero && parsed == 0)) {
-          return zeroErrorText;
+        if (parsed < 0) {
+          return 'Debe ser 0 o más';
         }
         return null;
       },

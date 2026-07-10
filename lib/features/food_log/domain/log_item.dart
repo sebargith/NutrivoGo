@@ -22,6 +22,10 @@ class LogItem {
     this.costPerServingSnapshotClp,
     this.packagePriceSnapshotClp,
     this.packageQuantitySnapshot,
+    this.baseQuantitySnapshot,
+    this.servingSizeSnapshot,
+    this.unitsPerServingSnapshot,
+    this.baseQuantityPerUnitSnapshot,
   });
 
   final String id;
@@ -41,6 +45,10 @@ class LogItem {
   final double? costPerServingSnapshotClp;
   final double? packagePriceSnapshotClp;
   final double? packageQuantitySnapshot;
+  final double? baseQuantitySnapshot;
+  final double? servingSizeSnapshot;
+  final double? unitsPerServingSnapshot;
+  final double? baseQuantityPerUnitSnapshot;
 
   LogItem copyWith({
     Product? product,
@@ -58,6 +66,10 @@ class LogItem {
     double? costPerServingSnapshotClp,
     double? packagePriceSnapshotClp,
     double? packageQuantitySnapshot,
+    double? baseQuantitySnapshot,
+    double? servingSizeSnapshot,
+    double? unitsPerServingSnapshot,
+    double? baseQuantityPerUnitSnapshot,
   }) {
     return LogItem(
       id: id,
@@ -81,6 +93,12 @@ class LogItem {
           packagePriceSnapshotClp ?? this.packagePriceSnapshotClp,
       packageQuantitySnapshot:
           packageQuantitySnapshot ?? this.packageQuantitySnapshot,
+      baseQuantitySnapshot: baseQuantitySnapshot ?? this.baseQuantitySnapshot,
+      servingSizeSnapshot: servingSizeSnapshot ?? this.servingSizeSnapshot,
+      unitsPerServingSnapshot:
+          unitsPerServingSnapshot ?? this.unitsPerServingSnapshot,
+      baseQuantityPerUnitSnapshot:
+          baseQuantityPerUnitSnapshot ?? this.baseQuantityPerUnitSnapshot,
     );
   }
 }

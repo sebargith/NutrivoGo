@@ -161,6 +161,8 @@ class GeminiProductAnalysis {
       servingUnit: servingSize == null
           ? null
           : (json['serving_unit'] as String? ?? baseUnit.label),
+      unitsPerServing: _number(json['units_per_serving']),
+      servingsPerPackage: _number(json['servings_per_package']),
       caloriesPer100: _per100Number(
         json,
         explicitKeys: const [

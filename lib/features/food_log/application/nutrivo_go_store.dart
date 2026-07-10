@@ -276,6 +276,8 @@ class NutrivoGoStore extends ChangeNotifier {
     double? packagePriceClp,
     double? packageQuantity,
     String? packageQuantityUnit,
+    double? unitsPerServing,
+    double? servingsPerPackage,
   }) async {
     final now = _clock();
     final product = Product(
@@ -303,6 +305,8 @@ class NutrivoGoStore extends ChangeNotifier {
       packageQuantityUnit: packageQuantity == null
           ? null
           : _emptyToNull(packageQuantityUnit) ?? baseUnit.label,
+      unitsPerServing: _positiveOptional(unitsPerServing),
+      servingsPerPackage: _positiveOptional(servingsPerPackage),
     );
 
     await _database
@@ -337,6 +341,8 @@ class NutrivoGoStore extends ChangeNotifier {
     double? packagePriceClp,
     double? packageQuantity,
     String? packageQuantityUnit,
+    double? unitsPerServing,
+    double? servingsPerPackage,
     bool clearExtraNutrients = false,
     bool clearSugar = false,
     bool clearSaturatedFat = false,
@@ -344,6 +350,8 @@ class NutrivoGoStore extends ChangeNotifier {
     bool clearFiber = false,
     bool clearPackagePrice = false,
     bool clearPackageQuantity = false,
+    bool clearUnitsPerServing = false,
+    bool clearServingsPerPackage = false,
   }) async {
     final updated = Product(
       id: product.id,
@@ -395,6 +403,14 @@ class NutrivoGoStore extends ChangeNotifier {
           : packageQuantityUnit == null
           ? product.packageQuantityUnit
           : _emptyToNull(packageQuantityUnit),
+      unitsPerServing: clearUnitsPerServing
+          ? null
+          : _positiveOptional(unitsPerServing ?? product.unitsPerServing),
+      servingsPerPackage: clearServingsPerPackage
+          ? null
+          : _positiveOptional(
+              servingsPerPackage ?? product.servingsPerPackage,
+            ),
     );
 
     await (_database.update(_database.productRows)
@@ -445,6 +461,11 @@ class NutrivoGoStore extends ChangeNotifier {
       quantity: quantity,
       unit: unit,
     );
+    final baseQuantity = _calculator.quantityInBaseUnit(
+      product: product,
+      quantity: quantity,
+      unit: unit,
+    );
     final item = LogItem(
       id: _makeId('log'),
       product: product,
@@ -459,7 +480,11 @@ class NutrivoGoStore extends ChangeNotifier {
       costPer100SnapshotClp: _costCalculator.costPer100(product),
       costPerServingSnapshotClp: _costCalculator.costPerServing(product),
       packagePriceSnapshotClp: product.packagePriceClp,
-      packageQuantitySnapshot: product.packageQuantity,
+      packageQuantitySnapshot: product.effectivePackageQuantity,
+      baseQuantitySnapshot: baseQuantity,
+      servingSizeSnapshot: product.servingSize,
+      unitsPerServingSnapshot: product.unitsPerServing,
+      baseQuantityPerUnitSnapshot: product.baseQuantityPerUnit,
     );
 
     await _database
@@ -589,6 +614,8 @@ class NutrivoGoStore extends ChangeNotifier {
       packagePriceClp: row.packagePriceClp,
       packageQuantity: row.packageQuantity,
       packageQuantityUnit: row.packageQuantityUnit,
+      unitsPerServing: row.unitsPerServing,
+      servingsPerPackage: row.servingsPerPackage,
     );
   }
 
@@ -619,6 +646,8 @@ class NutrivoGoStore extends ChangeNotifier {
       packagePriceClp: Value(product.packagePriceClp),
       packageQuantity: Value(product.packageQuantity),
       packageQuantityUnit: Value(product.packageQuantityUnit),
+      unitsPerServing: Value(product.unitsPerServing),
+      servingsPerPackage: Value(product.servingsPerPackage),
     );
   }
 
@@ -646,6 +675,10 @@ class NutrivoGoStore extends ChangeNotifier {
       costPerServingSnapshotClp: row.costPerServingSnapshotClp,
       packagePriceSnapshotClp: row.packagePriceSnapshotClp,
       packageQuantitySnapshot: row.packageQuantitySnapshot,
+      baseQuantitySnapshot: row.baseQuantitySnapshot,
+      servingSizeSnapshot: row.servingSizeSnapshot,
+      unitsPerServingSnapshot: row.unitsPerServingSnapshot,
+      baseQuantityPerUnitSnapshot: row.baseQuantityPerUnitSnapshot,
     );
   }
 
@@ -671,6 +704,10 @@ class NutrivoGoStore extends ChangeNotifier {
       costPerServingSnapshotClp: Value(item.costPerServingSnapshotClp),
       packagePriceSnapshotClp: Value(item.packagePriceSnapshotClp),
       packageQuantitySnapshot: Value(item.packageQuantitySnapshot),
+      baseQuantitySnapshot: Value(item.baseQuantitySnapshot),
+      servingSizeSnapshot: Value(item.servingSizeSnapshot),
+      unitsPerServingSnapshot: Value(item.unitsPerServingSnapshot),
+      baseQuantityPerUnitSnapshot: Value(item.baseQuantityPerUnitSnapshot),
     );
   }
 
@@ -901,6 +938,13 @@ class NutrivoGoStore extends ChangeNotifier {
       return null;
     }
     return trimmed.replaceAll(RegExp(r'\s+'), '');
+  }
+
+  double? _positiveOptional(double? value) {
+    if (value == null || !value.isFinite || value <= 0) {
+      return null;
+    }
+    return value;
   }
 }
 

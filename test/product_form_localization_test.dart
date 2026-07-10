@@ -47,6 +47,8 @@ void main() {
     expect(find.text('Código de barras'), findsOneWidget);
     expect(find.text('Unidad base'), findsOneWidget);
     expect(find.text('Tamaño de la porción (g)'), findsOneWidget);
+    expect(find.text('Unidades por porción'), findsOneWidget);
+    expect(find.text('Porciones por envase'), findsOneWidget);
     expect(find.text('Precio total del producto (CLP)'), findsOneWidget);
     expect(find.text('Cantidad total del producto/envase (g)'), findsOneWidget);
     expect(find.text('Serving unit'), findsNothing);
@@ -101,6 +103,8 @@ void main() {
     await tester.tap(find.text('ml'));
     await tester.pumpAndSettle();
     await enterTextInField(tester, 'Tamaño de la porción (ml)', '200');
+    await enterTextInField(tester, 'Unidades por porción', '2');
+    await enterTextInField(tester, 'Porciones por envase', '5');
     await enterTextInField(tester, 'Precio total del producto (CLP)', '1200');
     await enterTextInField(
       tester,
@@ -134,6 +138,8 @@ void main() {
     expect(row.packagePriceClp, 1200);
     expect(row.packageQuantity, 1000);
     expect(row.packageQuantityUnit, 'ml');
+    expect(row.unitsPerServing, 2);
+    expect(row.servingsPerPackage, 5);
   });
 
   testWidgets('product form validates invalid cost values', (tester) async {

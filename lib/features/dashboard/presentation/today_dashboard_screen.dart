@@ -483,7 +483,7 @@ class _LogItemTile extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          '${formatQuantity(item.quantity)} ${quantityUnitLabel(item.unit)} · '
+          '${loggedQuantityDisplay(quantity: item.quantity, unit: item.unit, baseQuantity: item.baseQuantitySnapshot, baseUnit: item.product.baseUnitLabel)} · '
           '${formatMacro(item.macros.protein, decimals: 1)}P  '
           '${formatMacro(item.macros.carbs, decimals: 1)}C  '
           '${formatMacro(item.macros.fat, decimals: 1)}F'

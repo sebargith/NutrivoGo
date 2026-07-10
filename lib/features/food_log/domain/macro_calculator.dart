@@ -37,12 +37,25 @@ class MacroCalculator {
       return quantity;
     }
 
-    if (normalizedUnit == 'serving') {
+    if (normalizedUnit == 'serving' || normalizedUnit == 'servings') {
       final servingSize = product.servingSize;
       if (servingSize == null || servingSize <= 0) {
         throw ArgumentError('Product needs a serving size to log servings.');
       }
       return quantity * servingSize;
+    }
+
+    if (normalizedUnit == 'unit' ||
+        normalizedUnit == 'units' ||
+        normalizedUnit == 'unidad' ||
+        normalizedUnit == 'unidades') {
+      final baseQuantityPerUnit = product.baseQuantityPerUnit;
+      if (baseQuantityPerUnit == null || baseQuantityPerUnit <= 0) {
+        throw ArgumentError(
+          'Product needs a serving size and units per serving to log units.',
+        );
+      }
+      return quantity * baseQuantityPerUnit;
     }
 
     throw ArgumentError.value(unit, 'unit', 'Unsupported unit for product.');

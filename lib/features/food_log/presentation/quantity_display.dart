@@ -6,6 +6,17 @@ String quantityUnitLabel(String unit) {
     'g' => 'gramos (g)',
     'ml' => 'mililitros (ml)',
     'serving' => 'porción(es)',
+    'unit' => 'unidad(es)',
+    _ => unit,
+  };
+}
+
+String quantityUnitShortLabel(String unit) {
+  return switch (unit) {
+    'g' => 'g',
+    'ml' => 'ml',
+    'serving' => 'porciones',
+    'unit' => 'unidades',
     _ => unit,
   };
 }
@@ -15,6 +26,7 @@ String quantityHelperText(String unit) {
     'g' => 'Ingresa los gramos que comiste.',
     'ml' => 'Ingresa los mililitros que consumiste.',
     'serving' => 'Ingresa cuántas porciones comiste.',
+    'unit' => 'Ingresa cuántas unidades comiste.',
     _ => 'Ingresa la cantidad consumida.',
   };
 }
@@ -26,4 +38,23 @@ String? servingSizeDisplay(Product product) {
     return null;
   }
   return '1 porción = ${formatQuantity(size)} $unit';
+}
+
+String loggedQuantityDisplay({
+  required double quantity,
+  required String unit,
+  double? baseQuantity,
+  String? baseUnit,
+  bool useSpanishDecimals = false,
+}) {
+  String format(double value) {
+    final text = formatQuantity(value);
+    return useSpanishDecimals ? text.replaceAll('.', ',') : text;
+  }
+
+  final entered = '${format(quantity)} ${quantityUnitShortLabel(unit)}';
+  if (baseQuantity == null || (unit != 'serving' && unit != 'unit')) {
+    return entered;
+  }
+  return '$entered · ${format(baseQuantity)} ${baseUnit ?? 'g'}';
 }

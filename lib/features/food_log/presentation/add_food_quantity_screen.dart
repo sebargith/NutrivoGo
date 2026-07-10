@@ -65,6 +65,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
     final availableUnits = [
       widget.product.baseUnitLabel,
       if (widget.product.servingSize != null) 'serving',
+      if (widget.product.baseQuantityPerUnit != null) 'unit',
     ];
 
     return Scaffold(

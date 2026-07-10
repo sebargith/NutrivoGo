@@ -36,6 +36,8 @@ class OcrProductImportSaver {
       packagePriceClp: draft.packagePriceClp,
       packageQuantity: draft.packageQuantity,
       packageQuantityUnit: draft.packageQuantityUnit,
+      unitsPerServing: draft.unitsPerServing,
+      servingsPerPackage: draft.servingsPerPackage,
     );
     final originalDraft = parsedDraft ?? draft;
     await store.addOcrScanReport(

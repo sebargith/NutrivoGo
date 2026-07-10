@@ -24,7 +24,12 @@ class OpenFoodFactsClient {
           'product_name_es',
           'brands',
           'serving_size',
+          'serving_quantity',
+          'serving_quantity_unit',
+          'serving_count',
           'quantity',
+          'product_quantity',
+          'product_quantity_unit',
           'nutrition_data_per',
           'nutriments',
         ].join(','),
@@ -86,7 +91,17 @@ class OpenFoodFactsParser {
         _string(product['product_name_es']) ??
         _string(product['product_name']) ??
         '';
-    final serving = _parseServing(_string(product['serving_size']));
+    final serving = _parseServing(
+      _string(product['serving_size']),
+      numericAmount: _number(product['serving_quantity']),
+      numericUnit: _string(product['serving_quantity_unit']),
+      numericUnits: _number(product['serving_count']),
+    );
+    final package = _parseBaseQuantity(
+      _string(product['quantity']),
+      numericAmount: _number(product['product_quantity']),
+      numericUnit: _string(product['product_quantity_unit']),
+    );
     final baseUnit = _inferBaseUnit(
       serving.unit ?? _string(product['quantity']),
       nutriments,
@@ -105,6 +120,14 @@ class OpenFoodFactsParser {
       brand: _string(product['brands']),
       servingSize: serving.amount,
       servingUnit: serving.unit,
+      unitsPerServing: serving.units,
+      servingsPerPackage:
+          serving.amount != null &&
+              serving.amount! > 0 &&
+              package.amount != null &&
+              package.unit == serving.unit
+          ? package.amount! / serving.amount!
+          : null,
       baseUnit: baseUnit,
       caloriesPer100: calories,
       proteinPer100:
@@ -127,6 +150,8 @@ class OpenFoodFactsParser {
       fiberPer100:
           _number(nutriments['fiber_$suffix']) ??
           _number(nutriments['fiber_100g']),
+      packageQuantity: package.amount,
+      packageQuantityUnit: package.unit,
     );
 
     return ProductLookupResult(
@@ -141,10 +166,19 @@ class OpenFoodFactsParser {
     );
   }
 
-  static _Serving _parseServing(String? value) {
+  static _Serving _parseServing(
+    String? value, {
+    double? numericAmount,
+    String? numericUnit,
+    double? numericUnits,
+  }) {
     final text = value?.trim();
     if (text == null || text.isEmpty) {
-      return const _Serving();
+      return _Serving(
+        amount: numericAmount,
+        unit: _normalizeServingUnit(numericUnit),
+        units: numericUnits,
+      );
     }
 
     final baseUnitMatches = RegExp(
@@ -157,10 +191,41 @@ class OpenFoodFactsParser {
         baseUnitMatch.group(1)!.replaceAll(',', '.'),
       );
       final unit = _normalizeServingUnit(baseUnitMatch.group(2));
-      return _Serving(amount: amount, unit: unit);
+      final unitCount = _parseUnitCount(text);
+      return _Serving(
+        amount: amount,
+        unit: unit,
+        units: unitCount ?? numericUnits,
+      );
     }
 
-    return const _Serving();
+    return _Serving(
+      amount: numericAmount,
+      unit: _normalizeServingUnit(numericUnit),
+      units: numericUnits,
+    );
+  }
+
+  static double? _parseUnitCount(String text) {
+    final match = RegExp(
+      r'([0-9]+(?:[\.,][0-9]+)?)\s*(?:unidades?|unid\.?|units?|pcs?)\b',
+      caseSensitive: false,
+    ).firstMatch(text);
+    return _number(match?.group(1));
+  }
+
+  static _Serving _parseBaseQuantity(
+    String? text, {
+    double? numericAmount,
+    String? numericUnit,
+  }) {
+    if (numericAmount != null && numericAmount > 0) {
+      final unit = _normalizeServingUnit(numericUnit);
+      if (unit != null) {
+        return _Serving(amount: numericAmount, unit: unit);
+      }
+    }
+    return _parseServing(text);
   }
 
   static BaseUnit _inferBaseUnit(
@@ -216,10 +281,11 @@ class OpenFoodFactsParser {
 }
 
 class _Serving {
-  const _Serving({this.amount, this.unit});
+  const _Serving({this.amount, this.unit, this.units});
 
   final double? amount;
   final String? unit;
+  final double? units;
 }
 
 class OpenFoodFactsException implements Exception {

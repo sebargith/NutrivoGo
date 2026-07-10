@@ -49,6 +49,8 @@ class NutritionLabelOcrDraft {
     this.packagePriceClp,
     this.packageQuantity,
     this.packageQuantityUnit,
+    this.unitsPerServing,
+    this.servingsPerPackage,
     this.source = 'ocr',
   });
 
@@ -75,6 +77,8 @@ class NutritionLabelOcrDraft {
   final double? packagePriceClp;
   final double? packageQuantity;
   final String? packageQuantityUnit;
+  final double? unitsPerServing;
+  final double? servingsPerPackage;
   final String source;
 
   bool get hasRequiredNutrition {
@@ -136,7 +140,19 @@ class NutritionLabelOcrDraft {
       'package_price_clp': packagePriceClp,
       'package_quantity': packageQuantity,
       'package_quantity_unit': packageQuantityUnit,
+      'units_per_serving': unitsPerServing,
+      'servings_per_package': servingsPerPackage,
+      'estimated_package_quantity': estimatedPackageQuantity,
     };
+  }
+
+  double? get estimatedPackageQuantity {
+    final size = servingSize;
+    final servings = servingsPerPackage;
+    if (size == null || size <= 0 || servings == null || servings <= 0) {
+      return null;
+    }
+    return size * servings;
   }
 
   String get reviewMessage {
@@ -176,6 +192,8 @@ class NutritionLabelOcrDraft {
     double? packagePriceClp,
     double? packageQuantity,
     String? packageQuantityUnit,
+    double? unitsPerServing,
+    double? servingsPerPackage,
     String? source,
   }) {
     return NutritionLabelOcrDraft(
@@ -203,6 +221,8 @@ class NutritionLabelOcrDraft {
       packagePriceClp: packagePriceClp ?? this.packagePriceClp,
       packageQuantity: packageQuantity ?? this.packageQuantity,
       packageQuantityUnit: packageQuantityUnit ?? this.packageQuantityUnit,
+      unitsPerServing: unitsPerServing ?? this.unitsPerServing,
+      servingsPerPackage: servingsPerPackage ?? this.servingsPerPackage,
       source: source ?? this.source,
     );
   }

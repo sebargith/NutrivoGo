@@ -14,6 +14,7 @@ class NutritionLabelOcrParser {
     final normalizedText = _normalize(rawText);
     final basis = _detectBasis(normalizedText);
     final serving = _detectServing(lines);
+    final servingsPerPackage = _detectServingsPerPackage(lines);
     final reconstructedTable = _parseReconstructedTable(lines, serving);
     final servingBeforePer100 = _servingColumnBeforePer100(lines);
     final sourceValues =
@@ -26,6 +27,19 @@ class NutritionLabelOcrParser {
                   basis == OcrNutritionBasis.per100ml),
         );
 
+    final inferredServingSize = serving.size == null
+        ? _inferServingSize(
+            reconstructedTable?.per100Values,
+            reconstructedTable?.perServingValues,
+          )
+        : null;
+    final effectiveServingSize = serving.size ?? inferredServingSize;
+    final warnings = <String>[...?reconstructedTable?.warnings];
+    if (inferredServingSize != null) {
+      warnings.add(
+        'El tamaño de la porción fue inferido comparando varias columnas nutricionales. Revísalo antes de guardar.',
+      );
+    }
     final baseUnit = switch (basis) {
       OcrNutritionBasis.per100ml => BaseUnit.milliliters,
       OcrNutritionBasis.per100g => BaseUnit.grams,
@@ -34,14 +48,16 @@ class NutritionLabelOcrParser {
 
     if (basis == OcrNutritionBasis.perServing) {
       final canNormalize =
-          serving.size != null && serving.size! > 0 && serving.unit != null;
+          effectiveServingSize != null &&
+          effectiveServingSize > 0 &&
+          (serving.unit != null || basis != OcrNutritionBasis.perServing);
       final normalized = canNormalize
-          ? _normalizeServingValues(sourceValues, serving.size!)
+          ? _normalizeServingValues(sourceValues, effectiveServingSize)
           : const OcrNutritionValues();
       return NutritionLabelOcrDraft(
         rawText: rawText,
-        servingSize: serving.size,
-        servingUnit: serving.unit,
+        servingSize: effectiveServingSize,
+        servingUnit: serving.unit ?? (baseUnit == BaseUnit.grams ? 'g' : 'ml'),
         baseUnit: baseUnit,
         caloriesPer100: normalized.calories,
         proteinPer100: normalized.protein,
@@ -54,14 +70,19 @@ class NutritionLabelOcrParser {
         detectedBasis: basis,
         perServingValues: sourceValues,
         normalizedFromServing: canNormalize,
-        warnings: reconstructedTable?.warnings ?? const <String>[],
+        warnings: warnings,
+        parserConfidence: canNormalize ? 0.65 : 0.35,
+        unitsPerServing: serving.units,
+        servingsPerPackage: servingsPerPackage,
       );
     }
 
     return NutritionLabelOcrDraft(
       rawText: rawText,
-      servingSize: serving.size,
-      servingUnit: serving.unit,
+      servingSize: effectiveServingSize,
+      servingUnit: effectiveServingSize == null
+          ? serving.unit
+          : serving.unit ?? (baseUnit == BaseUnit.grams ? 'g' : 'ml'),
       baseUnit: baseUnit,
       caloriesPer100: sourceValues.calories,
       proteinPer100: sourceValues.protein,
@@ -73,7 +94,14 @@ class NutritionLabelOcrParser {
       fiberPer100: sourceValues.fiber,
       detectedBasis: basis,
       perServingValues: reconstructedTable?.perServingValues,
-      warnings: reconstructedTable?.warnings ?? const <String>[],
+      warnings: warnings,
+      parserConfidence: reconstructedTable == null
+          ? 0.45
+          : inferredServingSize == null
+          ? 0.72
+          : 0.58,
+      unitsPerServing: serving.units,
+      servingsPerPackage: servingsPerPackage,
     );
   }
 
@@ -97,21 +125,52 @@ class NutritionLabelOcrParser {
   _Serving _detectServing(List<String> lines) {
     for (final line in lines) {
       final normalized = _normalize(line);
-      if (!normalized.contains('porcion') && !normalized.contains('racion')) {
+      if ((!normalized.contains('porcion') && !normalized.contains('racion')) ||
+          normalized.contains('porciones por envase')) {
         continue;
       }
-      final match = RegExp(
+      final sizeMatch = RegExp(
         r'(\d+(?:[\.,]\d+)?)\s*(g|gr|gramos|ml|cc)',
       ).firstMatch(normalized);
-      if (match == null) {
+      final unitsMatch = RegExp(
+        r'(\d+(?:[\.,]\d+)?)\s*(?:unidades?|unid\.?|uds?\.?|pcs?)\b',
+      ).firstMatch(normalized);
+      if (sizeMatch == null && unitsMatch == null) {
         continue;
       }
       return _Serving(
-        size: _parseNumber(match.group(1)),
-        unit: _normalizeUnit(match.group(2)),
+        size: _parseNumber(sizeMatch?.group(1)),
+        unit: _normalizeUnit(sizeMatch?.group(2)),
+        units: _parseNumber(unitsMatch?.group(1)),
       );
     }
     return const _Serving();
+  }
+
+  double? _detectServingsPerPackage(List<String> lines) {
+    for (var index = 0; index < lines.length; index++) {
+      final normalized = _normalize(lines[index]);
+      final isPackageHeader =
+          normalized.contains('porciones por envase') ||
+          normalized.contains('n porciones por envase') ||
+          normalized.contains('n° porciones por envase');
+      if (!isPackageHeader) {
+        continue;
+      }
+      final sameLine = RegExp(
+        r'(?<!100)\d+(?:[\.,]\d+)?',
+      ).firstMatch(normalized.replaceFirst('porciones por envase', ''));
+      if (sameLine != null) {
+        return _parseNumber(sameLine.group(0));
+      }
+      if (index + 1 < lines.length) {
+        final next = _parseNumber(lines[index + 1].trim());
+        if (next != null) {
+          return next;
+        }
+      }
+    }
+    return null;
   }
 
   bool _servingColumnBeforePer100(List<String> lines) {
@@ -308,6 +367,43 @@ class NutritionLabelOcrParser {
       sodium: values[_Nutrient.sodium],
       fiber: values[_Nutrient.fiber],
     );
+  }
+
+  double? _inferServingSize(
+    OcrNutritionValues? per100,
+    OcrNutritionValues? perServing,
+  ) {
+    if (per100 == null || perServing == null) {
+      return null;
+    }
+    final candidates = <double>[];
+    void add(double? per100Value, double? servingValue) {
+      if (per100Value == null ||
+          servingValue == null ||
+          per100Value <= 0 ||
+          servingValue <= 0) {
+        return;
+      }
+      candidates.add(servingValue / per100Value * 100);
+    }
+
+    add(per100.calories, perServing.calories);
+    add(per100.protein, perServing.protein);
+    add(per100.carbs, perServing.carbs);
+    add(per100.fat, perServing.fat);
+    add(per100.sugar, perServing.sugar);
+    if (candidates.length < 2) {
+      return null;
+    }
+    final average =
+        candidates.reduce((left, right) => left + right) / candidates.length;
+    final maximumDeviation = candidates
+        .map((candidate) => (candidate - average).abs())
+        .reduce((left, right) => left > right ? left : right);
+    if (average <= 0 || maximumDeviation > average * 0.12) {
+      return null;
+    }
+    return average;
   }
 
   bool _shouldConsumeIgnoredValue(_IgnoredRow ignored, double nextValue) {
@@ -602,8 +698,9 @@ class _ReconstructedTable {
 }
 
 class _Serving {
-  const _Serving({this.size, this.unit});
+  const _Serving({this.size, this.unit, this.units});
 
   final double? size;
   final String? unit;
+  final double? units;
 }

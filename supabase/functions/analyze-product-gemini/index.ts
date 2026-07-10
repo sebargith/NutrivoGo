@@ -25,6 +25,8 @@ const responseSchema = {
         barcode: { type: "string" },
         serving_size: { type: "number" },
         serving_unit: { type: "string" },
+        units_per_serving: { type: "number" },
+        servings_per_package: { type: "number" },
         base_unit: { type: "string", enum: ["g", "ml"] },
         basis: {
           type: "string",
@@ -206,6 +208,7 @@ Sodium must be mg per 100 g/ml.
 Do not return only per-serving values.
 If giving a serving size, serving size is separate from per-100 nutrition.
 For common foods like plátano, huevo, arroz cocido, pollo cocido, manzana, pan, avena, and leche, include calories_per_100, protein_per_100, carbs_per_100, and fat_per_100 if possible.
+Only return units_per_serving when a natural countable unit clearly applies, such as 1 egg or 1 banana. Do not invent physical units for rice, oil, flour, milk, or sugar. Keep servings_per_package null for generic foods unless the user explicitly describes a package. If a natural unit weight is estimated, add a Spanish assumption warning.
 If a value is unknown, use null instead of omitting the key.
 Do not put nutrients only in explanation text.
 Set source_mode to generic_food.
@@ -227,6 +230,7 @@ ${stringValue(body.hint) || "(none)"}
 Extract only visible nutrition label data.
 If both kJ and kcal are visible, use kcal.
 Return per-serving values in product.per_serving when visible, but product calories/protein/carbs/fat fields must follow product.basis.
+Distinguish physical units per serving (for example, 6 unidades) from serving size in grams/ml and servings per package (for example, 4,5 porciones por envase). Never convert a unit count into grams. Return units_per_serving and servings_per_package only when the label supports them.
 Return explanation, warnings, and assumptions in Spanish.
 `;
 }
@@ -323,6 +327,8 @@ function normalizeProduct(
   assignString(product, "barcode", value.barcode);
   assignNumber(product, "serving_size", value.serving_size);
   assignString(product, "serving_unit", value.serving_unit);
+  assignNumber(product, "units_per_serving", value.units_per_serving);
+  assignNumber(product, "servings_per_package", value.servings_per_package);
   const valuesArePer100 = basis === "per_100g" || basis === "per_100ml" ||
     mode === "generic_food";
   assignNumber(

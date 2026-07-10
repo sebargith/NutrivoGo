@@ -422,6 +422,10 @@ class SyncService extends ChangeNotifier {
       packagePriceClp: Value((row['package_price_clp'] as num?)?.toDouble()),
       packageQuantity: Value((row['package_quantity'] as num?)?.toDouble()),
       packageQuantityUnit: Value(row['package_quantity_unit'] as String?),
+      unitsPerServing: Value((row['units_per_serving'] as num?)?.toDouble()),
+      servingsPerPackage: Value(
+        (row['servings_per_package'] as num?)?.toDouble(),
+      ),
     );
   }
 
@@ -458,6 +462,18 @@ class SyncService extends ChangeNotifier {
       ),
       packageQuantitySnapshot: Value(
         (row['package_quantity_snapshot'] as num?)?.toDouble(),
+      ),
+      baseQuantitySnapshot: Value(
+        (row['base_quantity_snapshot'] as num?)?.toDouble(),
+      ),
+      servingSizeSnapshot: Value(
+        (row['serving_size_snapshot'] as num?)?.toDouble(),
+      ),
+      unitsPerServingSnapshot: Value(
+        (row['units_per_serving_snapshot'] as num?)?.toDouble(),
+      ),
+      baseQuantityPerUnitSnapshot: Value(
+        (row['base_quantity_per_unit_snapshot'] as num?)?.toDouble(),
       ),
     );
   }
@@ -521,6 +537,8 @@ class SyncService extends ChangeNotifier {
       'package_price_clp': row.packagePriceClp,
       'package_quantity': row.packageQuantity,
       'package_quantity_unit': row.packageQuantityUnit,
+      'units_per_serving': row.unitsPerServing,
+      'servings_per_package': row.servingsPerPackage,
     };
   }
 
@@ -544,6 +562,10 @@ class SyncService extends ChangeNotifier {
       'cost_per_serving_snapshot_clp': row.costPerServingSnapshotClp,
       'package_price_snapshot_clp': row.packagePriceSnapshotClp,
       'package_quantity_snapshot': row.packageQuantitySnapshot,
+      'base_quantity_snapshot': row.baseQuantitySnapshot,
+      'serving_size_snapshot': row.servingSizeSnapshot,
+      'units_per_serving_snapshot': row.unitsPerServingSnapshot,
+      'base_quantity_per_unit_snapshot': row.baseQuantityPerUnitSnapshot,
     };
   }
 

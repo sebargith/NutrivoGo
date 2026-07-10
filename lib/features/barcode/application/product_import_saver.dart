@@ -28,6 +28,8 @@ class ProductImportSaver {
       packagePriceClp: draft.packagePriceClp,
       packageQuantity: draft.packageQuantity,
       packageQuantityUnit: draft.packageQuantityUnit,
+      unitsPerServing: draft.unitsPerServing,
+      servingsPerPackage: draft.servingsPerPackage,
     );
   }
 }

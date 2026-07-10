@@ -21,6 +21,8 @@ class ProductImportDraft {
     this.packagePriceClp,
     this.packageQuantity,
     this.packageQuantityUnit,
+    this.unitsPerServing,
+    this.servingsPerPackage,
     this.source = 'barcode',
   });
 
@@ -41,6 +43,8 @@ class ProductImportDraft {
   final double? packagePriceClp;
   final double? packageQuantity;
   final String? packageQuantityUnit;
+  final double? unitsPerServing;
+  final double? servingsPerPackage;
   final String source;
 
   bool get hasRequiredNutrition {
@@ -69,6 +73,8 @@ class ProductImportDraft {
     double? packagePriceClp,
     double? packageQuantity,
     String? packageQuantityUnit,
+    double? unitsPerServing,
+    double? servingsPerPackage,
     String? source,
   }) {
     return ProductImportDraft(
@@ -89,6 +95,8 @@ class ProductImportDraft {
       packagePriceClp: packagePriceClp ?? this.packagePriceClp,
       packageQuantity: packageQuantity ?? this.packageQuantity,
       packageQuantityUnit: packageQuantityUnit ?? this.packageQuantityUnit,
+      unitsPerServing: unitsPerServing ?? this.unitsPerServing,
+      servingsPerPackage: servingsPerPackage ?? this.servingsPerPackage,
       source: source ?? this.source,
     );
   }

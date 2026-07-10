@@ -38,6 +38,8 @@ class ProductRows extends Table {
   RealColumn get packagePriceClp => real().nullable()();
   RealColumn get packageQuantity => real().nullable()();
   TextColumn get packageQuantityUnit => text().nullable()();
+  RealColumn get unitsPerServing => real().nullable()();
+  RealColumn get servingsPerPackage => real().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -68,6 +70,10 @@ class LogItemRows extends Table {
   RealColumn get costPerServingSnapshotClp => real().nullable()();
   RealColumn get packagePriceSnapshotClp => real().nullable()();
   RealColumn get packageQuantitySnapshot => real().nullable()();
+  RealColumn get baseQuantitySnapshot => real().nullable()();
+  RealColumn get servingSizeSnapshot => real().nullable()();
+  RealColumn get unitsPerServingSnapshot => real().nullable()();
+  RealColumn get baseQuantityPerUnitSnapshot => real().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -130,7 +136,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.connect(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -176,6 +182,26 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(
           logItemRows,
           logItemRows.packageQuantitySnapshot,
+        );
+      }
+      if (from < 6) {
+        await migrator.addColumn(productRows, productRows.unitsPerServing);
+        await migrator.addColumn(productRows, productRows.servingsPerPackage);
+        await migrator.addColumn(
+          logItemRows,
+          logItemRows.baseQuantitySnapshot,
+        );
+        await migrator.addColumn(
+          logItemRows,
+          logItemRows.servingSizeSnapshot,
+        );
+        await migrator.addColumn(
+          logItemRows,
+          logItemRows.unitsPerServingSnapshot,
+        );
+        await migrator.addColumn(
+          logItemRows,
+          logItemRows.baseQuantityPerUnitSnapshot,
         );
       }
     },

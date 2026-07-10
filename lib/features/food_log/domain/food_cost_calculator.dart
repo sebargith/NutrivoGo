@@ -9,8 +9,17 @@ class FoodCostCalculator {
   double? costPerBaseUnit(Product product) {
     return costPerBaseUnitFromPackage(
       packagePriceClp: product.packagePriceClp,
-      packageQuantity: product.packageQuantity,
+      packageQuantity: product.effectivePackageQuantity,
     );
+  }
+
+  double? costPerUnit(Product product) {
+    final totalUnits = product.totalUnitsPerPackage;
+    final price = product.packagePriceClp;
+    if (price == null || price <= 0 || totalUnits == null || totalUnits <= 0) {
+      return null;
+    }
+    return price / totalUnits;
   }
 
   double? costPer100(Product product) {

@@ -43,6 +43,8 @@ class Product {
     this.packagePriceClp,
     this.packageQuantity,
     this.packageQuantityUnit,
+    this.unitsPerServing,
+    this.servingsPerPackage,
   });
 
   final String id;
@@ -70,6 +72,43 @@ class Product {
   final double? packagePriceClp;
   final double? packageQuantity;
   final String? packageQuantityUnit;
+  final double? unitsPerServing;
+  final double? servingsPerPackage;
+
+  double? get baseQuantityPerUnit {
+    final size = servingSize;
+    final units = unitsPerServing;
+    if (size == null || size <= 0 || units == null || units <= 0) {
+      return null;
+    }
+    return size / units;
+  }
+
+  double? get estimatedPackageQuantity {
+    final size = servingSize;
+    final servings = servingsPerPackage;
+    if (size == null || size <= 0 || servings == null || servings <= 0) {
+      return null;
+    }
+    return size * servings;
+  }
+
+  double? get totalUnitsPerPackage {
+    final units = unitsPerServing;
+    final servings = servingsPerPackage;
+    if (units == null || units <= 0 || servings == null || servings <= 0) {
+      return null;
+    }
+    return units * servings;
+  }
+
+  double? get effectivePackageQuantity {
+    final stored = packageQuantity;
+    if (stored != null && stored > 0) {
+      return stored;
+    }
+    return estimatedPackageQuantity;
+  }
 
   String get displayName {
     final trimmedBrand = brand?.trim();
@@ -122,6 +161,8 @@ class Product {
     double? packagePriceClp,
     double? packageQuantity,
     String? packageQuantityUnit,
+    double? unitsPerServing,
+    double? servingsPerPackage,
   }) {
     return Product(
       id: id,
@@ -149,6 +190,8 @@ class Product {
       packagePriceClp: packagePriceClp ?? this.packagePriceClp,
       packageQuantity: packageQuantity ?? this.packageQuantity,
       packageQuantityUnit: packageQuantityUnit ?? this.packageQuantityUnit,
+      unitsPerServing: unitsPerServing ?? this.unitsPerServing,
+      servingsPerPackage: servingsPerPackage ?? this.servingsPerPackage,
     );
   }
 }

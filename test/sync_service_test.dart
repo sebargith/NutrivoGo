@@ -155,6 +155,74 @@ void main() {
     expect(remoteLog['package_quantity_snapshot'], 1000);
   });
 
+  test(
+    'sync pushes and pulls optional physical unit fields and snapshots',
+    () async {
+      final fixture = await createFixture();
+      final product = await fixture.store.addProduct(
+        name: 'Yogur por unidades',
+        baseUnit: BaseUnit.grams,
+        servingSize: 100,
+        servingUnit: 'g',
+        unitsPerServing: 6,
+        servingsPerPackage: 4.5,
+        packagePriceClp: 2000,
+        caloriesPer100: 200,
+        proteinPer100: 8,
+        carbsPer100: 20,
+        fatPer100: 4,
+      );
+      await fixture.store.addLogItem(
+        product: product,
+        quantity: 3,
+        unit: 'unit',
+        mealType: MealType.snack,
+      );
+
+      await fixture.syncService.sync();
+
+      final remoteProduct = fixture.remote.products.values.single;
+      expect(remoteProduct['units_per_serving'], 6);
+      expect(remoteProduct['servings_per_package'], 4.5);
+      final remoteLog = fixture.remote.logItems.values.single;
+      expect(remoteLog['unit'], 'unit');
+      expect(remoteLog['base_quantity_snapshot'], closeTo(50, 0.0001));
+      expect(remoteLog['units_per_serving_snapshot'], 6);
+
+      final pullFixture = await createFixture();
+      pullFixture.remote.products['remote-unit-product'] = _remoteProductRow(
+        id: 'remote-unit-product',
+        userId: 'user-1',
+        name: 'Yogur remoto',
+        updatedAt: fixedNow,
+        servingSize: 100,
+        servingUnit: 'g',
+        unitsPerServing: 6,
+        servingsPerPackage: 4.5,
+      );
+      pullFixture.remote.logItems['remote-unit-log'] = _remoteLogItemRow(
+        id: 'remote-unit-log',
+        userId: 'user-1',
+        productId: 'remote-unit-product',
+        mealType: 'snack',
+        updatedAt: fixedNow,
+        quantity: 3,
+        unit: 'unit',
+        baseQuantitySnapshot: 50,
+        servingSizeSnapshot: 100,
+        unitsPerServingSnapshot: 6,
+        baseQuantityPerUnitSnapshot: 100 / 6,
+      );
+
+      await pullFixture.syncService.sync();
+
+      expect(pullFixture.store.products.single.unitsPerServing, 6);
+      expect(pullFixture.store.products.single.servingsPerPackage, 4.5);
+      expect(pullFixture.store.logItems.single.unit, 'unit');
+      expect(pullFixture.store.logItems.single.baseQuantitySnapshot, 50);
+    },
+  );
+
   test('sync pushes Gemini generic product source', () async {
     final fixture = await createFixture();
     await fixture.store.addProduct(
@@ -583,6 +651,17 @@ void main() {
     expect(migration, contains('grant select, insert, update, delete'));
     expect(migration, contains('public.products, public.log_items'));
   });
+
+  test('Supabase migration adds optional physical unit fields', () {
+    final migration = File(
+      'supabase/migrations/007_add_product_physical_units.sql',
+    ).readAsStringSync();
+    expect(migration, contains('units_per_serving'));
+    expect(migration, contains('servings_per_package'));
+    expect(migration, contains('base_quantity_snapshot'));
+    expect(migration, contains('units_per_serving_snapshot'));
+    expect(migration, contains('grant select, insert, update, delete'));
+  });
 }
 
 Map<String, dynamic> _remoteProductRow({
@@ -594,14 +673,18 @@ Map<String, dynamic> _remoteProductRow({
   double? packageQuantity,
   String? packageQuantityUnit,
   String? source,
+  double? servingSize,
+  String? servingUnit,
+  double? unitsPerServing,
+  double? servingsPerPackage,
 }) {
   return {
     'id': id,
     'user_id': userId,
     'name': name,
     'brand': null,
-    'serving_size': null,
-    'serving_unit': null,
+    'serving_size': servingSize,
+    'serving_unit': servingUnit,
     'base_unit': 'g',
     'calories_per_100': 52,
     'protein_per_100': 0.3,
@@ -619,6 +702,8 @@ Map<String, dynamic> _remoteProductRow({
     'package_price_clp': packagePriceClp,
     'package_quantity': packageQuantity,
     'package_quantity_unit': packageQuantityUnit,
+    'units_per_serving': unitsPerServing,
+    'servings_per_package': servingsPerPackage,
   };
 }
 
@@ -633,14 +718,20 @@ Map<String, dynamic> _remoteLogItemRow({
   double? costPerServingSnapshotClp,
   double? packagePriceSnapshotClp,
   double? packageQuantitySnapshot,
+  double quantity = 100,
+  String unit = 'g',
+  double? baseQuantitySnapshot,
+  double? servingSizeSnapshot,
+  double? unitsPerServingSnapshot,
+  double? baseQuantityPerUnitSnapshot,
 }) {
   return {
     'id': id,
     'user_id': userId,
     'product_id': productId,
     'meal_type': mealType,
-    'quantity': 100,
-    'unit': 'g',
+    'quantity': quantity,
+    'unit': unit,
     'calories': 52,
     'protein': 0.3,
     'carbs': 14,
@@ -653,6 +744,10 @@ Map<String, dynamic> _remoteLogItemRow({
     'cost_per_serving_snapshot_clp': costPerServingSnapshotClp,
     'package_price_snapshot_clp': packagePriceSnapshotClp,
     'package_quantity_snapshot': packageQuantitySnapshot,
+    'base_quantity_snapshot': baseQuantitySnapshot,
+    'serving_size_snapshot': servingSizeSnapshot,
+    'units_per_serving_snapshot': unitsPerServingSnapshot,
+    'base_quantity_per_unit_snapshot': baseQuantityPerUnitSnapshot,
   };
 }
 

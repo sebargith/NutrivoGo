@@ -31,6 +31,8 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   final _brandController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _servingSizeController = TextEditingController();
+  final _unitsPerServingController = TextEditingController();
+  final _servingsPerPackageController = TextEditingController();
   final _packagePriceController = TextEditingController();
   final _packageQuantityController = TextEditingController();
   final _caloriesController = TextEditingController();
@@ -65,6 +67,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     _packageQuantityController.text = _formatOptionalInputNumber(
       product.packageQuantity,
     );
+    _unitsPerServingController.text = _formatOptionalInputNumber(
+      product.unitsPerServing,
+    );
+    _servingsPerPackageController.text = _formatOptionalInputNumber(
+      product.servingsPerPackage,
+    );
     _caloriesController.text = _formatInputNumber(product.caloriesPer100);
     _proteinController.text = _formatInputNumber(product.proteinPer100);
     _carbsController.text = _formatInputNumber(product.carbsPer100);
@@ -84,6 +92,8 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     _brandController.dispose();
     _barcodeController.dispose();
     _servingSizeController.dispose();
+    _unitsPerServingController.dispose();
+    _servingsPerPackageController.dispose();
     _packagePriceController.dispose();
     _packageQuantityController.dispose();
     _caloriesController.dispose();
@@ -165,20 +175,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  _OptionalNumberField(
-                    controller: _servingSizeController,
-                    label: 'Tamaño de la porción (${_baseUnit.label})',
-                    icon: Icons.straighten,
-                    numberInputFormatter: _numberInputFormatter,
-                    allowZero: false,
-                    zeroErrorText:
-                        'El tamaño de la porción debe ser mayor que cero',
-                  ),
-                  const SizedBox(height: 20),
                   ProductCostFields(
                     packagePriceController: _packagePriceController,
                     packageQuantityController: _packageQuantityController,
                     servingSizeController: _servingSizeController,
+                    unitsPerServingController: _unitsPerServingController,
+                    servingsPerPackageController: _servingsPerPackageController,
                     baseUnit: _baseUnit,
                     numberInputFormatter: _numberInputFormatter,
                   ),
@@ -296,6 +298,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             packageQuantityUnit: _packageQuantityController.text.trim().isEmpty
                 ? null
                 : _baseUnit.label,
+            unitsPerServing: _parseOptionalNumber(
+              _unitsPerServingController.text,
+            ),
+            servingsPerPackage: _parseOptionalNumber(
+              _servingsPerPackageController.text,
+            ),
           )
         : await widget.store.updateProduct(
             editingProduct,
@@ -332,6 +340,18 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                 : _baseUnit.label,
             clearPackagePrice: _packagePriceController.text.trim().isEmpty,
             clearPackageQuantity: _packageQuantityController.text
+                .trim()
+                .isEmpty,
+            unitsPerServing: _parseOptionalNumber(
+              _unitsPerServingController.text,
+            ),
+            servingsPerPackage: _parseOptionalNumber(
+              _servingsPerPackageController.text,
+            ),
+            clearUnitsPerServing: _unitsPerServingController.text
+                .trim()
+                .isEmpty,
+            clearServingsPerPackage: _servingsPerPackageController.text
                 .trim()
                 .isEmpty,
           );
@@ -450,16 +470,12 @@ class _OptionalNumberField extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.numberInputFormatter,
-    this.allowZero = true,
-    this.zeroErrorText = 'Debe ser 0 o mas',
   });
 
   final TextEditingController controller;
   final String label;
   final IconData icon;
   final TextInputFormatter numberInputFormatter;
-  final bool allowZero;
-  final String zeroErrorText;
 
   @override
   Widget build(BuildContext context) {
@@ -477,8 +493,8 @@ class _OptionalNumberField extends StatelessWidget {
         if (parsed == null) {
           return 'Ingresa un numero valido';
         }
-        if (parsed < 0 || (!allowZero && parsed == 0)) {
-          return zeroErrorText;
+        if (parsed < 0) {
+          return 'Debe ser 0 o más';
         }
         return null;
       },

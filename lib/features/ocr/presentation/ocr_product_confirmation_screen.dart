@@ -41,6 +41,8 @@ class _OcrProductConfirmationScreenState
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
   final _servingSizeController = TextEditingController();
+  final _unitsPerServingController = TextEditingController();
+  final _servingsPerPackageController = TextEditingController();
   final _packagePriceController = TextEditingController();
   final _packageQuantityController = TextEditingController();
   final _caloriesController = TextEditingController();
@@ -68,6 +70,12 @@ class _OcrProductConfirmationScreenState
     _nameController.text = draft.name;
     _brandController.text = draft.brand ?? '';
     _servingSizeController.text = _formatInputNumberOrEmpty(draft.servingSize);
+    _unitsPerServingController.text = _formatInputNumberOrEmpty(
+      draft.unitsPerServing,
+    );
+    _servingsPerPackageController.text = _formatInputNumberOrEmpty(
+      draft.servingsPerPackage,
+    );
     _packagePriceController.text = _formatInputNumberOrEmpty(
       draft.packagePriceClp,
     );
@@ -93,6 +101,8 @@ class _OcrProductConfirmationScreenState
     _nameController.dispose();
     _brandController.dispose();
     _servingSizeController.dispose();
+    _unitsPerServingController.dispose();
+    _servingsPerPackageController.dispose();
     _packagePriceController.dispose();
     _packageQuantityController.dispose();
     _caloriesController.dispose();
@@ -186,19 +196,12 @@ class _OcrProductConfirmationScreenState
                     },
                   ),
                   const SizedBox(height: 20),
-                  _OptionalNumberField(
-                    controller: _servingSizeController,
-                    label: 'Tamaño de la porción (${_baseUnit.label})',
-                    icon: Icons.straighten,
-                    allowZero: false,
-                    zeroErrorText:
-                        'El tamaño de la porción debe ser mayor que cero',
-                  ),
-                  const SizedBox(height: 20),
                   ProductCostFields(
                     packagePriceController: _packagePriceController,
                     packageQuantityController: _packageQuantityController,
                     servingSizeController: _servingSizeController,
+                    unitsPerServingController: _unitsPerServingController,
+                    servingsPerPackageController: _servingsPerPackageController,
                     baseUnit: _baseUnit,
                     numberInputFormatter: _numberInputFormatter,
                   ),
@@ -311,6 +314,10 @@ class _OcrProductConfirmationScreenState
       packageQuantityUnit: _packageQuantityController.text.trim().isEmpty
           ? null
           : _baseUnit.label,
+      unitsPerServing: _parseOptionalNumber(_unitsPerServingController.text),
+      servingsPerPackage: _parseOptionalNumber(
+        _servingsPerPackageController.text,
+      ),
       source: _source,
     );
     final product = await widget.saver.save(
@@ -453,6 +460,8 @@ class _OcrProductConfirmationScreenState
     _baseUnit = draft.baseUnit;
     _source = draft.source;
     _setOptionalNumber(_servingSizeController, draft.servingSize);
+    _setOptionalNumber(_unitsPerServingController, draft.unitsPerServing);
+    _setOptionalNumber(_servingsPerPackageController, draft.servingsPerPackage);
     _setOptionalNumber(_caloriesController, draft.caloriesPer100);
     _setOptionalNumber(_proteinController, draft.proteinPer100);
     _setOptionalNumber(_carbsController, draft.carbsPer100);
@@ -950,15 +959,11 @@ class _OptionalNumberField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.icon,
-    this.allowZero = true,
-    this.zeroErrorText = 'Debe ser 0 o mas',
   });
 
   final TextEditingController controller;
   final String label;
   final IconData icon;
-  final bool allowZero;
-  final String zeroErrorText;
 
   @override
   Widget build(BuildContext context) {
@@ -980,8 +985,8 @@ class _OptionalNumberField extends StatelessWidget {
         if (parsed == null) {
           return 'Ingresa un numero valido';
         }
-        if (parsed < 0 || (!allowZero && parsed == 0)) {
-          return zeroErrorText;
+        if (parsed < 0) {
+          return 'Debe ser 0 o más';
         }
         return null;
       },

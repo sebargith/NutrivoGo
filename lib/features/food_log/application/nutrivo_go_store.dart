@@ -6,10 +6,12 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/record_sync_status.dart';
+import '../../../shared/utils/calendar_date.dart';
 import '../../ocr_reports/domain/ocr_image_saving_mode.dart';
 import '../../ocr_reports/domain/ocr_scan_report.dart';
 import '../../products/domain/product.dart';
 import '../domain/food_cost_calculator.dart';
+import '../domain/consumption_summary.dart';
 import '../domain/log_item.dart';
 import '../domain/macro_calculator.dart';
 import '../domain/macro_snapshot.dart';
@@ -83,9 +85,7 @@ class NutrivoGoStore extends ChangeNotifier {
   }
 
   List<LogItem> get todaysLogItems {
-    return _logItems
-        .where((item) => _isSameDay(item.createdAt, _clock()))
-        .toList(growable: false);
+    return logItemsForDate(_clock());
   }
 
   MacroSnapshot get dailyTotals {
@@ -116,18 +116,94 @@ class NutrivoGoStore extends ChangeNotifier {
     return null;
   }
 
-  List<LogItem> itemsForMeal(MealType mealType) {
-    return todaysLogItems
-        .where((item) => item.mealType == mealType)
+  List<LogItem> logItemsForDate(DateTime date) {
+    return _logItems
+        .where(
+          (item) => isSameCalendarDate(item.consumedOn ?? item.createdAt, date),
+        )
         .toList(growable: false);
   }
 
-  double? costForMeal(MealType mealType) {
-    return _sumKnownCosts(itemsForMeal(mealType));
+  List<DateTime> get consumptionDates {
+    final dates = <DateTime>{
+      for (final item in _logItems)
+        calendarDate(item.consumedOn ?? item.createdAt),
+    }.toList()..sort((left, right) => right.compareTo(left));
+    return List.unmodifiable(dates);
   }
 
-  bool hasUnknownCostsForMeal(MealType mealType) {
-    return itemsForMeal(mealType).any((item) => item.costSnapshotClp == null);
+  MacroSnapshot totalsForDate(DateTime date) {
+    return _totalMacros(logItemsForDate(date));
+  }
+
+  double? costForDate(DateTime date) {
+    return _sumKnownCosts(logItemsForDate(date));
+  }
+
+  int foodsWithoutPriceForDate(DateTime date) {
+    return _countUnknownCosts(logItemsForDate(date));
+  }
+
+  ConsumptionSummary summaryForRange(
+    DateTime startInclusive,
+    DateTime endExclusive,
+  ) {
+    final items = _logItems
+        .where((item) {
+          final date = calendarDate(item.consumedOn ?? item.createdAt);
+          return !date.isBefore(calendarDate(startInclusive)) &&
+              date.isBefore(calendarDate(endExclusive));
+        })
+        .toList(growable: false);
+    final recordedDates = <DateTime>{
+      for (final item in items) calendarDate(item.consumedOn ?? item.createdAt),
+    };
+    final knownCosts = <DateTime, double>{};
+    for (final item in items) {
+      final cost = item.costSnapshotClp;
+      if (cost == null) {
+        continue;
+      }
+      final date = calendarDate(item.consumedOn ?? item.createdAt);
+      knownCosts.update(
+        date,
+        (current) => current + cost,
+        ifAbsent: () => cost,
+      );
+    }
+    return ConsumptionSummary(
+      totalMacros: _totalMacros(items),
+      recordedDayCount: recordedDates.length,
+      knownCostTotalClp: knownCosts.isEmpty
+          ? null
+          : knownCosts.values.fold<double>(0, (sum, value) => sum + value),
+      daysWithKnownCost: knownCosts.length,
+      foodsWithoutPrice: _countUnknownCosts(items),
+    );
+  }
+
+  ConsumptionSummary summaryForDate(DateTime date) {
+    return summaryForRange(
+      date,
+      calendarDate(date).add(const Duration(days: 1)),
+    );
+  }
+
+  List<LogItem> itemsForMeal(MealType mealType, {DateTime? consumedOn}) {
+    return logItemsForDate(
+      consumedOn ?? _clock(),
+    ).where((item) => item.mealType == mealType).toList(growable: false);
+  }
+
+  double? costForMeal(MealType mealType, {DateTime? consumedOn}) {
+    return _sumKnownCosts(itemsForMeal(mealType, consumedOn: consumedOn));
+  }
+
+  bool hasUnknownCostsForMeal(MealType mealType, {DateTime? consumedOn}) {
+    return itemsForMeal(
+      mealType,
+      consumedOn: consumedOn,
+    ).any((item) => item.costSnapshotClp == null);
   }
 
   List<Product> frequentProductsForMeal(MealType mealType, {int limit = 5}) {
@@ -408,9 +484,7 @@ class NutrivoGoStore extends ChangeNotifier {
           : _positiveOptional(unitsPerServing ?? product.unitsPerServing),
       servingsPerPackage: clearServingsPerPackage
           ? null
-          : _positiveOptional(
-              servingsPerPackage ?? product.servingsPerPackage,
-            ),
+          : _positiveOptional(servingsPerPackage ?? product.servingsPerPackage),
     );
 
     await (_database.update(_database.productRows)
@@ -449,6 +523,7 @@ class NutrivoGoStore extends ChangeNotifier {
     required double quantity,
     required String unit,
     required MealType mealType,
+    DateTime? consumedOn,
   }) async {
     final now = _clock();
     final macros = _calculator.calculateFromProduct(
@@ -475,6 +550,7 @@ class NutrivoGoStore extends ChangeNotifier {
       macros: macros,
       createdAt: now,
       updatedAt: now,
+      consumedOn: calendarDate(consumedOn ?? now),
       userId: _activeUserId,
       costSnapshotClp: costSnapshot,
       costPer100SnapshotClp: _costCalculator.costPer100(product),
@@ -666,6 +742,9 @@ class NutrivoGoStore extends ChangeNotifier {
       ),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      consumedOn: row.consumedOn == null
+          ? calendarDate(row.createdAt)
+          : calendarDate(row.consumedOn!),
       deletedAt: row.deletedAt,
       userId: row.userId,
       syncStatus: RecordSyncStatus.fromStorage(row.syncStatus),
@@ -695,6 +774,7 @@ class NutrivoGoStore extends ChangeNotifier {
       fat: Value(item.macros.fat),
       createdAt: Value(item.createdAt),
       updatedAt: Value(item.updatedAt),
+      consumedOn: Value(calendarDate(item.consumedOn ?? item.createdAt)),
       deletedAt: Value(item.deletedAt),
       userId: Value(item.userId),
       syncStatus: Value(item.syncStatus.storageValue),
@@ -818,6 +898,17 @@ class NutrivoGoStore extends ChangeNotifier {
     return hasKnownCost ? total : null;
   }
 
+  MacroSnapshot _totalMacros(Iterable<LogItem> items) {
+    return items.fold(
+      const MacroSnapshot.zero(),
+      (total, item) => total + item.macros,
+    );
+  }
+
+  int _countUnknownCosts(Iterable<LogItem> items) {
+    return items.where((item) => item.costSnapshotClp == null).length;
+  }
+
   Map<String, _UsageStats> _mealUsageStats(MealType mealType) {
     final stats = <String, _UsageStats>{};
     for (final item in _logItems) {
@@ -892,12 +983,6 @@ class NutrivoGoStore extends ChangeNotifier {
     return left.displayName.toLowerCase().compareTo(
       right.displayName.toLowerCase(),
     );
-  }
-
-  bool _isSameDay(DateTime left, DateTime right) {
-    return left.year == right.year &&
-        left.month == right.month &&
-        left.day == right.day;
   }
 
   bool _canShowUserData(String? rowUserId) {

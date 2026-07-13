@@ -11,6 +11,7 @@ import '../../food_log/domain/macro_snapshot.dart';
 import '../../food_log/domain/meal_type.dart';
 import '../../food_log/presentation/quantity_display.dart';
 import '../../gemini/application/gemini_product_client.dart';
+import '../../history/presentation/history_screen.dart';
 import '../../products/presentation/product_search_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../sync/application/sync_service.dart';
@@ -40,6 +41,11 @@ class TodayDashboardScreen extends StatelessWidget {
               syncService: syncService!,
               onPressed: () => _openSettings(context),
             ),
+          IconButton(
+            tooltip: 'Historial',
+            icon: const Icon(Icons.history_outlined),
+            onPressed: () => _openHistory(context),
+          ),
           IconButton(
             tooltip: 'Productos',
             icon: const Icon(Icons.inventory_2_outlined),
@@ -128,6 +134,14 @@ class TodayDashboardScreen extends StatelessWidget {
           authController: authController,
           syncService: syncService,
         ),
+      ),
+    );
+  }
+
+  Future<void> _openHistory(BuildContext context) {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => HistoryScreen(store: store, geminiClient: geminiClient),
       ),
     );
   }

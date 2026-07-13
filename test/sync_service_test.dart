@@ -121,6 +121,29 @@ void main() {
     expect(fixture.remote.logItems.values.single['meal_type'], 'afternoon');
   });
 
+  test('sync preserves consumed_on as a timezone-safe calendar date', () async {
+    final fixture = await createFixture();
+    final product = await fixture.store.addProduct(
+      name: 'Yogurt',
+      baseUnit: BaseUnit.grams,
+      caloriesPer100: 100,
+      proteinPer100: 10,
+      carbsPer100: 5,
+      fatPer100: 1,
+    );
+    await fixture.store.addLogItem(
+      product: product,
+      quantity: 150,
+      unit: 'g',
+      mealType: MealType.afternoon,
+      consumedOn: DateTime(2026, 6, 30, 23, 30),
+    );
+
+    await fixture.syncService.sync();
+
+    expect(fixture.remote.logItems.values.single['consumed_on'], '2026-06-30');
+  });
+
   test('sync pushes product cost fields and log cost snapshots', () async {
     final fixture = await createFixture();
     final product = await fixture.store.addProduct(
@@ -662,6 +685,15 @@ void main() {
     expect(migration, contains('units_per_serving_snapshot'));
     expect(migration, contains('grant select, insert, update, delete'));
   });
+
+  test('Supabase migration adds a date-only consumed_on field and index', () {
+    final migration = File(
+      'supabase/migrations/008_add_log_consumed_on.sql',
+    ).readAsStringSync();
+    expect(migration, contains('consumed_on date'));
+    expect(migration, contains('alter column consumed_on set not null'));
+    expect(migration, contains('log_items_user_consumed_on_idx'));
+  });
 }
 
 Map<String, dynamic> _remoteProductRow({
@@ -724,6 +756,7 @@ Map<String, dynamic> _remoteLogItemRow({
   double? servingSizeSnapshot,
   double? unitsPerServingSnapshot,
   double? baseQuantityPerUnitSnapshot,
+  String? consumedOn,
 }) {
   return {
     'id': id,
@@ -738,6 +771,7 @@ Map<String, dynamic> _remoteLogItemRow({
     'fat': 0.2,
     'created_at': updatedAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
+    'consumed_on': consumedOn,
     'deleted_at': null,
     'cost_snapshot_clp': costSnapshotClp,
     'cost_per_100_snapshot_clp': costPer100SnapshotClp,

@@ -1653,6 +1653,17 @@ class $LogItemRowsTable extends LogItemRows
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _consumedOnMeta = const VerificationMeta(
+    'consumedOn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> consumedOn = GeneratedColumn<DateTime>(
+    'consumed_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _deletedAtMeta = const VerificationMeta(
     'deletedAt',
   );
@@ -1808,6 +1819,7 @@ class $LogItemRowsTable extends LogItemRows
     fat,
     createdAt,
     updatedAt,
+    consumedOn,
     deletedAt,
     userId,
     syncStatus,
@@ -1918,6 +1930,12 @@ class $LogItemRowsTable extends LogItemRows
       );
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('consumed_on')) {
+      context.handle(
+        _consumedOnMeta,
+        consumedOn.isAcceptableOrUnknown(data['consumed_on']!, _consumedOnMeta),
+      );
     }
     if (data.containsKey('deleted_at')) {
       context.handle(
@@ -2080,6 +2098,10 @@ class $LogItemRowsTable extends LogItemRows
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      consumedOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}consumed_on'],
+      ),
       deletedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
@@ -2153,6 +2175,7 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
   final double fat;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? consumedOn;
   final DateTime? deletedAt;
   final String? userId;
   final String syncStatus;
@@ -2178,6 +2201,7 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     required this.fat,
     required this.createdAt,
     required this.updatedAt,
+    this.consumedOn,
     this.deletedAt,
     this.userId,
     required this.syncStatus,
@@ -2206,6 +2230,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     map['fat'] = Variable<double>(fat);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || consumedOn != null) {
+      map['consumed_on'] = Variable<DateTime>(consumedOn);
+    }
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
@@ -2269,6 +2296,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       fat: Value(fat),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      consumedOn: consumedOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(consumedOn),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
@@ -2328,6 +2358,7 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       fat: serializer.fromJson<double>(json['fat']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      consumedOn: serializer.fromJson<DateTime?>(json['consumedOn']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       userId: serializer.fromJson<String?>(json['userId']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -2374,6 +2405,7 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       'fat': serializer.toJson<double>(fat),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'consumedOn': serializer.toJson<DateTime?>(consumedOn),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'userId': serializer.toJson<String?>(userId),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -2414,6 +2446,7 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     double? fat,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Value<DateTime?> consumedOn = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
     Value<String?> userId = const Value.absent(),
     String? syncStatus,
@@ -2439,6 +2472,7 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     fat: fat ?? this.fat,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    consumedOn: consumedOn.present ? consumedOn.value : this.consumedOn,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     userId: userId.present ? userId.value : this.userId,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -2484,6 +2518,9 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
       fat: data.fat.present ? data.fat.value : this.fat,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      consumedOn: data.consumedOn.present
+          ? data.consumedOn.value
+          : this.consumedOn,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       userId: data.userId.present ? data.userId.value : this.userId,
       syncStatus: data.syncStatus.present
@@ -2536,6 +2573,7 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
           ..write('fat: $fat, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('consumedOn: $consumedOn, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('userId: $userId, ')
           ..write('syncStatus: $syncStatus, ')
@@ -2566,6 +2604,7 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
     fat,
     createdAt,
     updatedAt,
+    consumedOn,
     deletedAt,
     userId,
     syncStatus,
@@ -2595,6 +2634,7 @@ class LogItemRow extends DataClass implements Insertable<LogItemRow> {
           other.fat == this.fat &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
+          other.consumedOn == this.consumedOn &&
           other.deletedAt == this.deletedAt &&
           other.userId == this.userId &&
           other.syncStatus == this.syncStatus &&
@@ -2623,6 +2663,7 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
   final Value<double> fat;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<DateTime?> consumedOn;
   final Value<DateTime?> deletedAt;
   final Value<String?> userId;
   final Value<String> syncStatus;
@@ -2649,6 +2690,7 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     this.fat = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.consumedOn = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.userId = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -2676,6 +2718,7 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     required double fat,
     required DateTime createdAt,
     required DateTime updatedAt,
+    this.consumedOn = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.userId = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -2713,6 +2756,7 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     Expression<double>? fat,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<DateTime>? consumedOn,
     Expression<DateTime>? deletedAt,
     Expression<String>? userId,
     Expression<String>? syncStatus,
@@ -2740,6 +2784,7 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
       if (fat != null) 'fat': fat,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (consumedOn != null) 'consumed_on': consumedOn,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (userId != null) 'user_id': userId,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -2777,6 +2822,7 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     Value<double>? fat,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<DateTime?>? consumedOn,
     Value<DateTime?>? deletedAt,
     Value<String?>? userId,
     Value<String>? syncStatus,
@@ -2804,6 +2850,7 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
       fat: fat ?? this.fat,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      consumedOn: consumedOn ?? this.consumedOn,
       deletedAt: deletedAt ?? this.deletedAt,
       userId: userId ?? this.userId,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -2862,6 +2909,9 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
     }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (consumedOn.present) {
+      map['consumed_on'] = Variable<DateTime>(consumedOn.value);
     }
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
@@ -2938,6 +2988,7 @@ class LogItemRowsCompanion extends UpdateCompanion<LogItemRow> {
           ..write('fat: $fat, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('consumedOn: $consumedOn, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('userId: $userId, ')
           ..write('syncStatus: $syncStatus, ')
@@ -5332,6 +5383,7 @@ typedef $$LogItemRowsTableCreateCompanionBuilder =
       required double fat,
       required DateTime createdAt,
       required DateTime updatedAt,
+      Value<DateTime?> consumedOn,
       Value<DateTime?> deletedAt,
       Value<String?> userId,
       Value<String> syncStatus,
@@ -5360,6 +5412,7 @@ typedef $$LogItemRowsTableUpdateCompanionBuilder =
       Value<double> fat,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<DateTime?> consumedOn,
       Value<DateTime?> deletedAt,
       Value<String?> userId,
       Value<String> syncStatus,
@@ -5437,6 +5490,11 @@ class $$LogItemRowsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get consumedOn => $composableBuilder(
+    column: $table.consumedOn,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5570,6 +5628,11 @@ class $$LogItemRowsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get consumedOn => $composableBuilder(
+    column: $table.consumedOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
     column: $table.deletedAt,
     builder: (column) => ColumnOrderings(column),
@@ -5678,6 +5741,11 @@ class $$LogItemRowsTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
+  GeneratedColumn<DateTime> get consumedOn => $composableBuilder(
+    column: $table.consumedOn,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
@@ -5782,6 +5850,7 @@ class $$LogItemRowsTableTableManager
                 Value<double> fat = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> consumedOn = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String?> userId = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -5809,6 +5878,7 @@ class $$LogItemRowsTableTableManager
                 fat: fat,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                consumedOn: consumedOn,
                 deletedAt: deletedAt,
                 userId: userId,
                 syncStatus: syncStatus,
@@ -5837,6 +5907,7 @@ class $$LogItemRowsTableTableManager
                 required double fat,
                 required DateTime createdAt,
                 required DateTime updatedAt,
+                Value<DateTime?> consumedOn = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String?> userId = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -5864,6 +5935,7 @@ class $$LogItemRowsTableTableManager
                 fat: fat,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                consumedOn: consumedOn,
                 deletedAt: deletedAt,
                 userId: userId,
                 syncStatus: syncStatus,

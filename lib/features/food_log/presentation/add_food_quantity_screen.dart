@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../shared/utils/cost_formatters.dart';
+import '../../../shared/utils/calendar_date.dart';
 import '../../../shared/utils/macro_formatters.dart';
 import '../../products/domain/product.dart';
 import '../application/nutrivo_go_store.dart';
@@ -18,11 +19,13 @@ class AddFoodQuantityScreen extends StatefulWidget {
     required this.product,
     super.key,
     this.initialMealType,
+    this.initialConsumedOn,
   });
 
   final NutrivoGoStore store;
   final Product product;
   final MealType? initialMealType;
+  final DateTime? initialConsumedOn;
 
   @override
   State<AddFoodQuantityScreen> createState() => _AddFoodQuantityScreenState();
@@ -39,12 +42,14 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
   late final TextEditingController _quantityController;
   late String _unit;
   late MealType _mealType;
+  late DateTime _consumedOn;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _mealType = widget.initialMealType ?? MealType.lunch;
+    _consumedOn = calendarDate(widget.initialConsumedOn ?? DateTime.now());
     final hasServing = widget.product.servingSize != null;
     _unit = hasServing ? 'serving' : widget.product.baseUnitLabel;
     final initialQuantity = hasServing ? 1.0 : 100.0;
@@ -154,13 +159,28 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                       setState(() => _mealType = value);
                     },
                   ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.calendar_today_outlined),
+                    title: const Text('Fecha de consumo'),
+                    subtitle: Text(_formatDate(_consumedOn)),
+                    trailing: const Icon(Icons.edit_calendar_outlined),
+                    onTap: _pickConsumedOn,
+                  ),
                   const SizedBox(height: 16),
                   _MacroPreview(snapshot: preview, cost: _previewCost()),
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     onPressed: _isSaving ? null : _save,
                     icon: const Icon(Icons.check),
-                    label: Text(_isSaving ? 'Guardando' : 'Agregar a hoy'),
+                    label: Text(
+                      _isSaving
+                          ? 'Guardando'
+                          : isSameCalendarDate(_consumedOn, DateTime.now())
+                          ? 'Agregar a hoy'
+                          : 'Agregar al ${_formatDate(_consumedOn)}',
+                    ),
                   ),
                 ],
               ),
@@ -197,6 +217,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
       quantity: _parseRequiredNumber(_quantityController.text),
       unit: _unit,
       mealType: _mealType,
+      consumedOn: _consumedOn,
     );
     if (!mounted) {
       return;
@@ -237,6 +258,37 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
 
   double _parseRequiredNumber(String value) {
     return double.parse(value.trim().replaceAll(',', '.'));
+  }
+
+  Future<void> _pickConsumedOn() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _consumedOn,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+      helpText: 'Fecha de consumo',
+    );
+    if (selected != null && mounted) {
+      setState(() => _consumedOn = calendarDate(selected));
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    const months = <String>[
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    return '${date.day} de ${months[date.month - 1]} de ${date.year}';
   }
 
   double? _parseOptionalNumber(String? value) {

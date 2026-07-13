@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase/supabase.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../shared/utils/calendar_date.dart';
 import '../../../core/sync/record_sync_status.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
 import 'sync_remote_data_source.dart';
@@ -447,6 +448,12 @@ class SyncService extends ChangeNotifier {
       fat: Value((row['fat'] as num).toDouble()),
       createdAt: Value(_readDate(row['created_at'])),
       updatedAt: Value(_readDate(row['updated_at'])),
+      consumedOn: Value(
+        calendarDateFromStorage(
+          row['consumed_on'],
+          fallback: _readDate(row['created_at']),
+        ),
+      ),
       deletedAt: Value(_readNullableDate(row['deleted_at'])),
       syncStatus: Value(RecordSyncStatus.synced.storageValue),
       lastSyncedAt: Value(now),
@@ -556,6 +563,7 @@ class SyncService extends ChangeNotifier {
       'fat': row.fat,
       'created_at': _toIso(row.createdAt),
       'updated_at': _toIso(row.updatedAt),
+      'consumed_on': calendarDateToStorage(row.consumedOn ?? row.createdAt),
       'deleted_at': _toIsoOrNull(row.deletedAt),
       'cost_snapshot_clp': row.costSnapshotClp,
       'cost_per_100_snapshot_clp': row.costPer100SnapshotClp,

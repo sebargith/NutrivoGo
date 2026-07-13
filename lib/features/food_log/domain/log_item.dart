@@ -13,6 +13,7 @@ class LogItem {
     required this.macros,
     required this.createdAt,
     required this.updatedAt,
+    this.consumedOn,
     this.deletedAt,
     this.userId,
     this.syncStatus = RecordSyncStatus.pending,
@@ -36,6 +37,7 @@ class LogItem {
   final MacroSnapshot macros;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? consumedOn;
   final DateTime? deletedAt;
   final String? userId;
   final RecordSyncStatus syncStatus;
@@ -56,6 +58,7 @@ class LogItem {
     String? unit,
     MealType? mealType,
     MacroSnapshot? macros,
+    DateTime? consumedOn,
     DateTime? updatedAt,
     DateTime? deletedAt,
     String? userId,
@@ -80,6 +83,7 @@ class LogItem {
       macros: macros ?? this.macros,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      consumedOn: consumedOn ?? this.consumedOn,
       deletedAt: deletedAt ?? this.deletedAt,
       userId: userId ?? this.userId,
       syncStatus: syncStatus ?? this.syncStatus,

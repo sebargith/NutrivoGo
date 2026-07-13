@@ -61,6 +61,7 @@ class LogItemRows extends Table {
   RealColumn get fat => real()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get consumedOn => dateTime().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   TextColumn get userId => text().nullable()();
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
@@ -136,7 +137,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.connect(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -187,14 +188,8 @@ class AppDatabase extends _$AppDatabase {
       if (from < 6) {
         await migrator.addColumn(productRows, productRows.unitsPerServing);
         await migrator.addColumn(productRows, productRows.servingsPerPackage);
-        await migrator.addColumn(
-          logItemRows,
-          logItemRows.baseQuantitySnapshot,
-        );
-        await migrator.addColumn(
-          logItemRows,
-          logItemRows.servingSizeSnapshot,
-        );
+        await migrator.addColumn(logItemRows, logItemRows.baseQuantitySnapshot);
+        await migrator.addColumn(logItemRows, logItemRows.servingSizeSnapshot);
         await migrator.addColumn(
           logItemRows,
           logItemRows.unitsPerServingSnapshot,
@@ -203,6 +198,25 @@ class AppDatabase extends _$AppDatabase {
           logItemRows,
           logItemRows.baseQuantityPerUnitSnapshot,
         );
+      }
+      if (from < 7) {
+        await migrator.addColumn(logItemRows, logItemRows.consumedOn);
+        final rows = await select(logItemRows).get();
+        for (final row in rows) {
+          await (update(
+            logItemRows,
+          )..where((item) => item.id.equals(row.id))).write(
+            LogItemRowsCompanion(
+              consumedOn: Value(
+                DateTime(
+                  row.createdAt.year,
+                  row.createdAt.month,
+                  row.createdAt.day,
+                ),
+              ),
+            ),
+          );
+        }
       }
     },
   );

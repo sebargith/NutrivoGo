@@ -27,11 +27,13 @@ class ProductSearchScreen extends StatefulWidget {
     required this.store,
     super.key,
     this.initialMealType,
+    this.initialConsumedOn,
     this.geminiClient,
   });
 
   final NutrivoGoStore store;
   final MealType? initialMealType;
+  final DateTime? initialConsumedOn;
   final GeminiProductClient? geminiClient;
 
   @override
@@ -406,6 +408,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
           store: widget.store,
           product: product,
           initialMealType: widget.initialMealType,
+          initialConsumedOn: widget.initialConsumedOn,
         ),
       ),
     );

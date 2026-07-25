@@ -23,12 +23,19 @@ void main() {
 
     await tester.pumpWidget(NutrivoGoApp(store: store));
 
-    expect(find.text('NutrivoGo'), findsOneWidget);
-    expect(find.text('Hoy'), findsOneWidget);
+    expect(find.text('Hoy'), findsWidgets);
+    expect(find.text('Historial'), findsOneWidget);
+    expect(find.text('Productos'), findsOneWidget);
+    expect(find.text('Ajustes'), findsOneWidget);
     expect(find.text('Calorías'), findsOneWidget);
-    expect(find.text('Agregar alimento'), findsOneWidget);
     expect(find.text('Desayuno'), findsOneWidget);
     final dashboardScroll = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Agregar alimento'),
+      300,
+      scrollable: dashboardScroll,
+    );
+    expect(find.text('Agregar alimento'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Almuerzo'),
       300,
@@ -93,6 +100,35 @@ void main() {
     );
   });
 
+  testWidgets('Plato navigation keeps all product entry methods available', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final fixture = await createMemoryStore();
+    await tester.pumpWidget(NutrivoGoApp(store: fixture.store));
+
+    await tester.tap(find.text('Historial').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Día'), findsOneWidget);
+    expect(find.text('Semana'), findsOneWidget);
+    expect(find.text('Mes'), findsOneWidget);
+
+    await tester.tap(find.text('Productos').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Código'), findsOneWidget);
+    expect(find.text('Etiqueta'), findsOneWidget);
+    expect(find.text('Gemini'), findsOneWidget);
+    expect(find.text('Crear producto'), findsWidgets);
+
+    await tester.tap(find.text('Ajustes').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Configuración'), findsOneWidget);
+  });
+
   for (final mealType in MealType.values) {
     testWidgets('meal quick add preselects ${mealType.label}', (tester) async {
       tester.view.physicalSize = const Size(900, 1200);
@@ -126,14 +162,14 @@ void main() {
       expect(find.text('Agregar a ${mealType.label}'), findsOneWidget);
       await tester.tap(find.text('Pan'));
       await tester.pumpAndSettle();
-      expect(find.text('Agregar a ${mealType.label}'), findsOneWidget);
+      expect(find.text('Registrar alimento'), findsOneWidget);
 
       await tester.scrollUntilVisible(
-        find.text('Agregar a hoy'),
+        find.text('Registrar en ${mealType.label}'),
         300,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(find.text('Agregar a hoy'));
+      await tester.tap(find.text('Registrar en ${mealType.label}'));
       await tester.pumpAndSettle();
 
       expect(store.itemsForMeal(mealType), hasLength(1));

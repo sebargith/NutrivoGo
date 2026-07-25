@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../shared/theme/app_theme.dart';
 import '../../../shared/utils/cost_formatters.dart';
 import '../../../shared/utils/calendar_date.dart';
 import '../../../shared/utils/macro_formatters.dart';
@@ -74,7 +75,7 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text('Agregar a ${_mealType.label}')),
+      appBar: AppBar(title: const Text('Registrar alimento')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -82,66 +83,58 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
             child: Form(
               key: _formKey,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
                 children: [
                   _ProductSummary(product: widget.product),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      final isWide = constraints.maxWidth >= 560;
-                      final quantityField = TextFormField(
+                      final diameter = (constraints.maxWidth - 112).clamp(
+                        190.0,
+                        280.0,
+                      );
+                      return _CircularQuantityInput(
+                        diameter: diameter,
                         controller: _quantityController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [_numberInputFormatter],
-                        decoration: InputDecoration(
-                          labelText: 'Cantidad consumida',
-                          prefixIcon: const Icon(Icons.straighten),
-                          helperText: quantityHelperText(_unit),
+                        formatter: _numberInputFormatter,
+                        unit: _unit,
+                        validationMessage: _positiveNumberValidator(
+                          _quantityController.text,
                         ),
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        validator: _positiveNumberValidator,
-                      );
-                      final unitField = DropdownButtonFormField<String>(
-                        initialValue: _unit,
-                        decoration: const InputDecoration(
-                          labelText: 'Medido en',
-                          prefixIcon: Icon(Icons.category_outlined),
-                        ),
-                        items: [
-                          for (final unit in availableUnits)
-                            DropdownMenuItem(
-                              value: unit,
-                              child: Text(quantityUnitLabel(unit)),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) {
-                            return;
-                          }
-                          setState(() => _unit = value);
-                        },
-                      );
-
-                      if (!isWide) {
-                        return Column(
-                          children: [
-                            quantityField,
-                            const SizedBox(height: 12),
-                            unitField,
-                          ],
-                        );
-                      }
-
-                      return Row(
-                        children: [
-                          Expanded(child: quantityField),
-                          const SizedBox(width: 12),
-                          Expanded(child: unitField),
-                        ],
+                        onDecrease: () => _adjustQuantity(-1),
+                        onIncrease: () => _adjustQuantity(1),
                       );
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
+                  SegmentedButton<String>(
+                    showSelectedIcon: false,
+                    segments: [
+                      for (final unit in availableUnits)
+                        ButtonSegment(
+                          value: unit,
+                          label: Text(quantityUnitShortLabel(unit)),
+                        ),
+                    ],
+                    selected: {_unit},
+                    onSelectionChanged: (selection) {
+                      setState(() => _unit = selection.first);
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    quantityHelperText(_unit),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppPalette.mutedInk),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Asignar a comida',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 6),
                   DropdownButtonFormField<MealType>(
                     initialValue: _mealType,
                     decoration: const InputDecoration(
@@ -159,18 +152,20 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                       setState(() => _mealType = value);
                     },
                   ),
-                  const SizedBox(height: 12),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.calendar_today_outlined),
-                    title: const Text('Fecha de consumo'),
-                    subtitle: Text(_formatDate(_consumedOn)),
-                    trailing: const Icon(Icons.edit_calendar_outlined),
-                    onTap: _pickConsumedOn,
+                  const SizedBox(height: 10),
+                  Card(
+                    child: ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.calendar_today_outlined),
+                      title: const Text('Fecha de consumo'),
+                      subtitle: Text(_formatDate(_consumedOn)),
+                      trailing: const Icon(Icons.edit_calendar_outlined),
+                      onTap: _pickConsumedOn,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   _MacroPreview(snapshot: preview, cost: _previewCost()),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: _isSaving ? null : _save,
                     icon: const Icon(Icons.check),
@@ -178,8 +173,8 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
                       _isSaving
                           ? 'Guardando'
                           : isSameCalendarDate(_consumedOn, DateTime.now())
-                          ? 'Agregar a hoy'
-                          : 'Agregar al ${_formatDate(_consumedOn)}',
+                          ? 'Registrar en ${_mealType.label}'
+                          : 'Registrar el ${_formatDate(_consumedOn)}',
                     ),
                   ),
                 ],
@@ -189,6 +184,13 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
         ),
       ),
     );
+  }
+
+  void _adjustQuantity(int direction) {
+    final current = _parseOptionalNumber(_quantityController.text) ?? 0;
+    final step = _unit == 'g' || _unit == 'ml' ? 10.0 : 1.0;
+    final next = (current + direction * step).clamp(step, 99999.0);
+    _quantityController.text = formatQuantity(next);
   }
 
   MacroSnapshot _previewMacros() {
@@ -300,6 +302,126 @@ class _AddFoodQuantityScreenState extends State<AddFoodQuantityScreen> {
   }
 }
 
+class _CircularQuantityInput extends StatelessWidget {
+  const _CircularQuantityInput({
+    required this.diameter,
+    required this.controller,
+    required this.formatter,
+    required this.unit,
+    required this.validationMessage,
+    required this.onDecrease,
+    required this.onIncrease,
+  });
+
+  final double diameter;
+  final TextEditingController controller;
+  final TextInputFormatter formatter;
+  final String unit;
+  final String? validationMessage;
+  final VoidCallback onDecrease;
+  final VoidCallback onIncrease;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _QuantityButton(
+          tooltip: 'Disminuir cantidad',
+          icon: Icons.remove,
+          onPressed: onDecrease,
+        ),
+        const SizedBox(width: 12),
+        Container(
+          width: diameter,
+          height: diameter,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppPalette.paper,
+            border: Border.all(color: AppPalette.ocean, width: 7),
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: controller,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [formatter],
+                    validator: (value) => validationMessage,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AppPalette.ocean,
+                      fontSize: 34,
+                    ),
+                    decoration: const InputDecoration(
+                      filled: false,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      errorStyle: TextStyle(fontSize: 0, height: 0),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  Text(
+                    quantityUnitShortLabel(unit),
+                    style: const TextStyle(
+                      color: AppPalette.mutedInk,
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (validationMessage != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      validationMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppPalette.beet,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        _QuantityButton(
+          tooltip: 'Aumentar cantidad',
+          icon: Icons.add,
+          onPressed: onIncrease,
+        ),
+      ],
+    );
+  }
+}
+
+class _QuantityButton extends StatelessWidget {
+  const _QuantityButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton.outlined(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(icon),
+      color: AppPalette.ocean,
+      iconSize: 28,
+    );
+  }
+}
+
 class _ProductSummary extends StatelessWidget {
   const _ProductSummary({required this.product});
 
@@ -308,63 +430,53 @@ class _ProductSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(product.name, style: theme.textTheme.titleLarge),
-            if (product.brand?.isNotEmpty == true) ...[
-              const SizedBox(height: 4),
+    return Row(
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppPalette.mist.withValues(alpha: 0.55),
+            border: Border.all(color: AppPalette.outline),
+          ),
+          child: const Icon(
+            Icons.rice_bowl_outlined,
+            color: AppPalette.ocean,
+            size: 42,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(product.name, style: theme.textTheme.titleLarge),
+              if (product.brand?.isNotEmpty == true)
+                Text(
+                  product.brand!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppPalette.mutedInk,
+                  ),
+                ),
+              const SizedBox(height: 5),
               Text(
-                product.brand!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                '${formatMacro(product.caloriesPer100)} kcal / 100 ${product.baseUnitLabel}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppPalette.mutedInk,
                 ),
               ),
-            ],
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _InfoChip(
-                  icon: Icons.local_fire_department_outlined,
-                  text:
-                      '${formatMacro(product.caloriesPer100)} kcal / 100${product.baseUnitLabel}',
-                ),
-                _InfoChip(
-                  icon: Icons.fitness_center,
-                  text:
-                      '${formatMacro(product.proteinPer100, decimals: 1)} g proteínas',
-                ),
-                if (servingSizeDisplay(product) != null)
-                  _InfoChip(
-                    icon: Icons.straighten,
-                    text: servingSizeDisplay(product)!,
+              if (servingSizeDisplay(product) != null)
+                Text(
+                  servingSizeDisplay(product)!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppPalette.mutedInk,
                   ),
-              ],
-            ),
-          ],
+                ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      avatar: Icon(icon, size: 16),
-      label: Text(text),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ],
     );
   }
 }
@@ -384,33 +496,54 @@ class _MacroPreview extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Macros calculados', style: theme.textTheme.titleMedium),
+            Text(
+              'Vista previa nutricional',
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Row(
               children: [
-                _MacroPill(
-                  label: 'Calorías',
-                  value: formatMacro(snapshot.calories),
-                  unit: 'kcal',
+                Expanded(
+                  child: _MacroPill(
+                    label: 'Calorías',
+                    value: formatMacro(snapshot.calories),
+                    unit: 'kcal',
+                  ),
                 ),
-                _MacroPill(
-                  label: 'Proteínas',
-                  value: formatMacro(snapshot.protein, decimals: 1),
-                  unit: 'g',
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _MacroPill(
+                    label: 'Proteínas',
+                    value: formatMacro(snapshot.protein, decimals: 1),
+                    unit: 'g',
+                  ),
                 ),
-                _MacroPill(
-                  label: 'Carbohidratos',
-                  value: formatMacro(snapshot.carbs, decimals: 1),
-                  unit: 'g',
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _MacroPill(
+                    label: 'Carbohidratos',
+                    value: formatMacro(snapshot.carbs, decimals: 1),
+                    unit: 'g',
+                  ),
                 ),
-                _MacroPill(
-                  label: 'Grasas',
-                  value: formatMacro(snapshot.fat, decimals: 1),
-                  unit: 'g',
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _MacroPill(
+                    label: 'Grasas',
+                    value: formatMacro(snapshot.fat, decimals: 1),
+                    unit: 'g',
+                  ),
                 ),
-                _MacroPill(label: 'Gasto', value: formatClp(cost), unit: ''),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              children: [
+                const Icon(Icons.payments_outlined, size: 20),
+                const SizedBox(width: 8),
+                const Text('Costo estimado'),
+                const Spacer(),
+                Text(formatClp(cost), style: theme.textTheme.titleMedium),
               ],
             ),
           ],
@@ -435,30 +568,32 @@ class _MacroPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      constraints: const BoxConstraints(minWidth: 128),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      height: 82,
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 9),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
+        color: AppPalette.porcelain,
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppPalette.outline),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
             child: Text(
               unit.isEmpty ? value : '$value $unit',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppPalette.mutedInk,
             ),
           ),
         ],

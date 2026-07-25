@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../shared/theme/app_theme.dart';
 import '../../../shared/utils/cost_formatters.dart';
 import '../../../shared/utils/macro_formatters.dart';
 import '../../food_log/application/nutrivo_go_store.dart';
@@ -34,34 +36,21 @@ class TodayDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NutrivoGo'),
+        title: const Text('Hoy'),
+        leading: syncService == null
+            ? null
+            : _SyncStatusAction(
+                syncService: syncService!,
+                onPressed: () => _openSettings(context),
+              ),
         actions: [
-          if (syncService != null)
-            _SyncStatusAction(
-              syncService: syncService!,
-              onPressed: () => _openSettings(context),
-            ),
           IconButton(
-            tooltip: 'Historial',
-            icon: const Icon(Icons.history_outlined),
+            tooltip: 'Abrir historial',
+            icon: const Icon(Icons.calendar_month_outlined),
             onPressed: () => _openHistory(context),
           ),
-          IconButton(
-            tooltip: 'Productos',
-            icon: const Icon(Icons.inventory_2_outlined),
-            onPressed: () => _openAddFood(context),
-          ),
-          IconButton(
-            tooltip: 'Configuración',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => _openSettings(context),
-          ),
+          const SizedBox(width: 6),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddFood(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Agregar alimento'),
       ),
       body: SafeArea(
         child: AnimatedBuilder(
@@ -69,41 +58,37 @@ class TodayDashboardScreen extends StatelessWidget {
           builder: (context, _) {
             return Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1100),
+                constraints: const BoxConstraints(maxWidth: 720),
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                   children: [
-                    _Header(date: DateTime.now()),
-                    const SizedBox(height: 16),
-                    _MacroGrid(
-                      totals: store.dailyTotals,
-                      dailyCost: store.dailyCostClp,
-                    ),
-                    if (store.hasUnknownDailyCosts) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'Algunos alimentos no tienen precio',
+                    Center(
+                      child: Text(
+                        _formatDate(DateTime.now()),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: AppPalette.mutedInk,
                         ),
                       ),
-                    ],
-                    if (store.todaysLogItems.isEmpty) ...[
-                      const SizedBox(height: 16),
-                      _TodayEmptyState(onAddFood: () => _openAddFood(context)),
-                    ],
-                    const SizedBox(height: 20),
-                    for (final meal in MealType.values) ...[
-                      _MealSection(
-                        mealType: meal,
-                        items: store.itemsForMeal(meal),
-                        cost: store.costForMeal(meal),
-                        hasUnknownCosts: store.hasUnknownCostsForMeal(meal),
-                        onAdd: () => _openAddFood(context, meal),
-                        onRemove: (id) => unawaited(store.removeLogItem(id)),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+                    ),
+                    const SizedBox(height: 14),
+                    _NutritionPlate(totals: store.dailyTotals),
+                    const SizedBox(height: 18),
+                    _DailySpend(
+                      value: store.dailyCostClp,
+                      hasUnknown: store.hasUnknownDailyCosts,
+                    ),
+                    const SizedBox(height: 10),
+                    _MealsPanel(
+                      store: store,
+                      onAdd: (meal) => _openAddFood(context, meal),
+                      onRemove: (id) => unawaited(store.removeLogItem(id)),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: () => _openAddFood(context),
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: const Text('Agregar alimento'),
+                    ),
                   ],
                 ),
               ),
@@ -161,7 +146,7 @@ class _SyncStatusAction extends StatelessWidget {
         return IconButton(
           tooltip: _tooltip,
           icon: Icon(_icon),
-          color: _color(context),
+          color: _color,
           onPressed: onPressed,
         );
       },
@@ -181,419 +166,470 @@ class _SyncStatusAction extends StatelessWidget {
     if (syncService.status == SyncRunStatus.synced) {
       return Icons.cloud_done_outlined;
     }
-    if (syncService.status == SyncRunStatus.notLoggedIn) {
-      return Icons.cloud_off_outlined;
-    }
     return Icons.cloud_queue_outlined;
   }
 
   String get _tooltip {
     if (syncService.isSyncing) {
-      return 'Syncing';
+      return 'Sincronizando';
     }
     if (syncService.pendingCount > 0) {
-      return '${syncService.pendingCount} pending sync item(s)';
+      return '${syncService.pendingCount} cambios pendientes';
     }
     if (syncService.status == SyncRunStatus.failed) {
-      return 'Sync needs attention';
+      return 'La sincronización requiere atención';
     }
-    return 'Sync status';
+    return 'Estado de sincronización';
   }
 
-  Color? _color(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Color? get _color {
     if (syncService.status == SyncRunStatus.failed) {
-      return colorScheme.error;
+      return AppPalette.beet;
     }
     if (syncService.pendingCount > 0) {
-      return colorScheme.secondary;
+      return AppPalette.pumpkin;
     }
-    return null;
+    return AppPalette.ocean;
   }
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.date});
-
-  final DateTime date;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Hoy', style: theme.textTheme.headlineMedium),
-              const SizedBox(height: 4),
-              Text(
-                MaterialLocalizations.of(context).formatFullDate(date),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Icon(Icons.calendar_today_outlined, size: 28),
-      ],
-    );
-  }
-}
-
-class _MacroGrid extends StatelessWidget {
-  const _MacroGrid({required this.totals, required this.dailyCost});
+class _NutritionPlate extends StatelessWidget {
+  const _NutritionPlate({required this.totals});
 
   final MacroSnapshot totals;
-  final double? dailyCost;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 760 ? 4 : 2;
-        return GridView.count(
-          crossAxisCount: columns,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: columns == 4 ? 1.75 : 1.55,
-          children: [
-            _MacroCard(
-              label: 'Calorías',
-              value: formatMacro(totals.calories),
-              unit: 'kcal',
-              icon: Icons.local_fire_department_outlined,
-              color: Theme.of(context).colorScheme.secondary,
+        final size = math.min(constraints.maxWidth, 280.0);
+        return Center(
+          child: SizedBox.square(
+            dimension: size,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppPalette.paper,
+                border: Border.all(color: AppPalette.outline),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x160F2F3E),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CustomPaint(painter: const _PlatePainter()),
+                    Center(
+                      child: Container(
+                        width: size * 0.38,
+                        height: size * 0.38,
+                        decoration: BoxDecoration(
+                          color: AppPalette.paper,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppPalette.outline),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x120F2F3E), blurRadius: 8),
+                          ],
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  formatMacro(totals.calories),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        color: AppPalette.ocean,
+                                        fontSize: 32,
+                                      ),
+                                ),
+                                const Text(
+                                  'kcal',
+                                  style: TextStyle(
+                                    color: AppPalette.mutedInk,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const Text(
+                                  'Calorías',
+                                  style: TextStyle(
+                                    color: AppPalette.mutedInk,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: const Alignment(-0.58, -0.2),
+                      child: _PlateLabel(
+                        icon: Icons.eco_outlined,
+                        label: 'Proteínas',
+                        value: '${formatMacro(totals.protein, decimals: 1)} g',
+                      ),
+                    ),
+                    Align(
+                      alignment: const Alignment(0.62, -0.2),
+                      child: _PlateLabel(
+                        icon: Icons.grass_outlined,
+                        label: 'Carbohidratos',
+                        value: '${formatMacro(totals.carbs, decimals: 1)} g',
+                      ),
+                    ),
+                    Align(
+                      alignment: const Alignment(0, 0.7),
+                      child: _PlateLabel(
+                        icon: Icons.water_drop_outlined,
+                        label: 'Grasas',
+                        value: '${formatMacro(totals.fat, decimals: 1)} g',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            _MacroCard(
-              label: 'Proteínas',
-              value: formatMacro(totals.protein, decimals: 1),
-              unit: 'g',
-              icon: Icons.fitness_center,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            _MacroCard(
-              label: 'Carbohidratos',
-              value: formatMacro(totals.carbs, decimals: 1),
-              unit: 'g',
-              icon: Icons.grain,
-              color: Theme.of(context).colorScheme.tertiary,
-            ),
-            _MacroCard(
-              label: 'Grasas',
-              value: formatMacro(totals.fat, decimals: 1),
-              unit: 'g',
-              icon: Icons.water_drop_outlined,
-              color: const Color(0xFFFF8A65),
-            ),
-            _MacroCard(
-              label: 'Gasto del día',
-              value: formatClp(dailyCost),
-              unit: '',
-              icon: Icons.payments_outlined,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ],
+          ),
         );
       },
     );
   }
 }
 
-class _MacroCard extends StatelessWidget {
-  const _MacroCard({
+class _PlatePainter extends CustomPainter {
+  const _PlatePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = size.width * 0.24;
+    final inset = stroke / 2 + 2;
+    final rect = Rect.fromLTWH(
+      inset,
+      inset,
+      size.width - inset * 2,
+      size.height - inset * 2,
+    );
+    const gap = 0.045;
+    const sweep = math.pi * 2 / 3 - gap * 2;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.butt;
+
+    paint.color = AppPalette.leaf;
+    canvas.drawArc(rect, math.pi * 0.82 + gap, sweep, false, paint);
+    paint.color = AppPalette.pumpkin;
+    canvas.drawArc(rect, -math.pi * 0.5 + gap, sweep, false, paint);
+    paint.color = AppPalette.corn;
+    canvas.drawArc(rect, math.pi * 0.16 + gap, sweep, false, paint);
+
+    final separators = Paint()
+      ..color = AppPalette.paper
+      ..strokeWidth = 5;
+    for (final angle in [-math.pi / 2, math.pi / 6, math.pi * 5 / 6]) {
+      final center = rect.center;
+      final innerRadius = rect.width / 2 - stroke / 2;
+      final outerRadius = rect.width / 2 + stroke / 2;
+      canvas.drawLine(
+        center +
+            Offset(
+              math.cos(angle) * innerRadius,
+              math.sin(angle) * innerRadius,
+            ),
+        center +
+            Offset(
+              math.cos(angle) * outerRadius,
+              math.sin(angle) * outerRadius,
+            ),
+        separators,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PlatePainter oldDelegate) => false;
+}
+
+class _PlateLabel extends StatelessWidget {
+  const _PlateLabel({
+    required this.icon,
     required this.label,
     required this.value,
-    required this.unit,
-    required this.icon,
-    required this.color,
   });
 
+  final IconData icon;
   final String label;
   final String value;
-  final String unit;
-  final IconData icon;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return SizedBox(
+      width: 92,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 20),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DailySpend extends StatelessWidget {
+  const _DailySpend({required this.value, required this.hasUnknown});
+
+  final double? value;
+  final bool hasUnknown;
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text.rich(
-                TextSpan(
-                  text: value,
-                  children: [
-                    TextSpan(
-                      text: unit.isEmpty ? '' : ' $unit',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-                maxLines: 1,
-              ),
-            ),
-          ],
+      child: ListTile(
+        dense: true,
+        leading: const Icon(Icons.account_balance_wallet_outlined),
+        title: const Text('Gasto del día'),
+        subtitle: hasUnknown ? const Text('Hay alimentos sin precio') : null,
+        trailing: Text(
+          formatClp(value),
+          style: Theme.of(context).textTheme.titleMedium,
         ),
       ),
     );
   }
 }
 
-class _MealSection extends StatelessWidget {
-  const _MealSection({
-    required this.mealType,
-    required this.items,
-    required this.cost,
-    required this.hasUnknownCosts,
+class _MealsPanel extends StatelessWidget {
+  const _MealsPanel({
+    required this.store,
     required this.onAdd,
     required this.onRemove,
   });
 
-  final MealType mealType;
+  final NutrivoGoStore store;
+  final ValueChanged<MealType> onAdd;
+  final ValueChanged<String> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Column(
+        children: [
+          for (var index = 0; index < MealType.values.length; index++) ...[
+            _MealRow(
+              meal: MealType.values[index],
+              items: store.itemsForMeal(MealType.values[index]),
+              cost: store.costForMeal(MealType.values[index]),
+              onAdd: () => onAdd(MealType.values[index]),
+              onRemove: onRemove,
+            ),
+            if (index < MealType.values.length - 1) const Divider(),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MealRow extends StatelessWidget {
+  const _MealRow({
+    required this.meal,
+    required this.items,
+    required this.cost,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final MealType meal;
   final List<LogItem> items;
   final double? cost;
-  final bool hasUnknownCosts;
   final VoidCallback onAdd;
   final ValueChanged<String> onRemove;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final calories = items.fold<double>(
       0,
       (total, item) => total + item.macros.calories,
     );
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    mealType.label,
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-                Wrap(
-                  spacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      '${formatMacro(calories)} kcal',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (cost != null)
-                      Text(
-                        formatClp(cost),
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: theme.colorScheme.primary,
-                        ),
-                      )
-                    else if (items.isNotEmpty && hasUnknownCosts)
-                      Text(
-                        'Sin precio',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    IconButton(
-                      tooltip: 'Agregar a ${mealType.label}',
-                      icon: const Icon(Icons.add_circle_outline),
-                      onPressed: onAdd,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            if (items.isEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                'No hay registros',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 2, 6, 2),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _MealIcon(meal: meal),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  meal.label,
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),
-            ] else ...[
-              const SizedBox(height: 8),
-              for (final item in items)
-                _LogItemTile(item: item, onRemove: onRemove),
+              if (cost != null) ...[
+                Text(
+                  formatClp(cost),
+                  style: const TextStyle(
+                    color: AppPalette.mutedInk,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                '${formatMacro(calories)} kcal',
+                style: const TextStyle(
+                  color: AppPalette.mutedInk,
+                  fontSize: 12,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Agregar a ${meal.label}',
+                onPressed: onAdd,
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.add_circle, color: AppPalette.ocean),
+              ),
             ],
-          ],
-        ),
+          ),
+          if (items.isNotEmpty)
+            for (final item in items)
+              _LogItemLine(item: item, onRemove: onRemove),
+        ],
       ),
     );
   }
 }
 
-class _LogItemTile extends StatelessWidget {
-  const _LogItemTile({required this.item, required this.onRemove});
+class _MealIcon extends StatelessWidget {
+  const _MealIcon({required this.meal});
+
+  final MealType meal;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = switch (meal) {
+      MealType.breakfast => Icons.free_breakfast_outlined,
+      MealType.lunch => Icons.rice_bowl_outlined,
+      MealType.afternoon => Icons.local_cafe_outlined,
+      MealType.dinner => Icons.dinner_dining_outlined,
+      MealType.snack => Icons.apple_outlined,
+    };
+    return Icon(icon, color: AppPalette.ocean, size: 22);
+  }
+}
+
+class _LogItemLine extends StatelessWidget {
+  const _LogItemLine({required this.item, required this.onRemove});
 
   final LogItem item;
   final ValueChanged<String> onRemove;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Dismissible(
       key: ValueKey(item.id),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 16),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          Icons.delete_outline,
-          color: theme.colorScheme.onErrorContainer,
-        ),
+        color: AppPalette.beet.withValues(alpha: 0.12),
+        padding: const EdgeInsets.only(right: 12),
+        child: const Icon(Icons.delete_outline, color: AppPalette.beet),
       ),
       onDismissed: (_) => onRemove(item.id),
-      child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(
-          item.product.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          '${loggedQuantityDisplay(quantity: item.quantity, unit: item.unit, baseQuantity: item.baseQuantitySnapshot, baseUnit: item.product.baseUnitLabel)} · '
-          '${formatMacro(item.macros.protein, decimals: 1)}P  '
-          '${formatMacro(item.macros.carbs, decimals: 1)}C  '
-          '${formatMacro(item.macros.fat, decimals: 1)}F'
-          '${item.costSnapshotClp == null ? '' : ' · ${formatClp(item.costSnapshotClp)}'}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${formatMacro(item.macros.calories)} kcal',
-              style: theme.textTheme.labelLarge,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 32),
+        child: ListTile(
+          dense: true,
+          minVerticalPadding: 0,
+          contentPadding: EdgeInsets.zero,
+          title: Text(
+            item.product.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            loggedQuantityDisplay(
+              quantity: item.quantity,
+              unit: item.unit,
+              baseQuantity: item.baseQuantitySnapshot,
+              baseUnit: item.product.baseUnitLabel,
             ),
-            IconButton(
-              tooltip: 'Eliminar',
-              icon: const Icon(Icons.close),
-              onPressed: () => onRemove(item.id),
-            ),
-          ],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${formatMacro(item.macros.calories)} kcal'),
+              IconButton(
+                tooltip: 'Eliminar',
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: () => onRemove(item.id),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _TodayEmptyState extends StatelessWidget {
-  const _TodayEmptyState({required this.onAddFood});
-
-  final VoidCallback onAddFood;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 460;
-          final content = Row(
-            children: [
-              Icon(
-                Icons.restaurant_outlined,
-                size: 34,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'No hay alimentos registrados hoy',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Agrega un producto guardado o crea uno para empezar.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: compact
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      content,
-                      const SizedBox(height: 14),
-                      FilledButton.icon(
-                        onPressed: onAddFood,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Agregar alimento'),
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(child: content),
-                      const SizedBox(width: 12),
-                      FilledButton.icon(
-                        onPressed: onAddFood,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Agregar'),
-                      ),
-                    ],
-                  ),
-          );
-        },
-      ),
-    );
-  }
+String _formatDate(DateTime date) {
+  const weekdays = [
+    'lunes',
+    'martes',
+    'miércoles',
+    'jueves',
+    'viernes',
+    'sábado',
+    'domingo',
+  ];
+  const months = [
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ];
+  return '${weekdays[date.weekday - 1]}, ${date.day} de ${months[date.month - 1]}';
 }

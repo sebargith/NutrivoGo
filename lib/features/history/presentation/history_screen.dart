@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../../../shared/theme/app_theme.dart';
 import '../../../shared/utils/calendar_date.dart';
 import '../../../shared/utils/cost_formatters.dart';
 import '../../../shared/utils/macro_formatters.dart';
@@ -56,7 +59,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       segments: const [
                         ButtonSegment(
                           value: _HistoryPeriod.day,
-                          label: Text('Dia'),
+                          label: Text('Día'),
                         ),
                         ButtonSegment(
                           value: _HistoryPeriod.week,
@@ -87,6 +90,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    if (_period == _HistoryPeriod.week) ...[
+                      _WeekDayStrip(
+                        store: widget.store,
+                        start: _weekStart(_selectedDate),
+                        selectedDate: _selectedDate,
+                        onSelect: (date) =>
+                            setState(() => _selectedDate = date),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     _SummaryCard(summary: _summary, title: _summaryTitle),
                     const SizedBox(height: 20),
                     if (_period == _HistoryPeriod.day) ...[
@@ -130,7 +143,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   String get _summaryTitle => switch (_period) {
-    _HistoryPeriod.day => 'Resumen del dia',
+    _HistoryPeriod.day => 'Resumen del día',
     _HistoryPeriod.week => 'Resumen de la semana',
     _HistoryPeriod.month => 'Resumen del mes',
   };
@@ -239,6 +252,137 @@ class _DateNavigator extends StatelessWidget {
   }
 }
 
+class _WeekDayStrip extends StatelessWidget {
+  const _WeekDayStrip({
+    required this.store,
+    required this.start,
+    required this.selectedDate,
+    required this.onSelect,
+  });
+
+  final NutrivoGoStore store;
+  final DateTime start;
+  final DateTime selectedDate;
+  final ValueChanged<DateTime> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        child: Row(
+          children: [
+            for (var index = 0; index < 7; index++)
+              Expanded(
+                child: _WeekDayRing(
+                  date: start.add(Duration(days: index)),
+                  calories: store
+                      .totalsForDate(start.add(Duration(days: index)))
+                      .calories,
+                  selected: isSameCalendarDate(
+                    start.add(Duration(days: index)),
+                    selectedDate,
+                  ),
+                  onTap: () => onSelect(start.add(Duration(days: index))),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WeekDayRing extends StatelessWidget {
+  const _WeekDayRing({
+    required this.date,
+    required this.calories,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final DateTime date;
+  final double calories;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            weekdays[date.weekday - 1],
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? AppPalette.ocean : AppPalette.mutedInk,
+            ),
+          ),
+          Text('${date.day}', style: const TextStyle(fontSize: 10)),
+          const SizedBox(height: 4),
+          Container(
+            width: 42,
+            height: 42,
+            padding: EdgeInsets.all(selected ? 2 : 0),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: selected
+                  ? Border.all(color: AppPalette.ocean, width: 2)
+                  : null,
+            ),
+            child: CustomPaint(
+              painter: _DayRingPainter(),
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      formatMacro(calories),
+                      style: const TextStyle(
+                        color: AppPalette.ink,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayRingPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+    const sweep = math.pi * 2 / 3 - 0.08;
+    for (final entry in <(double, Color)>[
+      (-math.pi / 2, AppPalette.leaf),
+      (math.pi / 6, AppPalette.pumpkin),
+      (math.pi * 5 / 6, AppPalette.corn),
+    ]) {
+      paint.color = entry.$2;
+      canvas.drawArc(rect.deflate(2), entry.$1 + 0.04, sweep, false, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DayRingPainter oldDelegate) => false;
+}
+
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.summary, required this.title});
 
@@ -258,10 +402,41 @@ class _SummaryCard extends StatelessWidget {
           children: [
             Text(title, style: textTheme.titleLarge),
             const SizedBox(height: 12),
-            _MacroLine(label: 'Calorias', value: _kcal(macros.calories)),
-            _MacroLine(label: 'Proteinas', value: _grams(macros.protein)),
-            _MacroLine(label: 'Carbohidratos', value: _grams(macros.carbs)),
-            _MacroLine(label: 'Grasas', value: _grams(macros.fat)),
+            Row(
+              children: [
+                Expanded(
+                  child: _SummaryMetric(
+                    label: 'Calorías',
+                    value: _kcal(macros.calories),
+                    color: AppPalette.ocean,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _SummaryMetric(
+                    label: 'Proteínas',
+                    value: _grams(macros.protein),
+                    color: AppPalette.leaf,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _SummaryMetric(
+                    label: 'Carbohidratos',
+                    value: _grams(macros.carbs),
+                    color: AppPalette.pumpkin,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _SummaryMetric(
+                    label: 'Grasas',
+                    value: _grams(macros.fat),
+                    color: AppPalette.corn,
+                  ),
+                ),
+              ],
+            ),
             const Divider(height: 24),
             _MacroLine(
               label: 'Promedio diario',
@@ -278,7 +453,7 @@ class _SummaryCard extends StatelessWidget {
               value: formatClp(summary.averageKnownCostClp),
             ),
             _MacroLine(
-              label: 'Dias con registros',
+              label: 'Días con registros',
               value: '${summary.recordedDayCount}',
             ),
             if (summary.foodsWithoutPrice > 0) ...[
@@ -297,6 +472,52 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
+class _SummaryMetric extends StatelessWidget {
+  const _SummaryMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 78,
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 9),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: color),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppPalette.mutedInk, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MacroLine extends StatelessWidget {
   const _MacroLine({required this.label, required this.value});
 
@@ -307,7 +528,21 @@ class _MacroLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(children: [Text(label), const Spacer(), Text(value)]),
+      child: Row(
+        children: [
+          Expanded(flex: 2, child: Text(label)),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -332,7 +567,7 @@ class _DailyDetail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Detalle del dia', style: Theme.of(context).textTheme.titleLarge),
+        Text('Detalle del día', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         for (final meal in MealType.values) ...[
           _MealGroup(
@@ -430,7 +665,7 @@ class _DaysList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Dias registrados', style: Theme.of(context).textTheme.titleLarge),
+        Text('Días registrados', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         for (final date in dates)
           _HistoryDayTile(
@@ -499,7 +734,7 @@ class _EmptyHistory extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
-            const Text('Agrega alimentos para ver el resumen de este dia.'),
+            const Text('Agrega alimentos para ver el resumen de este día.'),
           ],
         ),
       ),
@@ -516,7 +751,7 @@ class _PeriodHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = period == _HistoryPeriod.week ? 'semana' : 'mes';
     return Text(
-      'Los promedios se calculan solo sobre los dias con registros de este $label.',
+      'Los promedios se calculan solo sobre los días con registros de este $label.',
       style: Theme.of(context).textTheme.bodySmall,
     );
   }

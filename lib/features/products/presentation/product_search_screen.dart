@@ -29,12 +29,14 @@ class ProductSearchScreen extends StatefulWidget {
     this.initialMealType,
     this.initialConsumedOn,
     this.geminiClient,
+    this.isProductTab = false,
   });
 
   final NutrivoGoStore store;
   final MealType? initialMealType;
   final DateTime? initialConsumedOn;
   final GeminiProductClient? geminiClient;
+  final bool isProductTab;
 
   @override
   State<ProductSearchScreen> createState() => _ProductSearchScreenState();
@@ -66,32 +68,12 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.initialMealType == null
+          widget.isProductTab
+              ? 'Productos'
+              : widget.initialMealType == null
               ? 'Agregar alimento'
               : 'Agregar a ${widget.initialMealType!.label}',
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Escanear código de barras',
-            icon: const Icon(Icons.qr_code_scanner),
-            onPressed: _isLookingUpBarcode ? null : _scanBarcode,
-          ),
-          IconButton(
-            tooltip: 'Escanear etiqueta nutricional',
-            icon: const Icon(Icons.document_scanner_outlined),
-            onPressed: _scanNutritionLabel,
-          ),
-          IconButton(
-            tooltip: 'Crear producto',
-            icon: const Icon(Icons.add_box_outlined),
-            onPressed: _createProduct,
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createProduct,
-        icon: const Icon(Icons.add),
-        label: const Text('Producto'),
       ),
       body: SafeArea(
         child: AnimatedBuilder(
@@ -106,66 +88,66 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                 _query.isEmpty && widget.initialMealType == null
                 ? widget.store.recentProducts
                 : <Product>[];
+            final quickProducts = frequentProducts.isNotEmpty
+                ? frequentProducts
+                : recentProducts;
             return Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 900),
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
                   children: [
-                    TextField(
-                      controller: _searchController,
-                      textInputAction: TextInputAction.search,
-                      decoration: const InputDecoration(
-                        hintText: 'Buscar productos',
-                        prefixIcon: Icon(Icons.search),
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            textInputAction: TextInputAction.search,
+                            decoration: const InputDecoration(
+                              hintText: 'Buscar alimento o marca',
+                              prefixIcon: Icon(Icons.search),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton.icon(
+                          onPressed: _isLookingUpBarcode ? null : _scanBarcode,
+                          icon: const Icon(Icons.qr_code_scanner),
+                          label: Text(
+                            _isLookingUpBarcode ? 'Buscando' : 'Escanear',
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    _BarcodeActionBar(
-                      isLoading: _isLookingUpBarcode,
-                      onScan: _scanBarcode,
-                    ),
-                    const SizedBox(height: 12),
-                    _OcrActionBar(onScan: _scanNutritionLabel),
-                    const SizedBox(height: 12),
-                    _GeminiActionBar(onOpen: _openGeminiGeneric),
                     const SizedBox(height: 16),
+                    if (quickProducts.isNotEmpty) ...[
+                      _SectionHeader(
+                        title: frequentProducts.isNotEmpty
+                            ? 'Frecuentes'
+                            : 'Recientes',
+                        subtitle: 'Acceso rápido',
+                      ),
+                      const SizedBox(height: 10),
+                      _FrequentPlate(
+                        products: quickProducts,
+                        onTap: _selectProduct,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    _ProductEntryActions(
+                      isLookingUpBarcode: _isLookingUpBarcode,
+                      onBarcode: _scanBarcode,
+                      onOcr: _scanNutritionLabel,
+                      onGemini: _openGeminiGeneric,
+                      onCreate: _createProduct,
+                    ),
+                    const SizedBox(height: 20),
                     if (widget.store.products.isEmpty)
                       _EmptyProducts(onCreate: _createProduct)
                     else if (products.isEmpty)
                       _NoResults(onCreate: _createProduct)
                     else ...[
-                      if (frequentProducts.isNotEmpty) ...[
-                        _SectionHeader(
-                          title:
-                              'Frecuentes en ${widget.initialMealType!.label}',
-                          subtitle: 'Usados en esta comida',
-                        ),
-                        const SizedBox(height: 8),
-                        for (final product in frequentProducts)
-                          _ProductTile(
-                            product: product,
-                            onTap: _selectProduct,
-                            onEdit: _editProduct,
-                            onDelete: _confirmDeleteProduct,
-                          ),
-                        const SizedBox(height: 12),
-                      ],
-                      if (recentProducts.isNotEmpty) ...[
-                        _SectionHeader(
-                          title: 'Recientes',
-                          subtitle: 'Agrega rápido alimentos usados antes',
-                        ),
-                        const SizedBox(height: 8),
-                        for (final product in recentProducts)
-                          _ProductTile(
-                            product: product,
-                            onTap: _selectProduct,
-                            onEdit: _editProduct,
-                            onDelete: _confirmDeleteProduct,
-                          ),
-                        const SizedBox(height: 12),
-                      ],
                       _SectionHeader(
                         title: 'Productos',
                         subtitle: '${products.length} guardados',
@@ -415,47 +397,107 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     if (!mounted || loggedItem == null) {
       return;
     }
-    Navigator.of(context).pop();
+    if (!widget.isProductTab) {
+      Navigator.of(context).pop();
+    }
   }
 }
 
-class _GeminiActionBar extends StatelessWidget {
-  const _GeminiActionBar({required this.onOpen});
+class _FrequentPlate extends StatelessWidget {
+  const _FrequentPlate({required this.products, required this.onTap});
 
-  final VoidCallback onOpen;
+  final List<Product> products;
+  final ValueChanged<Product> onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            const Icon(Icons.auto_awesome_outlined),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Agregar con Gemini',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Buscar alimento genérico',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+    final visible = products.take(4).toList(growable: false);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.maxWidth.clamp(250.0, 340.0);
+        const positions = <Alignment>[
+          Alignment(-0.58, -0.58),
+          Alignment(0.58, -0.58),
+          Alignment(-0.58, 0.58),
+          Alignment(0.58, 0.58),
+        ];
+        return Center(
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Theme.of(context).colorScheme.surface,
+              border: Border.all(color: const Color(0xFFE1DED7)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x120F2F3E),
+                  blurRadius: 14,
+                  offset: Offset(0, 7),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            FilledButton.icon(
-              onPressed: onOpen,
-              icon: const Icon(Icons.auto_awesome),
-              label: const Text('Generar'),
+            child: Stack(
+              children: [
+                for (var index = 0; index < visible.length; index++)
+                  Align(
+                    alignment: positions[index],
+                    child: _FrequentProduct(
+                      product: visible[index],
+                      onTap: () => onTap(visible[index]),
+                    ),
+                  ),
+                if (visible.length < 4)
+                  const Center(
+                    child: Icon(
+                      Icons.add_circle_outline,
+                      color: Color(0xFF9AA7AD),
+                      size: 34,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FrequentProduct extends StatelessWidget {
+  const _FrequentProduct({required this.product, required this.onTap});
+
+  final Product product;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _productColor(product);
+    return SizedBox(
+      width: 112,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(60),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: 0.14),
+                border: Border.all(color: color, width: 2),
+              ),
+              child: Icon(_productIcon(product), color: color, size: 34),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              product.name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12),
             ),
           ],
         ),
@@ -464,72 +506,83 @@ class _GeminiActionBar extends StatelessWidget {
   }
 }
 
-class _OcrActionBar extends StatelessWidget {
-  const _OcrActionBar({required this.onScan});
+class _ProductEntryActions extends StatelessWidget {
+  const _ProductEntryActions({
+    required this.isLookingUpBarcode,
+    required this.onBarcode,
+    required this.onOcr,
+    required this.onGemini,
+    required this.onCreate,
+  });
 
-  final VoidCallback onScan;
+  final bool isLookingUpBarcode;
+  final VoidCallback onBarcode;
+  final VoidCallback onOcr;
+  final VoidCallback onGemini;
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 620 ? 4 : 2;
+        final width = (constraints.maxWidth - (columns - 1) * 8) / columns;
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            const Icon(Icons.document_scanner_outlined),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Escanear etiqueta nutricional',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+            _ActionButton(
+              width: width,
+              icon: Icons.qr_code_scanner,
+              label: 'Código',
+              onPressed: isLookingUpBarcode ? null : onBarcode,
             ),
-            const SizedBox(width: 12),
-            FilledButton.icon(
-              onPressed: onScan,
-              icon: const Icon(Icons.camera_alt_outlined),
-              label: const Text('Escanear'),
+            _ActionButton(
+              width: width,
+              icon: Icons.document_scanner_outlined,
+              label: 'Etiqueta',
+              onPressed: onOcr,
+            ),
+            _ActionButton(
+              width: width,
+              icon: Icons.auto_awesome_outlined,
+              label: 'Gemini',
+              onPressed: onGemini,
+            ),
+            _ActionButton(
+              width: width,
+              icon: Icons.add_box_outlined,
+              label: 'Crear producto',
+              onPressed: onCreate,
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-class _BarcodeActionBar extends StatelessWidget {
-  const _BarcodeActionBar({required this.isLoading, required this.onScan});
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.width,
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
 
-  final bool isLoading;
-  final VoidCallback onScan;
+  final double width;
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            const Icon(Icons.qr_code_scanner),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                isLoading
-                    ? 'Buscando código de barras...'
-                    : 'Escanea o ingresa un código',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 12),
-            FilledButton.icon(
-              onPressed: isLoading ? null : onScan,
-              icon: Icon(isLoading ? Icons.hourglass_top : Icons.camera_alt),
-              label: Text(isLoading ? 'Buscando' : 'Escanear'),
-            ),
-          ],
-        ),
+    return SizedBox(
+      width: width,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label, overflow: TextOverflow.ellipsis),
       ),
     );
   }
@@ -713,4 +766,42 @@ class _NoResults extends StatelessWidget {
       ),
     );
   }
+}
+
+Color _productColor(Product product) {
+  final index = product.name.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
+  const colors = <Color>[
+    Color(0xFF4F8B63),
+    Color(0xFFE78942),
+    Color(0xFFE0B332),
+    Color(0xFFA95066),
+    Color(0xFF2C6E8A),
+  ];
+  return colors[index % colors.length];
+}
+
+IconData _productIcon(Product product) {
+  final name = product.name.toLowerCase();
+  if (name.contains('leche') ||
+      name.contains('yogur') ||
+      name.contains('yogurt')) {
+    return Icons.local_drink_outlined;
+  }
+  if (name.contains('pan') ||
+      name.contains('avena') ||
+      name.contains('arroz')) {
+    return Icons.bakery_dining_outlined;
+  }
+  if (name.contains('pollo') ||
+      name.contains('carne') ||
+      name.contains('huevo')) {
+    return Icons.egg_alt_outlined;
+  }
+  if (name.contains('manzana') ||
+      name.contains('plátano') ||
+      name.contains('platano') ||
+      name.contains('fruta')) {
+    return Icons.apple_outlined;
+  }
+  return Icons.restaurant_outlined;
 }

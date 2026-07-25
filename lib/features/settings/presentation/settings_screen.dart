@@ -676,6 +676,7 @@ class _OcrReportsCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                 child: DropdownButtonFormField<OcrImageSavingMode>(
+                  isExpanded: true,
                   initialValue: store.ocrImageSavingMode,
                   decoration: const InputDecoration(
                     labelText: 'Guardar imagenes OCR para debug',
@@ -683,7 +684,14 @@ class _OcrReportsCard extends StatelessWidget {
                   ),
                   items: [
                     for (final mode in OcrImageSavingMode.values)
-                      DropdownMenuItem(value: mode, child: Text(mode.label)),
+                      DropdownMenuItem(
+                        value: mode,
+                        child: Text(
+                          mode.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                   ],
                   onChanged: (mode) {
                     if (mode != null) {

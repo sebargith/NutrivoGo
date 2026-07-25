@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'core/auth/auth_controller.dart';
 import 'core/database/app_database.dart';
 import 'core/supabase/supabase_client_provider.dart';
-import 'features/dashboard/presentation/today_dashboard_screen.dart';
 import 'features/food_log/application/nutrivo_go_store.dart';
 import 'features/gemini/application/gemini_product_client.dart';
 import 'features/sync/application/sync_service.dart';
+import 'shared/navigation/main_app_shell.dart';
 import 'shared/theme/app_theme.dart';
 
 class NutrivoGoApp extends StatefulWidget {
@@ -120,8 +120,8 @@ class _NutrivoGoAppState extends State<NutrivoGoApp>
     return MaterialApp(
       title: 'NutrivoGo',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
-      home: TodayDashboardScreen(
+      theme: AppTheme.light(),
+      home: MainAppShell(
         store: _store,
         authController: _authController,
         syncService: _syncService,
